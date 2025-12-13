@@ -782,7 +782,7 @@ Rule: If a requirement has no test, it is untested. If a test has no requirement
 - example run logs demonstrating:
   - normal behavior,
   - at least one failure mode behaving correctly.
-- proof that observability works:
+- proof of observability works:
   - correlation IDs exist,
   - metrics/traces exist (or equivalent breadcrumbs).
 
