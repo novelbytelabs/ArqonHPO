@@ -1,289 +1,845 @@
 <!--
 Sync Impact Report:
-- Version: 2.4.0 -> 2.4.1
-- Modified principles:
-  - I. Warm-Start Pipeline Integrity (expanded phase definitions, override controls, rolling mode switch rules)
-  - II. Reproducibility & Statelessness (made environment capture and determinism requirements explicit)
-  - III. Interface & Protocol Discipline (added artifact compatibility + hot-path boundary rules)
-  - IV. Test-First Quality Gates (expanded required test types and determinism rules)
-  - V. Observability, Performance & Safety (expanded boundedness + timeout + failure-mode logging)
-  - VI. Canonical Environment & Dependency Determinism (clarified: canonical env is for repo validation/benchmarks; end users are not forced to use conda or a specific env name)
-- Added principles:
-  - VI. Canonical Environment & Dependency Determinism (conda env `helios-gpu-118`)
-  - VII. Artifact Contracts & Auditability
-  - VIII. Research / Production Boundary
-  - IX. Data & Privacy Safety
-  - X. Compatibility & Versioning Discipline
-- Added sections:
-  - Expanded Engineering Standards & Constraints (determinism, numerical hygiene, environment)
-- Removed sections: None
-- Templates requiring updates:
-  - ✅ .specify/templates/plan-template.md
-  - ✅ .specify/templates/spec-template.md
-  - ✅ .specify/templates/tasks-template.md
-  - ✅ .specify/scripts/bash/update-agent-context.sh (default agent file now AGENTS.md)
-  - ✅ README.md (document canonical conda env)
-  - ✅ environment.yml (new; documents canonical env)
-  - ⚠ N/A: .specify/templates/commands/*.md (directory not present)
-- Follow-up TODOs: None
+
+- ArqonHPO Constitution v1.0.0 (2025-12-13)
 -->
 
 # ArqonHPO Constitution
 
-**Version**: 2.4.1  
-**Ratification Date**: 2025-12-11  
-**Last Amended**: 2025-12-12
+**Version**: 1.0.0  
+**Ratification Date**: 2025-12-13  
+**Last Amended**: 2025-12-13  
 
-This document codifies the non-negotiable rules for the ArqonHPO warm-start
-optimization engine. If a decision conflicts with this constitution, the
-decision is wrong.
+This document defines the **non-negotiable principles** that govern how ArqonHPO is designed, evolved, and maintained.
 
-This constitution exists to prevent:
-- warm-start bypasses that silently destroy quality and reproducibility,
-- uncontrolled heuristics in the hot path,
-- “works on my machine” benchmarking and environment drift,
-- nondeterministic results that cannot be audited or rerun.
+It exists to protect ArqonHPO from accidental bloat, regression, silent breakage, and “clever” shortcuts that erode trust.
 
-Specs, plans, and tasks generated via speckit must comply.
+If a decision conflicts with this constitution, **the decision is wrong**.
 
-**Scope (what this governs)**:
-- The warm-start optimization pipeline (RPZL probe, variance test, mode selection, refinement).
-- The public API surface (`ArqonSolver`) and any CLI wrappers.
-- Artifacts produced for audit (samples, rationale, metrics, environment).
-- Benchmark claims and published performance numbers.
+> **Spec Kit Note:** This constitution is the hard sandbox for all `/speckit.*` commands.  
+> Specs, plans, and tasks **must not** violate the constraints in Sections II–XI.
 
-**Non-scope (what this does not govern)**:
-- The internal architecture of ArqonBus (covered by ArqonBus governance).
-- One-off research notebooks and prototypes that do not ship as supported surfaces
-  (still must not be misrepresented as production results).
+---
 
-## Core Principles
+# ULTIMATE INTEGRITY COVENANT
 
-### I. Warm-Start Pipeline Integrity
-Rationale: warm-start is the product; bypasses destroy correctness and trust.
+This constitution is a **hard constraint** on all engineering work. It exists to prevent the failure modes that destroy real systems:
 
-Non-negotiables:
-- Solver flow is always: RPZL (prime-indexed) probe → variance classification → seeded refinement.
-- Landscape classification is required: run the RPZL variance test (50 RPZL samples,
-  neighbor variance) before mode selection.
-- Default solver mode is Hybrid RPZL+Optuna; pure Optuna is allowed only when variance
-  indicates chaotic/rugged landscapes (e.g., Rastrigin-class).
-- No “helpful” heuristics may be inserted into the hot path unless:
-  - they are spec’d, tested, and benchmarked, and
-  - they do not bypass the RPZL probe + variance decision.
+- “Happy path” engineering that collapses under real inputs
+- Pseudocode / placeholders / stubs presented as completion
+- Tests that “check boxes” but don’t model production reality
+- Fake evidence (invented logs, benchmarks, screenshots, coverage, results)
+- Unnamed technical debt that silently becomes permanent
+- Silent failure handling and silent security degradation
+- Undocumented complexity and unreadable “clever” code
+- Non-reproducible builds, non-deterministic behavior, and flaky verification
+- Work products that are narrative-only, vague, or unverifiable
 
-Overrides and bypass controls:
-- Any override/bypass (including “force pure Optuna”) MUST be explicit, auditable, and time-bounded.
-- Overrides MUST include a rationale string and an external reference (ADR link or issue ID).
-- Overrides MUST be off by default in production surfaces.
+If a decision conflicts with this covenant, **the decision is wrong**.
 
-Phase definitions (must be observable):
-- **Probe**: RPZL sampling used to discover structure and gather probe samples.
-- **Classify**: variance test produces a structured/chaotic label and score.
-- **Seed**: hybrid mode seeds refinement from probe findings (when applicable).
-- **Refine**: Optuna/TPE (or approved Bayesian backend) refines within the selected mode.
+---
 
-Rolling classification (long-running workloads):
-- The solver MUST support a rolling window (default: last 50 relevant samples) and MAY switch
-  modes when the classification changes.
-- Any mode switch MUST be logged with the old/new mode and the variance score(s) that triggered it.
+### A. The Only Acceptable Meaning of “DONE” (The 8-Pillar Standard)
 
-### II. Reproducibility & Statelessness
-Rationale: optimization results are only valuable if they can be reproduced and audited.
+A change is **NOT DONE** until all eight pillars are true:
 
-Non-negotiables:
-- Every run MUST be reproducible: fixed seeds, recorded bounds/budget/probe_ratio, and deterministic
-  objective evaluation (given the same environment and objective).
-- No hidden global state or cached mutations; all state is derived from inputs or explicit artifacts.
-- The solver MUST be restartable from serialized artifacts without changing behavior.
+1. Implementation  
+   - Real code exists (not pseudocode). It compiles, runs, and handles edge cases.  
+   - Invalid states are rejected; invariants are enforced.  
+   - Failure behavior is explicit: timeouts, retries, backpressure, cancellation, and partial failures are defined.
 
-Required run metadata (minimum):
-- All RNG seeds used (probe sampling, variance test, refinement backend).
-- Bounds, budget, probe_ratio, and any constraint definitions.
-- RPZL parameters (prime set/stride choice, sample count, neighborhood definition).
-- Variance test result (score, threshold(s), label).
-- Selected mode and (if hybrid) the seed mapping used to initialize refinement.
-- Dependency versions and environment fingerprint (see Principle VI).
+2. Verification  
+   - Automated tests cover normal + failure + adversarial + concurrency/ordering behavior.  
+   - Tests model production complexity, not toy inputs.  
+   - Where appropriate: property-based tests, fuzzing, chaos/fault injection, and regression tests exist.
 
-Determinism guardrails:
-- Randomness MUST come from an explicit RNG seeded from the run inputs.
-- If parallelism is used, the run MUST still be deterministic or MUST declare nondeterminism explicitly
-  and treat the output as non-auditable (not allowed for benchmark claims).
+3. Documentation  
+   - In-repo docs explain: architecture, usage, invariants, data contracts, and “what can go wrong.”  
+   - Operational caveats are explicit: limits, failure modes, rollback strategy, and safety constraints.  
+   - Every public behavior change updates docs and/or changelog.
 
-### III. Interface & Protocol Discipline
-Rationale: stable, typed contracts keep the solver composable and safe to embed.
+4. Evidence  
+   - Reproducible proof exists (CI artifacts, logs, traces, coverage reports, benchmarks).  
+   - Evidence is not implied; it is attached or linkable to a specific commit/run.  
+   - If there is no evidence, the claim is false.
 
-Non-negotiables:
-- Primary product surface is a stable API (`ArqonSolver` semantics) exposed in multiple runtimes.
-- Inputs/outputs use typed, explicit structures; logs/JSON are diagnostics only and stay out of the
-  optimization loop.
-- Public contracts are versioned: changes to solver signatures or return types follow SemVer with
-  additive-first changes and documented deprecations.
+5. Traceability  
+   - Each requirement / acceptance criterion maps to:
+     - code locations,
+     - test locations,
+     - documentation locations,
+     - evidence artifacts.
+   - No orphan requirements. No orphan code. No untested requirements.
 
-Artifact and logging boundaries:
-- Diagnostics may be verbose; the optimization loop must remain free of non-essential I/O.
-- Artifacts MUST be structured, schema-versioned, and backward compatible (see Principle X).
+6. Operational Readiness  
+   - Safe defaults, explicit configuration validation, and clear failure signals exist.  
+   - Observability exists: structured logs + metrics + tracing (or an equivalent breadcrumb system).  
+   - Rollout/rollback exists where relevant; migrations are reversible or explicitly irreversible.
 
-### IV. Test-First Quality Gates
-Rationale: solver logic is easy to regress; tests are the only reliable guardrail.
+7. Security & Safety Readiness  
+   - Threat assumptions are stated. Privilege boundaries are validated.  
+   - Secrets are not logged; sensitive data is redacted.  
+   - Fail-closed behavior is defined for safety/security modules (no silent “allow”).
 
-Non-negotiables:
-- TDD is mandatory for solver logic, sampling math, and integrations (Optuna, NumPy, SciPy).
-- Regressions block merges.
-- Flakiness or nondeterminism is treated as a defect to fix, not a tolerance to accept.
+8. Task Completeness  
+   - Work is decomposed into a concrete task list (not vague bullets).  
+   - Each task includes acceptance criteria, a test hook, and an evidence hook.  
+   - If a task is not done, the work is not done.
 
-Required coverage (by behavior, not percentage):
-- Unit tests for: RPZL sampling invariants, variance test computation, and mode selection policy.
-- Integration tests for: end-to-end warm-start flow in both structured and chaotic fixtures.
-- Property tests for: sampling distribution sanity (where applicable).
-- Determinism tests: same seed + same env yields same mode and identical (or within defined epsilon)
-  outputs for deterministic objectives.
+Rule: Declaring “done” without satisfying every pillar is deception.
 
-### V. Observability, Performance & Safety
-Rationale: predictable performance and clear diagnostics are correctness properties.
+---
 
-Non-negotiables:
-- Structured logging around phases (probe, classify, seed, refine) with elapsed times, seed metadata,
-  and solver selection rationale (variance result).
-- No sensitive data in logs (objective payloads are treated as potentially sensitive).
-- No unbounded loops: every loop MUST have a budget or termination criterion tied to configured inputs.
-- Objective wrappers MUST guard against runaway compute and memory, including timeouts.
+### B. The Anti-Half-Ass Rules (Merge-Blocking by Definition)
 
-Required telemetry fields (minimum):
-- `run_id`, `seed`, `bounds_digest`, `budget`, `probe_ratio`
-- `rpzl_sample_count`, `rpzl_prime_stride` (or equivalent RPZL parameterization)
-- `variance_score`, `variance_label`, `mode_selected`
-- phase timings: `probe_ms`, `classify_ms`, `refine_ms`, `total_ms`
+#### B1. No Pseudocode-as-Deliverable
+- Pseudocode may exist only as clearly labeled design notes.  
+- Pseudocode cannot be the “solution,” cannot substitute for tests, and cannot be used to claim completion.
 
-Spectral telemetry:
-- When enabled, the solver SHOULD emit a “structural clarity” signal (e.g., eigen-gap or related metric)
-  and record it in artifacts for post-hoc analysis.
+#### B2. No Placeholders / No Stubs / No “Later”
+Forbidden in production paths:
+- `TODO`, `FIXME`, `pass`, `todo!()`, empty handlers, commented-out behavior, “mock later,” “hardening later,” “edge cases later.”
+If incomplete behavior must exist temporarily, it must:
+- be feature-flagged OFF by default,
+- be isolated so it cannot affect production behavior,
+- have a `TD-###` record with TTL (see Debt Policy).
 
-Hot-path boundaries:
-- For microsecond-class workloads and benchmark claims, hot-path search logic MUST run in Rust with
-  pre-allocated buffers and no GC pauses; Python bindings must remain outside the control loop.
+#### B3. No Fake Data, No Toy Inputs, No Lazy Synthetics
+- Tests and examples must use production-like complexity: realistic IDs, nested payloads, boundary sizes, malformed variants, weird unicode/whitespace, and adversarial inputs.
+- Ban list (unless the test is explicitly about these literals): `foo`, `bar`, `user_1`, `test123`, “hello world.”
 
-Safety:
-- Any failure in classification, seeding, or refinement MUST surface as an explicit error state with
-  rationale, not a silent fallback to an arbitrary mode.
+#### B4. No Happy Path Testing
+For any externally coupled feature (filesystem, subprocesses, network, storage, package backends), tests must cover:
+- timeouts, retries, partial failures, malformed responses, permission failures, cancellation, overload/backpressure, and out-of-order/duplicate events where relevant.
 
-### VI. Canonical Environment & Dependency Determinism
-Rationale: “same seed” is meaningless if the environment drifts.
+#### B5. No Silent Failures
+- Swallowing errors is forbidden. Every error must be handled, logged with context, or propagated.
+- “Fallback to success” behavior without explicit documentation and tests is forbidden.
 
-Non-negotiables:
-- The canonical development and benchmarking environment is a conda environment defined by
-  `environment.yml` (internally referred to as `helios-gpu-118`).
-- Benchmark claims MUST be produced using the canonical dependency set from `environment.yml`
-  (or a documented, equivalently pinned and reviewed alternative).
-- CI MUST create its own environment from `environment.yml` and is allowed to name it generically
-  (e.g., `ci`); the environment name is not a customer-facing contract.
-- Installing Python packages outside the active canonical conda environment is forbidden for this
-  project.
-  Specifically, `pip install --user` and writing to `~/.local/lib/python*` is forbidden.
-- Automation MUST prevent user-site leakage by setting `PYTHONNOUSERSITE=1` for runs that must be
-  reproducible (tests, benchmarks, CI).
-- Package installs MUST be explicit and env-scoped (e.g., `python -m pip install --no-user ...`
-  executed from within the `helios-gpu-118` interpreter).
+#### B6. Warnings Are Errors
+- Compiler, linter, formatter, typechecker warnings block merge. “It builds on my machine” is irrelevant.
 
-End-user compatibility (non-negotiable):
-- The published Python package MUST NOT require conda, MUST NOT require a specific conda env name,
-  and MUST remain usable in standard Python environments via `pip` (subject to documented Python
-  version support).
+#### B7. No Unbounded Risk
+- Unbounded queues, unbounded memory growth, unbounded metric cardinality, unbounded retries, and unbounded timeouts are forbidden.
+- If something can grow, it must have a cap. If it can retry, it must have a budget. If it can wait, it must have a timeout.
 
-Required environment capture for auditable runs:
-- Record environment fingerprint in run artifacts:
-  - conda environment name (`helios-gpu-118`),
-  - an exported dependency list (`conda env export --name helios-gpu-118` or equivalent),
-  - OS + CPU/GPU identity (when relevant to numeric determinism),
-  - Python package versions (pip/conda).
+---
 
-### VII. Artifact Contracts & Auditability
-Rationale: optimization is only trustworthy if it leaves an audit trail.
+### C. Technical Debt Policy (Zero Debt Unless Named + Owned + Expiring)
 
-Non-negotiables:
-- Intermediate artifacts MUST be serializable for audit and rerun.
-- Artifacts MUST be stable, schema-versioned, and non-executable by default.
-- Pickle-based primary artifacts are forbidden (allowed only for strictly internal debugging).
+Technical debt is **forbidden by default**. If debt must exist, it must be explicit, bounded, and temporary.
 
-Minimum artifact set per run:
-- Probe samples (or a digest + replayable generator parameters).
-- Variance test result and mode selection rationale.
-- Final best candidate(s) and objective value(s).
-- Run metadata and environment fingerprint.
+Debt is valid only if it is recorded as `TD-###` and includes:
+- owner,
+- scope and blast radius,
+- why it exists,
+- the exact exit criteria (“debt is removed when…”),
+- remediation plan,
+- hard TTL date,
+- tests guarding the boundary so the debt cannot silently expand.
 
-### VIII. Research / Production Boundary
-Rationale: exploration is good; shipping unvalidated novelty is not.
+Rules:
+- Debt without TTL is invalid.
+- Debt past TTL blocks merge/release.
+- “We’ll fix later” is not a plan.
+- “Temporary” code paths must have an explicit sunset mechanism.
 
-Non-negotiables:
-- Experimental kernels, alternate samplers, and novel execution modes must remain confined to
-  research artifacts until promoted via: spec → tests → benchmarks → docs update.
-- Production library surfaces remain stable; experimental code must not silently change behavior
-  of the default solver path.
+---
 
-### IX. Data & Privacy Safety
-Rationale: objectives may embed tenant or sensitive information.
+### D. SDD + TDD Contract (Professional Standard)
 
-Non-negotiables:
-- Objective evaluation MUST not leak sensitive data through logs, artifacts, or exceptions.
-- Sample logging is opt-in and MUST be redactable.
-- Artifacts intended for sharing MUST support redaction without breaking replayability guarantees.
+#### D1. Specification-Driven Design Requirements (for non-trivial changes)
+A valid spec includes:
+- intent and non-goals,
+- acceptance criteria (falsifiable),
+- invariants (must-always-be-true),
+- failure modes and expected behavior under each,
+- compatibility rules (protocol/API/schema expectations),
+- performance envelope and resource bounds (when relevant),
+- security/privacy assumptions and constraints,
+- operational concerns (observability, rollout/rollback, migration notes).
 
-### X. Compatibility & Versioning Discipline
-Rationale: reproducibility and downstream integrations depend on stability.
+If the spec is ambiguous, the first task is to remove ambiguity by producing falsifiable criteria.
 
-Non-negotiables:
-- `ArqonSolver` public API and artifact schemas follow SemVer:
-  - MAJOR: breaking API or artifact schema changes,
-  - MINOR: additive fields/features with defaults,
-  - PATCH: bug fixes and clarifications without contract changes.
-- Deprecations MUST be explicit and documented before removal.
-- Artifact schema versions MUST be recorded in every artifact bundle.
+#### D2. Test-Driven Development Requirements
+- Tests define behavior before/with implementation (TDD by default).
+- Refactors require existing tests protecting behavior.
+- Every bug fix includes a regression test that fails pre-fix and passes post-fix.
+- Flaky tests are critical bugs; they must be fixed, not ignored.
 
-## Engineering Standards & Constraints
-Engineering rules apply to all production-facing code and benchmark claims.
+---
 
-Docs and decision capture:
-- Docs as code: README/docs/notebooks must stay in sync with solver behavior and benchmarks.
-- ADRs capture significant algorithmic choices (variance thresholding, prime strategies, mode switching).
-- `docs/rpzl_adjoint_hybrid.ipynb` is canonical for RPZL structure/chaos guidance and hybrid benchmarks;
-  maintain its findings in line with code.
+### E. Verification Constitution (Realism + Adversarial + Failure-First)
 
-Objective purity and execution boundaries:
-- Objective functions MUST be pure and side-effect free (no hidden I/O, no hidden global mutation).
-- Stateful setup belongs outside solver inputs and is passed explicitly.
-- Any caching must be explicit, keyed, and captured in artifacts if it affects behavior.
+Required test categories (as applicable):
+- unit tests for pure logic (fast, no external deps),
+- integration tests for boundaries and real dependency interactions,
+- property-based tests for parsers/validators/protocol/config boundaries,
+- fuzz tests for user-controlled input surfaces,
+- concurrency/ordering tests for races, duplicates, replays, idempotency,
+- chaos/fault injection for externally coupled behaviors,
+- performance regression checks for hot paths or stated latency budgets.
 
-Numerical and determinism hygiene:
-- Floating-point tolerance MUST be defined where exact equality is not reasonable.
-- GPU-dependent behavior MUST be declared; benchmark claims MUST document hardware and driver constraints.
-- Nondeterministic kernels are forbidden in benchmark claims unless explicitly justified and isolated.
+Verification must explicitly test:
+- malformed inputs,
+- partial reads/writes,
+- timeout handling,
+- retry policy and idempotency guarantees,
+- permission boundaries,
+- overload/backpressure behavior,
+- deterministic ordering assumptions (or explicit non-guarantees).
 
-Environment discipline:
-- Default execution and benchmarking uses conda env `helios-gpu-118` (see Principle VI).
-- Dependencies are pinned (requirements and environment spec); unbounded version ranges are forbidden
-  for benchmark-critical paths.
+---
 
-CI is sovereign:
-- CI is the source of truth: linting, type checks, tests, and benchmarks must pass.
-- Manual hotfixes or skipped checks are forbidden.
+### F. The Claim Ledger (Mandatory Honesty)
 
-## Development Workflow & Quality Gates
-- Standard flow: `/speckit.specify` → `/speckit.clarify` → `/speckit.plan` → `/speckit.tasks` → `/speckit.implement`; each step must honor this constitution.
-- Plans enumerate technical context, constitution gates, and chosen structure; tasks map directly to user stories and include file paths and `P` markers where safe.
-- Solver-mode decision (structure vs chaos) from the variance test must be captured in specs/plans and enforced in tasks; deviations need ADR justification.
-- Tests run before code for each task phase; integration and benchmark scripts (Ackley/Rosenbrock/Rastrigin, hybrid head-to-heads) must be runnable locally and in CI without hidden prerequisites.
-- Releases are tag-driven via CI pipelines; artifacts are immutable, signed where applicable, and never built from unverified local states.
-- Documentation and checklists update alongside behavior; no feature is done until spec, plan, tasks, and docs reflect reality.
-- Plans MUST explicitly name the execution environment used for benchmarks (default: `helios-gpu-118`).
+Any claim like “works,” “done,” “fixed,” “secure,” “fast,” “compatible,” “production-ready” must be labeled:
 
-## Governance
-- This constitution supersedes other practices for ArqonHPO; violations block merges and releases.
-- Amendments require a documented proposal (rationale + impact), maintainer consensus, a version bump,
-  and updated ratified/amended dates.
-- Semantic versioning applies to this document:
-  - patch = clarifications/typos/non-semantic refinements,
-  - minor = new constraints/sections or materially expanded guidance,
-  - major = removal/redefinition of principles or governance breaking shifts.
-- Compliance review expectation: every plan MUST include a “Constitution Check” section listing the
-  applicable gates and how they are satisfied.
-- Exceptions require explicit, time-bounded ADRs and MUST not become the default path by accident.
+- Observed: executed + evidence attached
+- Derived: reasoned + assumptions listed + risks stated
+- Unverified: not tested + the exact minimal experiment provided
+
+Presenting Derived/Unverified claims as Observed is lying.
+
+---
+
+### G. Minimum Acceptable Deliverable (Non-Negotiable Output Shape)
+
+Any non-trivial work product must include all of:
+- a concrete task list with acceptance criteria per task,
+- a file-level plan (what files change/add/remove),
+- implementation code,
+- tests (including failure/adversarial coverage where relevant),
+- documentation updates,
+- an Evidence Pack (defined in the footer).
+
+If any part is incomplete, it must be explicitly labeled Unverified and paired with the shortest experiment that would verify it.
+
+### H. Default Principles
+
+If a situation, decision, or design choice is not explicitly covered by this Constitution, the default principle is to:
+- **Adopt the most stringent, resilient, and transparent posture.**
+- **Enforce the primacy of operational integrity, unambiguous intent, and disciplined scaling.**
+- **Treat unresolved ambiguity as a Constitutional void, demanding immediate and formal amendment.**
+
+# I. Vision and Scope
+
+## 1. The Vision
+
+**ArqonHPO is a probe-gated optimization engine for time-to-target.**
+
+It is built to be clearly competitive for two product-aligned use cases:
+
+1. **Fast simulation tuning:** expensive evaluations (milliseconds to seconds) where reaching a useful threshold quickly matters.
+2. **Sklearn-style model tuning:** moderate-cost evaluations where optimizer overhead is material and “good-enough quickly” often wins.
+
+## 2. The Scope
+
+To achieve this vision, we must be ruthless about what ArqonHPO **is** and what it **is not**.
+
+### 2.1 In Scope (The Core Product)
+
+ArqonHPO is **probe-gated optimization**. It is responsible for:
+
+* **The Probe Phase:** Deterministic sampling to gather an initial signal and candidates.
+* **The Classification Phase:** A fixed-size test that labels the landscape (e.g., structured vs chaotic) and produces a score.
+* **The Mode Selection Phase:** Selecting a refinement strategy based on the classification result.
+* **The Refinement Phase:** Executing the chosen optimizer within the remaining budget.
+* **Audit Artifacts:** Schema-versioned run artifacts sufficient for replay and accountability.
+
+### 2.2 Out of Scope (The Boundaries)
+
+ArqonHPO is **not**:
+
+* **A general-purpose ML training framework.** It tunes; it does not train end-to-end pipelines.
+* **A distributed execution platform.** It may integrate with external evaluators, but it does not provide a cluster runtime.
+* **A “guaranteed best on all objectives” optimizer.** Claims must be scoped to the benchmark suite and use cases.
+
+## 3. The Strategic Horizon
+
+We define evolution in three distinct epochs. Engineering decisions must align with the current epoch while reserving capacity for the next.
+
+* **Epoch 1: The Foundation (Deterministic probe-gated core).**
+    * *Focus:* determinism, bounded overhead, artifact auditability, and time-to-target benchmarking.
+    * *Goal:* be measurably competitive on the two target use cases.
+* **Epoch 2: The Platform (Composable strategies).**
+    * *Focus:* pluggable backends, richer classification signals, replay tooling.
+    * *Goal:* support multiple strategies without breaking contracts.
+* **Epoch 3: The Research Frontier (Optional).**
+    * *Focus:* experimental samplers, meta-controllers, and novel structural probes.
+    * *Goal:* enable experimentation without contaminating production defaults.
+
+---
+
+# II. Core Principles
+
+This section defines the engineering laws that govern ArqonHPO. These are not guidelines; they are constraints. Code that violates these principles will be rejected during Review.
+
+### 1. Architectural Invariance (The Gate Pattern)
+
+The system is composed of four non-negotiable phases. **Strict adherence** to the **probe-gated pipeline** is required to prevent coupling and ensure reproducibility.
+
+**The Phases:**
+
+* **Probe:** deterministic sampling; gathers initial candidates and signal.
+* **Classify:** fixed-size classification; emits score + label.
+* **Select:** chooses refinement mode based on classification.
+* **Refine:** executes the chosen optimizer within the remaining budget.
+
+**The Bypass Ban:**
+
+No phase may be skipped because it is “convenient.”
+
+* **Forbidden:** Selecting a refinement mode without running classification.
+* **Forbidden:** Adding hidden objective calls that do not count against budget.
+* **Forbidden:** Silent fallbacks that change mode/behavior without artifacts and tests.
+
+### 2. Statelessness & State Explicit-ness
+
+To ensure runs can be reproduced and audited, we adhere to a **Stateless Where Possible** philosophy.
+
+* **Run Ephemerality:** Any process must be able to crash and restart without corrupting an ongoing run artifact.
+* **State Explicitness:** All non-trivial solver state must be explicit, serializable, and captured in artifacts if it affects decisions.
+* **Seed Sovereignty:** All randomness must come from explicit seeds; hidden global RNG use is forbidden.
+
+### 3. Contract Sovereignty (Typed Inputs, Versioned Artifacts)
+
+We enforce a strict separation between machine-stable contracts and human-readable debugging.
+
+**Typed Contracts:**
+
+Configuration and run inputs must be expressed in typed structures. The config contract is the single source of truth for defaults and validation.
+
+**Artifact Reservations:**
+
+Artifacts are schema-versioned and must be stable and replayable. Logs are diagnostics and must not be required for replay.
+
+### 4. Future-Proofing Hooks (The Moonshot Mandate)
+
+To enable future experimentation without requiring a rewrite, v1.0 must reserve capacity for:
+
+* **Backend Hook:** Ability to select a refinement backend via a stable interface.
+* **Classifier Hook:** Ability to extend classification signals while preserving the fixed-size gating contract.
+* **Objective Guard Hook:** Ability to wrap objectives for timeouts/redaction without changing the solver core.
+* **Replay Hook:** Ability to replay decisions from artifacts.
+
+### 5. Semantic Versioning & Compatibility
+
+We adhere to strict Semantic Versioning regarding the **Public API** and **Artifact Schemas**.
+
+**Versioning Rules:**
+
+* **MAJOR:** Breaking changes to solver public API, artifact schema, or core behavior.
+* **MINOR:** New modes, additive fields (optional), new telemetry, or non-breaking enhancements.
+* **PATCH:** Bug fixes, performance improvements, and clarifications.
+
+**Stealth Ban:**
+
+There shall be no "stealth" breaking changes in MINOR or PATCH versions. Ever.
+
+### 6. Data Isolation & Privacy (The Bulkhead)
+
+Optimization objectives may embed sensitive information.
+
+* **Isolation:** Objective payloads are treated as sensitive by default.
+* **Redaction:** Logs/artifacts must not leak secrets or tenant data.
+* **Sharing Safety:** Artifacts intended for sharing must support redaction without breaking replayability guarantees.
+
+### 7. Security by Design
+
+Security is a baseline constraint, not a feature.
+
+* **Zero Trust:** The solver does not trust the objective; it validates inputs and guards execution.
+* **Fail Closed:** If a safety/guard module fails, times out, or crashes, the run is failed explicitly. It is never "allowed by default."
+* **Secure Defaults:** Unsafe execution modes must be opt-in and auditable.
+
+### 8. Programmable Safety (Guards)
+
+We reject hardcoded, silent safety logic. Safety requirements vary by environment.
+
+* **Guard Middleware:** Objective guards (timeouts, resource caps, redaction) must be composable.
+* **Fail Closed Mandate:** If a guard times out, crashes, or returns an error, execution is blocked and surfaced.
+* **Bounded Execution:** All guards must have strict, non-negotiable limits.
+
+### 9. Run-as-Artifact (The Capsule Principle)
+
+Runs are not just ephemeral computations. They must produce replayable artifacts.
+
+* **Digital DNA:** The system is optimized to transport the *potential* (seed + config + bounds + decisions), not just the result.
+* **Replayability:** A run can be reconstructed from the artifact plus the objective.
+
+### 10. Delta-First Evidence
+
+Computation cost and audit burden scale with **change ($\Delta$)**.
+
+* **Diff over Snapshot:** Prefer per-eval traces and incremental evidence over opaque summaries.
+* **Causal Integrity:** Decisions and their inputs must be recorded in order.
+
+### 11. Circuit-First Benchmarking
+
+Benchmarks are declarative.
+
+* **Bench Suites are Circuits:** Benchmark suites define objectives, budgets, targets, and seed suites as configuration.
+* **Decoupled Objectives:** Objectives remain oblivious to optimizer internals.
+
+---
+
+### Tier Ω Scope (Applies to Sections 12–21)
+
+Sections **12–21** govern **Tier Ω (Experimental)** features only.
+
+Tier 1 (Production) behavior **must** continue to satisfy all Core Principles in:
+
+* **Section II.1–11** (Pipeline integrity, determinism, contracts, privacy, boundedness),
+* **Section VIII** (Performance & Hot-Path Invariants),
+* **Section IX** (Observability & Telemetry Contracts), and
+* **Section X** (Data Governance & Retention),
+
+regardless of any Tier Ω configuration. **No Tier Ω behavior may weaken or bypass those invariants.**
+
+---
+
+### 12. Bounded Emergence (Tier Ω Only)
+
+We consciously work only inside the **Engineerable Sub-Space**.
+
+* **Tier Ω Only:** Even in experimental regimes, we serve systems where we retain control (budget, timeouts, caps).
+* **Chaos Ban (Default):** Highly chaotic or poorly characterized regimes are considered *out of scope* for production claims and live only in research sandboxes.
+* **Core Invariant Link:** All Tier Ω work remains subject to Determinism (II.2), Privacy (II.6), Safety (II.7–8), and Boundedness (VIII.1–2).
+
+### 13. Temporal Sovereignty (Tier Ω Only)
+
+**Time-varying structure** (adaptive schedules, time-to-target controllers) is a first-class control mechanism.
+
+* **Dynamic Schedules:** We assume control can be restored through well-designed temporal programs, not just static settings.
+
+### 14. Mathematical Rigor (Algebraic Preference, Tier Ω Only)
+
+* **Solvers over Heuristics:** If a problem can be solved by a matrix operation or algebraic solver, do not use a neural net or heuristic.
+* **Explicit Control:** Controllers must be explicit and observable. Hidden control loops are forbidden.
+* **Structured Sampling:** Prefer deterministic low-discrepancy / structured grids over naive random sweeps for discovery loops.
+
+### 15. The Omega Tier (Risk Classification, Tier Ω Only)
+
+Strategies are classified by risk profile:
+
+* **Tier 1 (Production):** Safe, bounded, and deterministic for benchmark claims.
+* **Tier Ω (Experimental):** Permitted to explore complex behavior but must be strictly confined and never become default by accident.
+
+### 16. Diagnostic Segregation (Tier Ω Only)
+
+* **Signals vs Decisions:** Outputs from Ω-tier probes are treated as **Diagnostic Signals**, not direct decision-makers in production defaults.
+
+### 17. The 4-Layer Hierarchy (Tier Ω Only)
+
+Complex systems follow the standard **Substrate → Observer → Controller → Architect** hierarchy.
+
+* **Explicit Roles:** Components must implicitly or explicitly fulfill one of these roles.
+* **Recursive Operators:** Recursive strategies must explicitly declare recursion depth limits and halt conditions.
+* **Meta-Optimizers:** Meta-optimizers whose output is the configuration of other optimizers are subject to strict evidence and safety gates.
+
+### 18. Probability Engines (Tier Ω Only)
+
+The system may support probability-shaping engines where outputs are distributions, not scalars.
+
+* **Superposition:** Decisions may be probabilistic until explicitly collapsed by a deterministic selection rule.
+
+### 19. Temporal Physics (Tier Ω Only)
+
+* **Phased Operation:** Systems may explicitly declare phases (e.g., `[
+  "probe",
+  "classify",
+  "refine"
+]`). Control policies must adapt to the active phase.
+
+### 20. The Reality Factory (Tier Ω Only)
+
+The system may manage governed experiment namespaces (“Realities”) as first-class lifecycle objects.
+
+* **Lifecycle States:** Experiments must track lifecycle state (`Draft` → `Running` → `Promoted` → `Archived`) with explicit transition gates.
+
+### 21. Strong Emergence Patterns (Tier Ω Only)
+
+* **Homeostatic Override:** Controllers must have the authority to force reset when error thresholds are breached.
+* **Curiosity Metrics:** “Surprise” is a valid optimization signal for discovery-only operators.
+
+---
+
+# III. Code Quality & Engineering Standards
+
+### 1. The "Boring Code" Manifesto
+
+We value clarity over cleverness. ArqonHPO must be readable by a junior engineer at 3 AM.
+
+* **Readability First:** If a "clever" one-liner creates cognitive load, expand it.
+* **Explicit over Implicit:** Magic behavior, monkey-patching, and hidden control flow are forbidden.
+* **Standard Tooling:** We adhere strictly to community standards (formatters, linters, type checkers).
+
+### 2. Asynchronous Boundaries
+
+If concurrency/parallel evaluation exists, it must not destroy determinism.
+
+* **Purity Mandate:** Core decision logic must remain synchronous and pure where possible.
+* **Timeout Mandate:** No external call (objective, subprocess, IO) shall exist without a configured timeout.
+
+### 3. Error Handling Philosophy
+
+Errors are data, not exceptions. They must be handled explicitly.
+
+* **Fail Loud (Developer Errors):** Logic errors and invariant violations must crash or hard-fail immediately.
+* **Fail Soft (Runtime Errors):** External failures must be handled via explicit rejection or controlled degradation.
+* **The "Swallow" Ban:** Silent discard of errors is forbidden.
+
+### 4. Logging & Observability
+
+* **Structured Only:** Logs must be structured and include correlation identifiers (e.g., `run_id`).
+* **Level Discipline:** `ERROR` means operator intervention is required. `WARN` means handled anomaly. `INFO` is lifecycle.
+* **Security Redaction:** Logs must never contain sensitive objective payloads at `INFO` or above.
+
+### 5. Configuration Discipline
+
+* **Config Over Code:** Operational thresholds (timeouts, budgets, caps) must be configurable, not magic numbers.
+* **Validation on Startup:** Invalid configuration must fail fast with explicit errors.
+
+### 6. Deterministic State & Contract Correctness
+
+Optimization systems die when state becomes ambiguous.
+
+* **State Machine Contracts:** Phase transitions and mode decisions must be explicit.
+* **Determinism:** Same seed + same env + same objective → same decisions and results (within defined tolerances).
+* **Artifact Contracts:** Artifact schema is a compatibility surface.
+
+### 7. Contract-First Definition
+
+* Typed config and artifact schemas are the source of truth.
+* Untyped ad-hoc dictionaries/maps in core paths are prohibited.
+
+### 8. Memory Safety & Resource Guarantees
+
+* **Resource Caps:** Every subsystem must define caps for memory, retries, and timeouts.
+
+### 9. Concurrency Safety & Ordering
+
+* **Ordering Invariants:** The solver must never assume ordering unless it enforces it.
+
+### 10. Performance Discipline
+
+* **Hot Path Hygiene:** Avoid unnecessary allocations and logging inside per-eval loops.
+* **Latency Budgets:** If a latency budget exists (time-to-target), it must be measured and guarded.
+
+### 11. API & Interface Stability
+
+* **Boundary Contracts:** Internal modules communicate via stable interfaces.
+
+### 12. Dependency Hygiene
+
+* **Admission Rules:** New dependencies are guilty until proven innocent.
+* **Pinning:** Benchmark-critical dependencies must be version-pinned.
+
+### 13. Documentation Standards
+
+* **Docs as Code:** Documentation must live in the repo.
+* **Decision Records:** Significant decisions must be captured (ADR or equivalent).
+
+### 14. Build & Artifact Integrity
+
+* **Reproducibility:** Builds and benchmark runs must be reproducible.
+* **Binary/Package Hygiene:** Produced artifacts must be traceable to a commit and environment.
+
+### 15. Mathematical Rigor (Algebraic Preference)
+
+* **Solvers over Heuristics:** Prefer explicit solvers where applicable.
+* **Explicit Control:** Hidden control loops are forbidden.
+* **Structured Sampling:** Prefer deterministic sampling schemes where it improves time-to-target and reproducibility.
+
+---
+
+# IV. Testing Strategy & Quality Gates
+
+### 1. TDD as the Working Standard
+
+Test-Driven Development (TDD) is the **default and expected workflow** for all ArqonHPO components.
+
+* **The Workflow:**
+  1. **Specify:** Define behavior in `/specs/` (SDD-first).
+  2. **Test:** Write or extend tests that express that behavior.
+  3. **Implement:** Write the code that satisfies the tests.
+  4. **Refactor:** Optimize while keeping the suite green.
+
+### 2. Coverage Expectations (Per Subsystem)
+
+Coverage is about behavioral exhaustiveness, not raw percentages.
+
+* **Solver Core:** Must cover probe, classify, mode select, refine, and budget accounting.
+* **Artifact Layer:** Must cover schema versioning, determinism, replay-critical fields.
+* **Benchmark Harness:** Must cover time-to-target measurement and reporting.
+
+### 3. Test Discipline Requirements
+
+* **Unit Tests:** Must run fast with zero external services.
+* **Integration Tests:** Must run end-to-end with real dependencies where relevant.
+* **Flaky Tests:** Flaky tests are **Critical Bugs**.
+* **Determinism:** Tests must avoid random sleeps and time-dependent logic; use controlled clocks.
+
+### 4. Quality Gates
+
+A PR **may not be merged** if any of the following are true:
+
+* **Determinism Gate:** nondeterministic behavior without explicit labeling and tests.
+* **Evidence Gate:** benchmark/perf claims without reproducible evidence.
+* **Artifact Gate:** schema changes without versioning and compatibility notes.
+* **Spec Gate:** behavior implemented without a Spec, or Spec not updated to match Code.
+* **Technical Debt Gate:** new `TODO`s without `TD-###` and TTL.
+
+---
+
+# V. Lifecycle & Automation
+
+ArqonHPO does not “ship code”; it manufactures **artifacts** through a controlled factory.
+
+### 1. The Factory Mandate
+
+Manual releases are forbidden for production claims. CI is the source of truth.
+
+* **The Pipeline is Sovereign:** If it did not pass CI, it does not exist.
+
+### 2. Immutable & Reproducible Artifacts
+
+* **Immutable Artifacts:** Release artifacts must be identifiable by content hash.
+* **Reproducible Builds:** The same commit must build reproducibly in the canonical environment.
+
+### 3. Supply Chain Security
+
+* **Dependency Locking:** No floating versions for benchmark-critical paths.
+* **Provenance:** Artifact origin must be traceable (commit, branch, CI run).
+
+---
+
+# VI. Operational Excellence
+
+ArqonHPO is correctness-sensitive infrastructure for optimization. The way it behaves under real objectives is as important as the way it behaves in tests.
+
+### 1. Performance & Capacity Invariants
+
+* **Boundedness:** No unbounded loops. Budget and timeouts are mandatory.
+* **Overhead Discipline:** Policy updates and bookkeeping must remain bounded and low overhead.
+
+### 2. Observability & Audit
+
+* **Reconstructability:** Logs + artifacts must allow reconstruction of what happened in a run.
+* **No Silent Recovery:** Any fallback must be visible and test-covered.
+
+---
+
+# VII. Governance & Amendment
+
+Governance defines how ArqonHPO protects its mission and how this Constitution itself may change.
+
+### 1. Scope Protection
+
+ArqonHPO is probe-gated optimization for the two target use cases. Scope creep is a bug.
+
+### 2. Complexity Budget
+
+Complexity is technical debt with compound interest.
+
+* Adding major dependencies or new execution modes requires explicit review and an ADR.
+
+### 3. Amendments
+
+This Constitution is living but intentionally hard to change.
+
+* Amendments require a documented proposal (rationale + impact) and a version bump.
+
+---
+
+# VIII. Performance & Hot-Path Invariants
+
+Performance is not an optimization; it is a **correctness property**.
+
+### 1. Boundedness as Law
+
+Unbounded anything is a denial-of-service vector.
+
+* **No Unbounded Work:** Every loop must have a budget.
+* **CPU Boundaries:** Heavy work must not block the per-eval control loop without explicit design.
+
+### 2. Hot-Path Constraints
+
+* **O(1) or Amortized O(1):** Per-eval policy decisions must be O(1) or amortized O(1).
+* **No Hidden I/O:** Do not write artifacts inside the inner loop unless explicitly buffered.
+
+---
+
+# IX. Observability & Telemetry Contracts
+
+What cannot be observed cannot be governed.
+
+### 1. Logs, Metrics, Traces as First-Class Citizens
+
+* **Structured Logs Only:** Must include `run_id` and phase markers.
+* **Telemetry for Mode Decisions:** Mode selection and classification results must be observable.
+
+---
+
+# X. Data Governance & Retention
+
+ArqonHPO may handle sensitive objective data. Data is an asset and a liability.
+
+### 1. Data Classification
+
+* **Run Artifacts:** schema-versioned run outputs.
+* **Objective Data:** treated as sensitive by default.
+
+### 2. Retention
+
+* **Explicit Retention:** No infinite retention by accident; retention policies must be explicit.
+
+---
+
+# XI. Internal Service Contracts & Complexity Escalation
+
+The internal structure must remain understandable, evolvable, and safe.
+
+### 1. Internal Contracts
+
+* **Versioned Contracts:** Internal boundaries must have explicit, versioned contracts (types + schemas).
+
+### 2. Complexity Budget & Escalation
+
+* Introducing a new core dependency or major execution mode requires a design review document and ADR.
+
+---
+
+# XII. Glossary & Canonical Definitions
+
+To prevent interpretation drift (especially for Spec Kit agents), we define core vocabulary used throughout this Constitution.
+
+| Term | Definition |
+| :--- | :--- |
+| **ArqonHPO** | The probe-gated optimization engine described by this Constitution. |
+| **Probe** | Deterministic initial sampling phase to gather candidates and signal. |
+| **Classify** | Fixed-size test producing a label and score to drive mode selection. |
+| **Mode** | The chosen refinement strategy family (structured vs chaotic). |
+| **Time-to-Target** | Time/evals to reach a specified objective threshold. |
+| **Tier 1** | Production behavior and benchmark claims subject to all core constraints. |
+| **Tier Ω** | Experimental features allowed only under strict confinement; never default. |
+
+---
+
+# XIV. ULTIMATE INTEGRITY ATTESTATION & EVIDENCE PACK
+
+This section is the **merge/ship gate**. It exists so “done” is not a feeling—it is a reproducible fact.
+
+---
+
+### 1) Merge/Ship Attestation (Required)
+
+By merging or shipping, the author(s) and reviewer(s) attest:
+
+- No placeholders exist in production paths (no TODOs, stubs, pseudocode-as-work, “later hardening”).
+- No fake evidence is presented (no invented logs, benchmarks, screenshots, coverage, or results).
+- No happy-path-only verification exists for critical behaviors.
+- No silent failure handling exists; errors are handled/logged/propagated with context.
+- Warnings were treated as errors (clean lint/typecheck/compile).
+- Any technical debt is recorded as `TD-###` with owner + TTL + exit criteria and is bounded by tests.
+- All claims are labeled Observed/Derived/Unverified, and Observed claims have attached evidence.
+
+If you cannot honestly attest to every item above, you must not merge/ship.
+
+---
+
+### 2) Evidence Pack (Attach or Link; Required)
+
+A change is invalid without a reproducible Evidence Pack. The Evidence Pack must be tied to a specific commit and must be reproducible by another engineer.
+
+#### 2.1 Build Proof
+- CI run or local output showing:
+  - clean build,
+  - clean lint/typecheck/format,
+  - warnings treated as errors.
+
+#### 2.2 Test Proof
+- Results for:
+  - unit tests,
+  - integration tests (where applicable),
+  - property/fuzz tests (where required by input boundaries),
+  - concurrency/ordering tests (where applicable).
+- A short note listing what is not covered and why (explicitly, not implicitly).
+
+#### 2.3 Failure Matrix Proof (Where the bad paths live)
+For each externally coupled feature, list:
+- failure scenarios tested (timeouts, retries, malformed responses, permission failures, overload/backpressure, partial failures),
+- test file(s) and test names (or equivalent pointers).
+
+#### 2.4 Traceability Proof (Truth Table)
+Provide a “truth table” mapping:
+- requirement / acceptance criteria → implementation location(s) → test location(s) → documentation location(s) → evidence artifact(s).
+
+Rule: If a requirement has no test, it is untested. If a test has no requirement, it is suspicious.
+
+#### 2.5 Runtime Proof (When Applicable)
+- example run logs demonstrating:
+  - normal behavior,
+  - at least one failure mode behaving correctly.
+- proof that observability works:
+  - correlation IDs exist,
+  - metrics/traces exist (or equivalent breadcrumbs).
+
+#### 2.6 Performance / Resource Proof (When Relevant)
+- baseline numbers + method + environment,
+- a regression guard (benchmark test, threshold check, or documented budget),
+- proof of bounded behavior (caps, backpressure, shedding policy).
+
+#### 2.7 Reproduction Commands
+- one-command verification (examples):
+  - `pytest`, `python -m build`, etc.
+- environment notes:
+  - pinned toolchains/dependencies,
+  - seed control for deterministic tests.
+
+---
+
+### 3) Debt Register Enforcement (TD-###)
+
+If any `TD-###` exists in the change:
+- TTL date and owner are mandatory.
+- The debt boundary must be protected by tests so it cannot silently expand.
+- The exit criteria must be concrete.
+- Debt past TTL is a release/merge blocker.
+
+---
+
+### 4) Professional Review Checklist (Hard Questions Only)
+
+Review must answer “yes” with evidence:
+
+- Does this handle failure modes explicitly (not “assumed”)?
+- Are tests realistic, adversarial, and non-trivial (no lazy synthetics)?
+- Are there concurrency/ordering hazards, and are they tested or explicitly ruled out?
+- Is behavior observable (logs/metrics/traces/breadcrumbs)?
+- Are resource bounds explicit (timeouts, caps, retry budgets, queue bounds)?
+- Is the code readable under pressure (3 AM standard)?
+- Is documentation updated to match behavior and constraints?
+- Can another engineer reproduce the Evidence Pack from scratch?
+
+If any answer is “no,” the change is not complete.
+
+---
+
+### 5) Claim Ledger Summary (Required When Stating Status)
+
+If a deliverable claims completion or correctness, it must include:
+
+- Observed claims: link evidence
+- Derived claims: list assumptions + risks + how to verify
+- Unverified claims: list the minimal experiment to verify
+
+Rule: If it cannot be reproduced from the Evidence Pack, it is not true.  
+Rule: If it is not true, it is not done.
+
+---
+
+**Version**: 1.0.0  
+**Ratified**: 2025-12-13  
+**Last Amended**: 2025-12-13  
