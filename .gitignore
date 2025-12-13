@@ -1,0 +1,179 @@
+datasets/
+data/
+dataset/
+runs/
+logs/
+output/
+priors/
+pipeline_features/
+domain_features/
+logs/
+checkpoints/
+simulation_results/
+string_data/
+benchmark_outputs/
+node_modules/
+target/
+
+*.json
+*.jsonl
+*.json.gz
+*.jsonl.gz
+*.jsonl.bz2
+*.json.bz2
+
+# Keep a single checked-in JSON artifact for probe-gating experiment results.
+!dev/probe_gating_experiments/results.json
+
+# *.md
+*.bak
+
+# Simulation Outputs / Data Files / Models
+*.csv
+*.pth
+*.pkl
+*.npy
+*.npz
+
+# Specific Data / Output Directories
+
+# Add other rules as needed (like venv/, __pycache__, etc.)
+
+# 🚫 GLOBAL NUKES
+*.log
+*.csv
+*.pkl
+*.gz
+*.zip
+*.tar
+*.tar.gz
+*.7z
+*.mp4
+*.avi
+*.mkv
+*.sqlite
+*.sqlite3
+*.db
+*.h5
+*.pt
+*.ckpt
+*.npz
+*.npy
+*.egg-info/
+__pycache__/
+.ipynb_checkpoints/
+.DS_Store
+.env
+.venv
+*.bak
+*.tmp
+*.swp
+*.swo
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+installed.txt
+*.egg-info/
+.installed.cfg
+*.whl
+MANIFEST
+
+# Environments
+.env/
+.venv/
+env/
+venv/
+ENV/
+Scripts/
+
+# PyInstaller
+build/
+dist/
+*.spec
+
+# Conda packages
+.conda_pkgs/
+.cache/
+.cargo/
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.sqlite
+
+# poetry
+poetry.lock
+
+# pytest
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# Static files (e.g., in Django)
+static/
+
+# OS or Editor related
+.DS_Store
+.idea/
+*.swp
+*.swo
+.vscode/
+
+# Logs and databases
+*.log
+*.sqlite
+*.sqlite3
+
+# Temporary files
+*~
+\#*
+*.bak
+*.tmp
+*.rej
+
+# Sensitive data
+secrets.json
+*.pem
+*.key
+*.p12
+
+# Compiled Artifacts
+*.pyc
+*.pyd
+
+# Documentation build products
+docs/_build/
+
+# Distribution zip files
+*.zip
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Virtual environments (if you use virtualenvwrapper)
+.virtualenvs/
