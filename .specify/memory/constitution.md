@@ -840,6 +840,12 @@ Rule: If it is not true, it is not done.
 
 ---
 
+## Implementation Substrate & SDK Contract
+- Core implementation MUST be a Rust library crate exposing the probe-gated solver API.
+- CLI MUST be a thin Rust binary crate that delegates to the core.
+- SDKs (for example, Python) MUST be thin bindings over the same core, not reimplementing solver logic.
+- Artifacts MUST be language-agnostic (JSON) and serve as the compatibility contract between surfaces.
+
 **Version**: 1.0.0  
 **Ratified**: 2025-12-13  
 **Last Amended**: 2025-12-13  

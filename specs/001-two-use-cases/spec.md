@@ -1,113 +1,218 @@
-# Spec: Probe-Gated Optimization (Two Use Cases)
+# PRD: ArqonHPO v1 – Probe‑Gated Optimization (Two Use Cases)
 
-**Project**: ArqonHPO (fresh repo)
+**Project**: ArqonHPO  
+**Spec ID**: 001-two-use-cases  
+**Status**: Draft (v1.0, Rust core baseline)
 
-**Status**: Draft
+---
 
-## Summary
-Build an optimization engine that is explicitly designed for two common, high-value use cases:
+## 1. Product Overview
 
-1. **Fast simulation tuning (time-to-target)**: expensive objective evaluations (milliseconds to seconds) on mostly-smooth/structured landscapes where good candidates can be found quickly if the search is guided early.
-2. **Sklearn-style model tuning (time-to-target)**: moderate-cost ML objectives where optimizer overhead matters and “good-enough quickly” beats “best eventually.”
+ArqonHPO v1 is a **probe‑gated optimization engine** focused on two concrete, high‑value use cases:
 
-The product is not trying to be universally SOTA across every search space; it is trying to be clearly competitive and measurably better for these two use cases.
+1. **Fast simulation tuning (time‑to‑target)**  
+   Expensive objective evaluations (milliseconds–seconds) on mostly smooth / structured landscapes, where reaching a "good enough" configuration quickly matters more than squeezing out the last few percent.
 
-## Problem Statement
-General-purpose HPO (e.g., pure TPE) can be:
-- too slow to reach a useful target when evaluations are expensive, and/or
-- dominated by overhead when evaluations are moderate-cost.
+2. **Sklearn‑style model tuning (time‑to‑target)**  
+   Moderate‑cost ML objectives where optimizer overhead is material and "good‑enough quickly" often beats "best eventually."
 
-We need a **deterministic, auditable, bounded-overhead** approach that performs a lightweight **probe → classify → choose refinement strategy** pipeline, optimized around time-to-target.
+The goal is **not** to be universally SOTA on every search space; the goal is to be:
+- **Clearly competitive and explainable** on these two use cases, and
+- **Deterministic, auditable, and bounded‑overhead** by construction.
 
-## Non-Negotiables (Constitution Alignment)
-- **No bypass in default behavior**: runs must follow **probe → fixed-size classification → mode selection → refinement**.
-- **Deterministic given seed**: same objective + bounds + seed + budget → identical decisions and identical best value (allowing only wall-clock timestamps to vary).
-- **Bounded overhead**: per-eval policy work is O(1) and must not add extra objective calls.
-- **Artifact auditability**: outputs are schema-versioned; include per-eval decisions, rewards/metrics, and environment fingerprint.
-- **Canonical validation environment**: validation runs use `PYTHONNOUSERSITE=1` and the canonical env (internally: `helios-gpu-118`), without making that env name a customer-facing requirement.
+At its core, ArqonHPO always follows the same pipeline:
 
-## Definitions
-- **Probe**: a deterministic, low-overhead sampler that produces an initial set of candidate evaluations.
-- **Classification**: a fixed-size test that labels the landscape as suitable for structured refinement vs chaotic/rugged behavior.
-- **Refinement**: the follow-on optimizer used for the remaining budget, chosen by the classification.
-- **Time-to-target**: time (or eval count) to reach a specified objective threshold.
+> **probe → fixed‑size classify → mode select → refine**
 
-## User Scenarios (Prioritized)
+---
 
-### US1 (P0): Fast simulation tuning
-**As a** user tuning simulator parameters,
-**I want** to reach a useful threshold quickly,
-**so that** I can iterate on designs without waiting for long runs.
+## 2. Problem & Goals
 
-**Acceptance scenarios**:
-- **Given** bounds, seed, and budget, **when** I run the optimizer on an expensive smooth objective, **then** it reaches the target threshold faster than pure TPE in median time-to-target across a seed suite.
-- **Given** the same inputs, **when** I rerun, **then** artifacts and best value match deterministically.
+### 2.1 Problem
 
-### US2 (P0): Sklearn-style ML tuning
-**As a** user tuning a small ML model,
-**I want** competitive time-to-target without large optimizer overhead,
+General‑purpose HPO (e.g., pure TPE) often:
+- Is **too slow** to reach a useful target when evaluations are expensive.
+- Is **overhead‑dominated** when evaluations are moderately cheap.
+
+Current tools also frequently lack:
+- Strict determinism given seed and environment.
+- First‑class artifact contracts that allow replay and audit.
+
+### 2.2 Goals (v1)
+
+1. **Time‑to‑target improvement (sim tuning)**  
+   For structured, expensive objectives, ArqonHPO should reach target thresholds **faster or more reliably** than pure TPE, across a benchmark suite and seed set.
+
+2. **Competitive time‑to‑target (sklearn tuning)**  
+   For small/moderate ML objectives, ArqonHPO should deliver **competitive or better** time‑to‑target versus TPE, while keeping optimizer overhead predictable and bounded.
+
+3. **Deterministic, auditable runs**  
+   Same objective + bounds + budget + seed + environment ⇒ identical decisions, identical best value (up to numeric tolerance), and replayable artifacts.
+
+4. **Bounded overhead & no hidden work**  
+   The policy/selection logic must be O(1) per evaluation, and **must not** introduce extra objective calls beyond the configured budget.
+
+### 2.3 Non‑Goals
+
+- Being SOTA on all objective classes (e.g., highly chaotic, arbitrary black‑box landscapes).
+- Distributed/async evaluation in v1 (single‑process focus).
+- Full support for arbitrary discrete / categorical‑only spaces in v1.
+
+---
+
+## 3. Users & Use Cases
+
+### 3.1 Personas
+
+1. **Simulation engineer ("Sim Eng")**
+   - Owns a simulator or numerical kernel.
+   - Evaluations are expensive; cares about **time‑to‑target** and repeatability.
+
+2. **Applied ML engineer ("ML Eng")**
+   - Tunes sklearn‑style models (classifiers/regressors).
+   - Evaluations are moderate cost; cares about **optimizer overhead** and predictable behavior.
+
+### 3.2 User Stories (Prioritized)
+
+#### US1 (P0): Fast simulation tuning
+
+**As a** Sim Eng,  
+**I want** the optimizer to reach a useful objective threshold quickly,  
+**so that** I can iterate on simulation configs without waiting for long runs.
+
+**Acceptance:**
+- Given bounds, seed, and budget, when I run on an expensive smooth objective, the optimizer reaches the agreed target threshold **faster in median time‑to‑target** than pure TPE across a seed suite.
+- Given the same inputs and environment, rerunning produces **identical artifacts and best value** (up to numeric tolerance).
+
+#### US2 (P0): Sklearn‑style ML tuning
+
+**As a** ML Eng,  
+**I want** competitive time‑to‑target without large optimizer overhead,  
 **so that** model selection is fast and repeatable.
 
-**Acceptance scenarios**:
-- **Given** a sklearn objective and fixed seed/budget, **when** I run the optimizer, **then** its median time-to-target is competitive with (or better than) TPE at the chosen target thresholds.
-- **Given** `PYTHONNOUSERSITE=1`, **when** I run benchmarks, **then** imports and results are stable (no user-site leakage).
+**Acceptance:**
+- Given a sklearn objective and fixed seed/budget, the optimizers median time‑to‑target is **competitive with or better than** TPE at agreed thresholds.
+- Given `PYTHONNOUSERSITE=1`, benchmark runs import successfully and results are stable (no user‑site leakage).
 
-## Functional Requirements
+---
 
-### FR1 — Probe phase
-- Must evaluate a fixed number of probe samples derived deterministically from `seed`, `bounds`, and `probe_ratio`.
-- Must record probe samples and their objective values in artifacts.
+## 4. Core Behavior & Requirements
 
-### FR2 — Classification phase
-- Must evaluate a fixed-size classification test (default: 50 samples) and produce:
+### 4.1 Pipeline Definitions
+
+- **Probe**: deterministic, low‑overhead sampler that produces an initial set of candidate evaluations.
+- **Classification**: fixed‑size test (default: 50 samples) that labels the landscape as **structured** or **chaotic** and outputs a score.
+- **Mode selection**: decision step mapping classification output ⇒ refinement mode.
+- **Refinement**: follow‑on optimization within the remaining budget.
+- **Time‑to‑target**: wall‑clock time or evaluation count to reach a specified objective threshold.
+
+### 4.2 Non‑Negotiables (Constitution Alignment)
+
+- **No bypass in default behavior**: default runs must follow **probe → fixed‑size classification → mode selection → refinement**.
+- **Determinism given seed**: same objective + bounds + seed + budget ⇒ identical decisions and best value (up to numeric tolerance) in the same environment.
+- **Bounded overhead**: per‑eval policy work is O(1) and does not add extra objective calls.
+- **Artifact auditability**: outputs are schema‑versioned and include per‑eval decisions and environment fingerprint.
+- **Canonical validation environment**: local validation runs use `PYTHONNOUSERSITE=1` and the canonical env (internally `helios-gpu-118`), without making that env name a customer‑facing requirement.
+
+### 4.3 Functional Requirements
+
+**FR1 – Probe phase**
+- Evaluate a fixed number of probe samples derived deterministically from `seed`, `bounds`, and `probe_ratio`.
+- Record probe samples and objective values in artifacts (or a replayable digest).
+
+**FR2 – Classification phase**
+- Run a fixed‑size classification test (default: 50 samples) and produce:
   - `variance_score` (or equivalent scalar),
-  - `variance_label` in `{structured, chaotic}`,
-  - a chosen `mode` for refinement.
-- Classification must be authoritative for mode selection in default behavior.
+  - `variance_label ∈ {structured, chaotic}`,
+  - the chosen `mode` for refinement.
+- Classification must be **authoritative** for mode selection in default behavior.
 
-### FR3 — Refinement modes
-The optimizer must support these refinement strategies as first-class modes:
-- **Structured mode**: a guided strategy that exploits the probe signal.
-- **Chaotic mode**: a general-purpose strategy (e.g., TPE) suitable for rugged objectives.
+**FR3 – Refinement modes**
+- Support these refinement strategies as first‑class modes:
+  - **Structured mode**: guided strategy that exploits the probe signal.
+  - **Chaotic mode**: general‑purpose strategy (e.g., TPE‑like) suitable for rugged objectives.
 
-### FR4 — Artifacts
-- Must emit a schema-versioned run artifact containing:
-  - inputs: bounds digest, budget, seed(s), probe_ratio,
-  - phase timings,
-  - classification outputs,
-  - per-eval trace: phase, candidate, value, best-so-far, and any strategy decisions.
-- Must capture an environment fingerprint sufficient to reproduce results.
+**FR4 – Artifacts**
+- Emit a schema‑versioned run artifact containing at minimum:
+  - Inputs: bounds digest, budget, seed(s), probe_ratio.
+  - Phase timings (probe, classify, refine, total).
+  - Classification outputs (score, label, mode).
+  - Per‑eval trace: phase, candidate, value, best‑so‑far, and any strategy decisions.
+- Capture an environment fingerprint sufficient to reproduce results.
 
-### FR5 — Determinism
+**FR5 – Determinism**
 - All randomness must come from an explicit seeded RNG.
-- Tie-breaking must be stable.
+- Tie‑breaking must be stable.
 
-## Non-Goals
-- Guarantee SOTA on all objective classes.
-- Support for distributed/async evaluation in MVP.
-- Support for arbitrary discrete/categorical-only spaces in MVP.
+---
 
-## Metrics & Evaluation Plan (What “Competitive” Means)
-Primary metric for both use cases:
-- **Median time-to-target** across a fixed seed suite.
+## 5. Metrics & Evaluation Plan
 
-Secondary metrics:
-- Hit-rate (fraction of seeds reaching the target within budget).
+### 5.1 Primary Metric
+
+- **Median time‑to‑target** across a fixed seed suite, per objective and per use case.
+
+### 5.2 Secondary Metrics
+
+- Hit‑rate: fraction of seeds reaching the target within budget.
 - Best value at fixed budget.
-- Overhead: optimizer CPU time per eval.
+- Overhead: optimizer CPU time per eval (and total runtime) compared to baselines.
 
-Baseline comparators:
+### 5.3 Baselines
+
 - Random search.
-- Pure Optuna TPE (or equivalent).
+- Pure Optuna TPE (or equivalent general‑purpose optimizer).
 
-Minimum benchmark suite (MVP):
-- **Fast sim tuning**: synthetic expensive smooth objectives (sleep-injected) and at least one “sim-like” structured function.
-- **Sklearn tuning**: at least one linear model objective (SGDClassifier/Regressor) and one nonlinear model objective.
+### 5.4 Minimum Benchmark Suite (MVP)
 
-## Risks / Open Questions
-- [NEEDS CLARIFICATION] Exact target thresholds per benchmark objective for time-to-target.
-- [NEEDS CLARIFICATION] Definition of “structured” vs “chaotic” label threshold(s).
-- [NEEDS CLARIFICATION] Which refinement strategies are in-scope for MVP (one per mode vs multiple).
+- **Fast sim tuning**:
+  - Synthetic expensive smooth objectives (sleep‑injected) and at least one "sim‑like" structured function.
 
-## Deliverables (This Spec Only)
-- This document defines what we are building; implementation and additional docs (plan/tasks) are intentionally deferred to SDD workflows.
+- **Sklearn tuning**:
+  - At least one linear model objective (e.g., `SGDClassifier` / `SGDRegressor`).
+  - At least one nonlinear model objective.
+
+---
+
+## 6. Risks & Open Questions
+
+**R1 – Target thresholds**  
+- [NEEDS CLARIFICATION] Exact target thresholds per benchmark objective for time‑to‑target comparisons.
+
+**R2 – Structured vs chaotic thresholds**  
+- [NEEDS CLARIFICATION] Numerical thresholds and rules for "structured" vs "chaotic" labels.
+
+**R3 – Mode strategy variants**  
+- [NEEDS CLARIFICATION] Which refinement strategies are in‑scope for MVP (one per mode vs more options behind config/flags).
+- MVP defaults:
+  - Structured mode: Nelder-Mead (robust, gradient-free, suited to smooth sims).
+  - Chaotic mode: TPE (Tree-structured Parzen Estimator, standard for ML tuning).
+
+---
+
+## 7. Implementation & Packaging Constraints (Non‑functional)
+
+- Core implementation MUST be a **Rust library crate** exposing the probe‑gated solver API.
+- CLI MUST be a thin **Rust binary crate** that delegates to the core.
+- SDKs (for example, Python) MUST be **thin bindings** over the same core, not reimplementing solver logic.
+- Artifacts MUST be language‑agnostic (JSON) and used as the compatibility contract between surfaces.
+
+### 7.1 Python Binding Strategy (Non‑functional)
+
+- The Python SDK MUST use **PyO3 directly** over the Rust core crate (no ctypes or cffi wrapper over the C ABI for primary usage).
+- A minimal C‑ABI crate MAY exist for non‑Python SDKs; it MUST remain small and stable and MUST NOT contain business logic.
+- Objective functions implemented in Python MUST be invoked via a dedicated Python‑objective bridge that minimizes cross‑boundary overhead (for example by targeting expensive objectives or supporting batching where appropriate).
+
+---
+
+## 8. Deliverables (This Spec Only)
+
+This spec defines **what** ArqonHPO v1 must do and how success is measured. Implementation details and task breakdown are deferred to Plan/Tasks documents.
+
+- Finalized `spec.md` (this file), aligned with the ArqonHPO Constitution.
+- A follow‑on `plan.md` describing:
+  - Rust workspace layout (`core`, `cli`, `ffi`, `bindings/python`).
+  - Config and artifact type definitions.
+  - Benchmark harness and evidence pack locations.
+- A follow‑on `tasks.md` breaking implementation into test‑first tasks mapped to FRs and user stories.
+
