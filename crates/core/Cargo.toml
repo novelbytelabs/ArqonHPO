@@ -1,0 +1,14 @@
+[package]
+name = "arqonhpo-core"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+serde = { workspace = true }
+rand = { workspace = true }
+rand_chacha = { workspace = true }
+thiserror = { workspace = true }
+miette = { workspace = true }
+tracing = { workspace = true }
+
+[dev-dependencies]

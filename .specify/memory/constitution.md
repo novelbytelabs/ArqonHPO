@@ -798,6 +798,18 @@ Rule: If a requirement has no test, it is untested. If a test has no requirement
   - pinned toolchains/dependencies,
   - seed control for deterministic tests.
 
+### 2.8 Canonical Environment Mandate
+
+To ensure absolute reproducibility, all development and CI operations MUST use the canonical Conda environment: `helios-gpu-118`.
+
+**Paths:**
+- Python: `/home/irbsurfer/miniconda3/envs/helios-gpu-118/bin/python`
+- Cargo: `/home/irbsurfer/miniconda3/envs/helios-gpu-118/bin/cargo`
+
+**Rules:**
+- Do NOT rely on system `python` or `cargo`.
+- Scripts and tools MUST resolve these absolute paths or explicitly activate the environment.
+
 ---
 
 ### 3) Debt Register Enforcement (TD-###)
