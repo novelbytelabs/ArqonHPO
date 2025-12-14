@@ -66,6 +66,8 @@ nav:
   - Architecture:
       - "ADR-001 Core": adrs/001-core-architecture.md
       - "ADR-002 Python Bridge": adrs/002-python-bridge.md
+  - Assessments:
+      - "TDD Assessment": reports/TDD_ASSESSMENT_REPORT.md
   - Contributing: contributing.md
 
 plugins:
@@ -88,4 +90,3 @@ markdown_extensions:
   - tables
   - toc:
       permalink: true
-

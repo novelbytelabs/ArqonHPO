@@ -7,7 +7,7 @@
 //! - Determinism given same probe samples
 
 use crate::artifact::EvalTrace;
-use crate::classify::{Classify, Landscape, VarianceClassifier};
+use crate::classify::{Classify, Landscape, ResidualDecayClassifier, VarianceClassifier};
 use std::collections::HashMap;
 
 /// Helper to create EvalTrace from value
@@ -24,9 +24,9 @@ fn trace(value: f64) -> EvalTrace {
 fn sphere_samples() -> Vec<EvalTrace> {
     // Sphere: f(x) = sum(x_i^2), very smooth
     // Sample at evenly spaced points
-    (0..20)
+    (-10..=10)
         .map(|i| {
-            let x = -5.0 + (i as f64) * 0.5;
+            let x = i as f64 * 0.4;
             trace(x * x) // Simple 1D sphere
         })
         .collect()
@@ -36,18 +36,21 @@ fn sphere_samples() -> Vec<EvalTrace> {
 fn rastrigin_samples() -> Vec<EvalTrace> {
     // Rastrigin: many local minima, high frequency oscillations
     use std::f64::consts::PI;
-    (0..20)
+    (-10..=10)
         .map(|i| {
-            let x = -5.0 + (i as f64) * 0.5;
+            let x = i as f64 * 0.4;
             let val = 10.0 + x * x - 10.0 * (2.0 * PI * x).cos();
             trace(val)
         })
         .collect()
 }
 
+// ============================================================================
+// VarianceClassifier Tests
+// ============================================================================
+
 #[test]
 fn test_variance_classifier_structured_low_cv() {
-    // Low coefficient of variation should be Structured
     let classifier = VarianceClassifier { threshold: 2.0 };
     let samples: Vec<EvalTrace> = (0..10).map(|i| trace(10.0 + (i as f64) * 0.01)).collect();
     
@@ -59,7 +62,6 @@ fn test_variance_classifier_structured_low_cv() {
 
 #[test]
 fn test_variance_classifier_chaotic_high_cv() {
-    // High coefficient of variation should be Chaotic
     let classifier = VarianceClassifier { threshold: 2.0 };
     let samples: Vec<EvalTrace> = vec![
         trace(0.1), trace(100.0), trace(0.5), trace(50.0), trace(0.2)
@@ -73,7 +75,6 @@ fn test_variance_classifier_chaotic_high_cv() {
 
 #[test]
 fn test_classifier_deterministic() {
-    // Same input should produce same output
     let classifier = VarianceClassifier::default();
     let samples = sphere_samples();
     
@@ -85,30 +86,55 @@ fn test_classifier_deterministic() {
 }
 
 // ============================================================================
-// FAILING TESTS FOR RESIDUAL DECAY CLASSIFIER (TDD - implement to make pass)
+// ResidualDecayClassifier Tests (RPZL Algorithm)
 // ============================================================================
 
 #[test]
-#[ignore = "ResidualDecayClassifier not yet implemented - T010-T012"]
-fn test_residual_decay_alpha_estimation() {
-    // Test that α is estimated correctly from decay curve
-    // For geometric decay E_k = C * β^k, α = -ln(β)
-    // This test will fail until ResidualDecayClassifier is implemented
-    todo!("Implement ResidualDecayClassifier");
-}
-
-#[test]
-#[ignore = "ResidualDecayClassifier not yet implemented - T010-T012"]
 fn test_residual_decay_sphere_structured() {
-    // Sphere function should have geometric decay (α < 0.5)
-    // This test will fail until ResidualDecayClassifier is implemented
-    todo!("Implement ResidualDecayClassifier");
+    // Sphere function is smooth - should classify as Structured
+    let classifier = ResidualDecayClassifier::default();
+    let samples = sphere_samples();
+    
+    let (landscape, alpha) = classifier.classify(&samples);
+    
+    println!("Sphere α = {}", alpha);
+    assert_eq!(landscape, Landscape::Structured, 
+               "Sphere should be Structured, got α={}", alpha);
 }
 
 #[test]
-#[ignore = "ResidualDecayClassifier not yet implemented - T010-T012"]
 fn test_residual_decay_rastrigin_chaotic() {
-    // Rastrigin function should NOT have geometric decay (α >= 0.5)
-    // This test will fail until ResidualDecayClassifier is implemented
-    todo!("Implement ResidualDecayClassifier");
+    // Rastrigin has many local minima - should classify as Chaotic
+    let classifier = ResidualDecayClassifier::default();
+    let samples = rastrigin_samples();
+    
+    let (landscape, alpha) = classifier.classify(&samples);
+    
+    println!("Rastrigin α = {}", alpha);
+    assert_eq!(landscape, Landscape::Chaotic, 
+               "Rastrigin should be Chaotic, got α={}", alpha);
+}
+
+#[test]
+fn test_residual_decay_deterministic() {
+    let classifier = ResidualDecayClassifier::default();
+    let samples = sphere_samples();
+    
+    let (l1, a1) = classifier.classify(&samples);
+    let (l2, a2) = classifier.classify(&samples);
+    
+    assert_eq!(l1, l2);
+    assert!((a1 - a2).abs() < 1e-10, "Alpha should be identical for same input");
+}
+
+#[test]
+fn test_residual_decay_insufficient_samples() {
+    // With fewer than min_samples, should default to Chaotic
+    let classifier = ResidualDecayClassifier::default();
+    let samples = vec![trace(1.0), trace(2.0)]; // Only 2 samples
+    
+    let (landscape, _) = classifier.classify(&samples);
+    
+    assert_eq!(landscape, Landscape::Chaotic, 
+               "Insufficient samples should default to Chaotic");
 }

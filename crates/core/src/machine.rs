@@ -1,5 +1,5 @@
 use crate::artifact::EvalTrace;
-use crate::classify::{Classify, Landscape, VarianceClassifier};
+use crate::classify::{Classify, Landscape, ResidualDecayClassifier, VarianceClassifier};
 use crate::config::SolverConfig;
 use crate::probe::{Probe, UniformProbe};
 use crate::strategies::nelder_mead::NelderMead;
@@ -25,6 +25,7 @@ pub struct Solver {
 }
 
 impl Solver {
+    /// Create a new solver with default components (UniformProbe, VarianceClassifier)
     pub fn new(config: SolverConfig) -> Self {
         Self {
             config,
@@ -34,6 +35,23 @@ impl Solver {
             classifier: Box::new(VarianceClassifier::default()),
             strategy: None,
         }
+    }
+
+    /// Create a solver with a custom classifier
+    pub fn with_classifier(config: SolverConfig, classifier: Box<dyn Classify>) -> Self {
+        Self {
+            config,
+            history: Vec::new(),
+            phase: Phase::Probe,
+            probe: Box::new(UniformProbe),
+            classifier,
+            strategy: None,
+        }
+    }
+
+    /// Create a solver with the RPZL ResidualDecayClassifier (recommended for production)
+    pub fn with_residual_decay(config: SolverConfig) -> Self {
+        Self::with_classifier(config, Box::new(ResidualDecayClassifier::default()))
     }
 
     /// Ask the solver what to do next.

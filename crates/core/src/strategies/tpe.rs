@@ -6,11 +6,29 @@ use rand::Rng;
 use rand_chacha::ChaCha8Rng;
 use std::collections::HashMap;
 
+/// Bandwidth selection rule for kernel density estimation
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum BandwidthRule {
+    /// Scott's Rule: σ = 1.06 × stddev × n^(-1/5)
+    Scott,
+    /// Silverman's Rule: σ = 0.9 × min(stddev, IQR/1.34) × n^(-1/5)
+    Silverman,
+    /// Fixed percentage of range
+    Fixed,
+}
+
+impl Default for BandwidthRule {
+    fn default() -> Self {
+        BandwidthRule::Scott
+    }
+}
+
 #[allow(dead_code)]
 pub struct TPE {
     dim: usize,
     gamma: f64,
     candidates: usize,
+    bandwidth_rule: BandwidthRule,
 }
 
 impl TPE {
@@ -19,6 +37,81 @@ impl TPE {
             dim,
             gamma: 0.25, // Top 25%
             candidates: 24,
+            bandwidth_rule: BandwidthRule::Scott,
+        }
+    }
+
+    /// Create TPE with a specific bandwidth rule
+    pub fn with_bandwidth_rule(dim: usize, rule: BandwidthRule) -> Self {
+        Self {
+            dim,
+            gamma: 0.25,
+            candidates: 24,
+            bandwidth_rule: rule,
+        }
+    }
+
+    /// Scott's Rule bandwidth: σ = 1.06 × stddev × n^(-1/5)
+    /// 
+    /// This is the standard bandwidth for kernel density estimation.
+    /// It adapts to the sample distribution and count.
+    pub fn scotts_bandwidth(values: &[f64]) -> f64 {
+        if values.len() < 2 {
+            return 1.0; // Fallback for insufficient data
+        }
+
+        let n = values.len() as f64;
+        let mean = values.iter().sum::<f64>() / n;
+        let variance = values.iter().map(|x| (x - mean).powi(2)).sum::<f64>() / n;
+        let stddev = variance.sqrt();
+
+        // Scott's Rule: 1.06 × σ × n^(-1/5)
+        let bandwidth = 1.06 * stddev * n.powf(-0.2);
+
+        // Minimum bandwidth to prevent degenerate kernels
+        bandwidth.max(1e-6)
+    }
+
+    /// Silverman's Rule bandwidth: σ = 0.9 × min(stddev, IQR/1.34) × n^(-1/5)
+    /// 
+    /// More robust to outliers than Scott's Rule.
+    #[allow(dead_code)]
+    pub fn silverman_bandwidth(values: &[f64]) -> f64 {
+        if values.len() < 4 {
+            return Self::scotts_bandwidth(values); // Fall back to Scott's
+        }
+
+        let n = values.len() as f64;
+        let mean = values.iter().sum::<f64>() / n;
+        let variance = values.iter().map(|x| (x - mean).powi(2)).sum::<f64>() / n;
+        let stddev = variance.sqrt();
+
+        // Compute IQR
+        let mut sorted = values.to_vec();
+        sorted.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+        let q1_idx = values.len() / 4;
+        let q3_idx = 3 * values.len() / 4;
+        let iqr = sorted[q3_idx] - sorted[q1_idx];
+
+        // Silverman's robust estimate
+        let scale = stddev.min(iqr / 1.34);
+        let bandwidth = 0.9 * scale * n.powf(-0.2);
+
+        bandwidth.max(1e-6)
+    }
+
+    /// Fixed bandwidth: percentage of range (legacy behavior)
+    #[allow(dead_code)]
+    pub fn fixed_bandwidth(range: f64, percentage: f64) -> f64 {
+        (range * percentage).max(1e-6)
+    }
+
+    /// Compute bandwidth for a dimension based on selected rule
+    fn compute_bandwidth(&self, values: &[f64], range: f64) -> f64 {
+        match self.bandwidth_rule {
+            BandwidthRule::Scott => Self::scotts_bandwidth(values),
+            BandwidthRule::Silverman => Self::silverman_bandwidth(values),
+            BandwidthRule::Fixed => Self::fixed_bandwidth(range, 0.1),
         }
     }
 
@@ -65,11 +158,6 @@ impl Strategy for TPE {
         let mut best_candidate = HashMap::new();
         let mut best_ei = -1.0;
 
-        // We generate N candidates and pick best EI
-        // But here we do it dimension-wise assumption (independent params).
-        // Actually, TPE usually samples a vector by sampling each dim independently from l(x).
-        // Then computes EI for that vector.
-
         let mut candidates_vec = Vec::new();
 
         for _ in 0..self.candidates {
@@ -88,11 +176,9 @@ impl Strategy for TPE {
                     .map(|t| *t.params.get(name).unwrap_or(&0.0))
                     .collect();
 
-                // Bandwidth: Rule of thumb sigma = (max - min) / sqrt(N)?
-                // Or standard deviation of data?
-                // For MVP: Use 10% of range or stddev.
+                // Compute adaptive bandwidth using Scott's Rule (or selected rule)
                 let range = domain.max - domain.min;
-                let sigma = range * 0.1; // simplified
+                let sigma = self.compute_bandwidth(&good_vals, range);
 
                 // Sample from l(x) (Good)
                 let val = Self::sample_gmm(&mut rng, &good_vals, sigma, domain.min, domain.max);
@@ -120,7 +206,7 @@ impl Strategy for TPE {
 
             // EI ~ l(x) / g(x) -> log EI ~ log l - log g
             let ei = log_l - log_g;
-            candidates_vec.push(candidate.clone()); // push clone before move
+            candidates_vec.push(candidate.clone());
             if ei > best_ei || best_candidate.is_empty() {
                 best_ei = ei;
                 best_candidate = candidate;
@@ -129,5 +215,61 @@ impl Strategy for TPE {
 
         // Return best of N candidates
         StrategyAction::Evaluate(vec![best_candidate])
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_scotts_bandwidth_calculation() {
+        // Test with known data
+        // For n=10, stddev=1.0: σ = 1.06 × 1.0 × 10^(-0.2) = 1.06 × 0.631 ≈ 0.669
+        let values: Vec<f64> = (0..10).map(|i| i as f64).collect();
+        let bandwidth = TPE::scotts_bandwidth(&values);
+        
+        // Values 0-9 have stddev ≈ 2.87
+        // Expected: 1.06 × 2.87 × 10^(-0.2) ≈ 1.92
+        assert!(bandwidth > 1.0 && bandwidth < 3.0, 
+                "Bandwidth should be reasonable, got {}", bandwidth);
+    }
+
+    #[test]
+    fn test_scotts_bandwidth_adapts_to_distribution() {
+        // Narrow distribution
+        let narrow: Vec<f64> = (0..20).map(|i| 5.0 + (i as f64) * 0.01).collect();
+        let narrow_bw = TPE::scotts_bandwidth(&narrow);
+
+        // Wide distribution  
+        let wide: Vec<f64> = (0..20).map(|i| i as f64 * 10.0).collect();
+        let wide_bw = TPE::scotts_bandwidth(&wide);
+
+        assert!(narrow_bw < wide_bw, 
+                "Narrow distribution should have smaller bandwidth: {} vs {}", 
+                narrow_bw, wide_bw);
+    }
+
+    #[test]
+    fn test_scotts_bandwidth_scales_with_n() {
+        // Larger n should reduce bandwidth
+        let small_n: Vec<f64> = (0..10).map(|i| i as f64).collect();
+        let large_n: Vec<f64> = (0..100).map(|i| (i % 10) as f64).collect(); // Same range
+
+        let small_bw = TPE::scotts_bandwidth(&small_n);
+        let large_bw = TPE::scotts_bandwidth(&large_n);
+
+        assert!(large_bw < small_bw, 
+                "Larger n should reduce bandwidth: {} vs {}", 
+                large_bw, small_bw);
+    }
+
+    #[test]
+    fn test_bandwidth_minimum_clamp() {
+        // Very tight data should still have minimum bandwidth
+        let tight: Vec<f64> = vec![1.0, 1.0, 1.0, 1.0, 1.0];
+        let bw = TPE::scotts_bandwidth(&tight);
+        
+        assert!(bw >= 1e-6, "Bandwidth should be clamped to minimum");
     }
 }

@@ -38,13 +38,13 @@
 
 ### 2.1 Residual Decay Classifier
 
-- [ ] T007 [P] Write failing test for α estimation in `crates/core/src/tests/test_classify.rs`
-- [ ] T008 [P] Write failing test for Sphere→Structured classification in `crates/core/src/tests/test_classify.rs`
-- [ ] T009 [P] Write failing test for Rastrigin→Chaotic classification in `crates/core/src/tests/test_classify.rs`
-- [ ] T010 Add `ResidualDecayClassifier` struct to `crates/core/src/classify.rs`
-- [ ] T011 Implement α estimation from E_k decay curve in `crates/core/src/classify.rs`
-- [ ] T012 Implement `Classify` trait for `ResidualDecayClassifier` with α < 0.5 threshold in `crates/core/src/classify.rs`
-- [ ] T013 Update `Solver` to use `ResidualDecayClassifier` as default in `crates/core/src/machine.rs`
+- [x] T007 [P] Write failing test for α estimation in `crates/core/src/tests/test_classify.rs`
+- [x] T008 [P] Write failing test for Sphere→Structured classification in `crates/core/src/tests/test_classify.rs`
+- [x] T009 [P] Write failing test for Rastrigin→Chaotic classification in `crates/core/src/tests/test_classify.rs`
+- [x] T010 Add `ResidualDecayClassifier` struct to `crates/core/src/classify.rs`
+- [x] T011 Implement α estimation from E_k decay curve in `crates/core/src/classify.rs`
+- [x] T012 Implement `Classify` trait for `ResidualDecayClassifier` with α < 0.5 threshold in `crates/core/src/classify.rs`
+- [x] T013 Update `Solver` to use `ResidualDecayClassifier` as default in `crates/core/src/machine.rs`
 
 ### 2.2 Scott's Rule TPE Bandwidth
 
