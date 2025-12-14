@@ -33,7 +33,7 @@ In high-throughput optimization—like real-time control, high-frequency trading
 > **"Speed is King"** - When evaluations are cheap (<10ms), ArqonHPO allows you to brute-force the problem with massive volume, beating smarter but slower algorithms.
 
 ### ⚡ Ideal for Multi-Agent Systems
-If you are building a **WebSocket Bus** or **MAS** with <1ms deadlines (Rust/Go/Elixir), ArqonHPO is the *only* viable choice.
+If you are building a **MAS** with <1ms deadlines, ArqonHPO is the *only* viable choice.
 - **Optuna (846ms)**: Blocks your event loop, causing massive lag.
 - **ArqonHPO (2.9ms)**: Fits comfortably inside a single message handler.
 
