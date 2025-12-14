@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  rust:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache
+        uses: Swatinem/rust-cache@v2
+
+      - name: Check
+        run: cargo check --workspace
+
+      - name: Clippy
+        run: cargo clippy --workspace -- -D warnings
+
+      - name: Format
+        run: cargo fmt --check
+
+      - name: Test
+        run: cargo test --workspace
+
+      - name: Audit
+        run: cargo install cargo-audit && cargo audit
+
+  python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install Maturin
+        run: pip install maturin pytest
+
+      - name: Build & Install
+        run: maturin develop -m bindings/python/Cargo.toml
+
+      - name: Test
+        run: |
+          cd bindings/python
+          PYTHONPATH=tests pytest tests/
+
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install MkDocs
+        run: pip install mkdocs-material mike
+
+      - name: Build Docs
+        run: cd docs && mkdocs build

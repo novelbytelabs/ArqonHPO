@@ -1,4 +1,4 @@
-use crate::config::{SolverConfig, Scale};
+use crate::config::SolverConfig;
 use crate::artifact::EvalTrace;
 use crate::strategies::{Strategy, StrategyAction};
 use crate::rng::get_rng;
@@ -35,7 +35,7 @@ impl TPE {
         }
         let idx = rng.gen_range(0..points.len());
         let mean = points[idx];
-        let val = mean + rng.sample::<f64, _>(rand::distr::StandardNormal) * sigma;
+        let val = mean + rng.sample::<f64, _>(rand_distr::StandardNormal) * sigma;
         val.clamp(min, max)
     }
 }
@@ -105,11 +105,11 @@ impl Strategy for TPE {
             
             // EI ~ l(x) / g(x) -> log EI ~ log l - log g
             let ei = log_l - log_g;
-            if ei > best_ei || candidates_vec.is_empty() {
+            candidates_vec.push(candidate.clone()); // push clone before move
+            if ei > best_ei || best_candidate.is_empty() {
                 best_ei = ei;
                 best_candidate = candidate;
             }
-            candidates_vec.push(candidate);
         }
         
         // Return best of N candidates

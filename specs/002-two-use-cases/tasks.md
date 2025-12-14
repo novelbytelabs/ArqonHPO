@@ -78,21 +78,21 @@ description: "Task list for ArqonHPO v1 implementation"
 **Purpose**: "Million Dollar" Polish NFRs and Documentation.
 
 ### Documentation (The Gamut)
-- [ ] T025 [P] Init `mkdocs-material` site with `mike` and deployment workflow <!-- id: T025 -->
-- [ ] T026 [P] Write "First Run" Quickstart Tutorial <!-- id: T026 -->
-- [ ] T027 [P] Implement Cookbook with Sim and ML recipes <!-- id: T027 -->
-- [ ] T028 [P] Setup Reference docs pipeline (Rustdoc, Mkdocstrings, Manpages) <!-- id: T028 -->
-- [ ] T029 Write ADR-001 (Core Arch) and ADR-002 (Python Bridge) <!-- id: T029 -->
-- [ ] T030 Add Community files (`CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SECURITY.md`) <!-- id: T030 -->
-- [ ] T031 Write OPS Runbooks (`RELEASE_RUNBOOK.md`, `CI_DEBUG_RUNBOOK.md`) <!-- id: T031 -->
+- [x] T025 [P] Init `mkdocs-material` site with `mike` and deployment workflow <!-- id: T025 -->
+- [x] T026 [P] Write "First Run" Quickstart Tutorial <!-- id: T026 -->
+- [x] T027 [P] Implement Cookbook with Sim and ML recipes <!-- id: T027 -->
+- [x] T028 [P] Setup Reference docs pipeline (Rustdoc, Mkdocstrings, Manpages) <!-- id: T028 -->
+- [x] T029 Write ADR-001 (Core Arch) and ADR-002 (Python Bridge) <!-- id: T029 -->
+- [x] T030 Add Community files (`CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SECURITY.md`) <!-- id: T030 -->
+- [x] T031 Write OPS Runbooks (`RELEASE_RUNBOOK.md`, `CI_DEBUG_RUNBOOK.md`) <!-- id: T031 -->
 
 ### "Million Dollar" NFRs
-- [ ] T032 [Security] Configure SLSA Level 3 generator in GitHub Actions <!-- id: T032 -->
-- [ ] T033 [Security] Configure SBOM (CycloneDX) generation <!-- id: T033 -->
-- [ ] T034 [Quality] Setup continuous fuzzing (`cargo-fuzz`) for `SolverConfig` <!-- id: T034 -->
-- [ ] T035 [DX] Integrate `miette` for rich error reporting in Core/CLI <!-- id: T035 -->
-- [ ] T036 [DX] Publish JSON Schema to SchemaStore (or prepare PR) <!-- id: T036 -->
-- [ ] T037 [Ops] Instrument core with `tracing` spans <!-- id: T037 -->
+- [x] T032 [Security] Configure SLSA Level 3 generator in GitHub Actions <!-- id: T032 -->
+- [x] T033 [Security] Configure SBOM (CycloneDX) generation <!-- id: T033 -->
+- [x] T034 [Quality] Setup continuous fuzzing (`cargo-fuzz`) for `SolverConfig` <!-- id: T034 -->
+- [x] T035 [DX] Integrate `miette` for rich error reporting in Core/CLI <!-- id: T035 -->
+- [x] T036 [DX] Publish JSON Schema to SchemaStore (or prepare PR) <!-- id: T036 -->
+- [x] T037 [Ops] Instrument core with `tracing` spans <!-- id: T037 -->
 
 ---
 

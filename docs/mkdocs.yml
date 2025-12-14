@@ -1,0 +1,53 @@
+site_name: ArqonHPO
+site_url: https://arqon.dev/hpo
+repo_url: https://github.com/arqon/ArqonHPO
+repo_name: arqon/ArqonHPO
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: deep purple
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: deep purple
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - content.code.copy
+    - content.code.annotate
+
+nav:
+  - Home: index.md
+  - Quickstart: quickstart.md
+  - Cookbook:
+      - Overview: cookbook/index.md
+      - Sim Tuning: cookbook/sim_tuning.md
+      - ML Tuning: cookbook/ml_tuning.md
+  - Reference:
+      - Python API: reference/python.md
+      - Rust API: reference/rust.md
+      - CLI: reference/cli.md
+  - Architecture:
+      - ADR-001: Core: adrs/001-core-architecture.md
+      - ADR-002: Python Bridge: adrs/002-python-bridge.md
+  - Contributing: contributing.md
+
+plugins:
+  - search
+  - mike
+
+markdown_extensions:
+  - admonition
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.superfences
+  - pymdownx.details
+  - attr_list
+  - md_in_html

@@ -38,6 +38,7 @@ impl Solver {
 
     /// Ask the solver what to do next.
     /// Returns a list of candidates to evaluate, or None if finished.
+    #[tracing::instrument(skip(self))]
     pub fn ask(&mut self) -> Option<Vec<HashMap<String, f64>>> {
         loop {
             match self.phase {
@@ -118,6 +119,7 @@ impl Solver {
         }
     }
 
+    #[tracing::instrument(skip(self, eval_results))]
     pub fn tell(&mut self, eval_results: Vec<EvalTrace>) {
         self.history.extend(eval_results);
     }
