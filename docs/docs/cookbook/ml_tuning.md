@@ -1,4 +1,4 @@
-# Cookbook: ML Model Tuning (US2)
+# Cookbook: ML Model Tuning
 
 Tune sklearn or PyTorch hyperparameters with TPE.
 

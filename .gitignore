@@ -14,7 +14,8 @@ string_data/
 benchmark_outputs/
 node_modules/
 target/
-docs/site/assets/javascripts/ 
+docs/site/assets/javascripts/
+docs/context/
 
 *.json
 *.jsonl

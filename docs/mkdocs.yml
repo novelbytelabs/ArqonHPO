@@ -1,53 +1,90 @@
 site_name: ArqonHPO
-site_url: https://arqon.dev/hpo
-repo_url: https://github.com/arqon/ArqonHPO
-repo_name: arqon/ArqonHPO
+site_description: "Adaptive Hyperparameter Optimization with automatic strategy selection"
+site_author: NovelByte Labs
+site_url: https://novelbytelabs.github.io/ArqonHPO/
+repo_url: https://github.com/novelbytelabs/ArqonHPO
+repo_name: novelbytelabs/ArqonHPO
+copyright: Copyright &copy; 2024 NovelByte Labs
 
 theme:
   name: material
   palette:
-    - scheme: default
+    - media: "(prefers-color-scheme)"
+      toggle:
+        icon: material/brightness-auto
+        name: Switch to light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
       primary: deep purple
+      accent: amber
       toggle:
         icon: material/brightness-7
         name: Switch to dark mode
-    - scheme: slate
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
       primary: deep purple
+      accent: amber
       toggle:
         icon: material/brightness-4
-        name: Switch to light mode
+        name: Switch to system preference
   features:
-    - navigation.tabs
     - navigation.sections
     - navigation.expand
-    - content.code.copy
+    #    - toc.integrate
+    - search.suggest
+    - search.highlight
+    - content.tabs.link
     - content.code.annotate
+    - navigation.top
+    - announce.dismiss
+    - content.code.copy
+    - content.action.copy
+    - content.action.view
+  icon:
+    repo: fontawesome/brands/github
+  logo: assets/logo.svg
+  favicon: assets/favicon.svg
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/novelbytelabs/ArqonHPO
+  generator: false
 
 nav:
   - Home: index.md
   - Quickstart: quickstart.md
   - Cookbook:
       - Overview: cookbook/index.md
-      - Sim Tuning: cookbook/sim_tuning.md
-      - ML Tuning: cookbook/ml_tuning.md
+      - Simulation Tuning: cookbook/sim_tuning.md
+      - ML Model Tuning: cookbook/ml_tuning.md
   - Reference:
       - Python API: reference/python.md
       - Rust API: reference/rust.md
       - CLI: reference/cli.md
+  - Benchmarks: benchmarks.md
   - Architecture:
-      - ADR-001 - Core: adrs/001-core-architecture.md
-      - ADR-002Python Bridge: adrs/002-python-bridge.md
+      - "ADR-001 Core": adrs/001-core-architecture.md
+      - "ADR-002 Python Bridge": adrs/002-python-bridge.md
   - Contributing: contributing.md
 
 plugins:
   - search
-  - mike
 
 markdown_extensions:
   - admonition
   - pymdownx.highlight:
       anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
   - pymdownx.superfences
   - pymdownx.details
+  - pymdownx.tabbed:
+      alternate_style: true
   - attr_list
   - md_in_html
+  - tables
+  - toc:
+      permalink: true

@@ -1,4 +1,4 @@
-# Cookbook: Simulation Tuning (US1)
+# Cookbook: Simulation Tuning
 
 Tune expensive, smooth simulation objectives with Nelder-Mead.
 

@@ -32,7 +32,7 @@ impl Classify for VarianceClassifier {
         let values: Vec<f64> = history.iter().map(|t| t.value).collect();
         let mean = values.iter().sum::<f64>() / values.len() as f64;
         let variance = values.iter().map(|v| (v - mean).powi(2)).sum::<f64>() / values.len() as f64;
-        
+
         // Simple heuristic: High variance relative to mean? Or just raw variance?
         // For MVP, raw variance might be unscaled.
         // Let's use Coefficient of Variation (CV) = sigma / mu, if mu != 0
