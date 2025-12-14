@@ -60,6 +60,7 @@ nav:
       - ML Model Tuning: cookbook/ml_tuning.md
   - Concepts:
       - PCR Algorithm: concepts/pcr_algorithm.md
+      - Probe Deep Dive: concepts/probe_deep_dive.md
   - Reference:
       - Python API: reference/python.md
       - Rust API: reference/rust.md
