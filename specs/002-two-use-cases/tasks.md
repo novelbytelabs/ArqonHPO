@@ -1,103 +1,231 @@
+# Tasks: RPZL Algorithm Production Implementation
+
+**Input**: Design documents from `/specs/002-two-use-cases/`
+**Prerequisites**: plan.md ✅, spec.md ✅, research.md ✅, data-model.md ✅
+
+**Tests**: REQUIRED per constitution - TDD for solver logic and sampling math.
+
+**Organization**: Tasks grouped by implementation phase, mapped to User Stories (US1: Sim Tuning, US2: ML Tuning).
+
+## Format: `[ID] [P?] [Story] Description`
+
+- **[P]**: Can run in parallel (different files, no dependencies)
+- **[Story]**: US1 = Fast Simulation Tuning, US2 = Sklearn ML Tuning
+- Include exact file paths in descriptions
+
 ---
-description: "Task list for ArqonHPO v1 implementation"
----
 
-# Tasks: ArqonHPO v1 "Two Use Cases"
+## Phase 1: Setup (Test Infrastructure)
 
-**Input**: Specs from `specs/002-two-use-cases/`
-**Prerequisites**: plan.md, spec.md
-**Organization**: Phases 1-2 (Foundation) -> Phases 3-4 (User Stories) -> Phase 5 (Polish/Docs)
+**Purpose**: Create test infrastructure before implementation (TDD)
 
-## Phase 1: Setup (Shared Infrastructure)
+- [x] T001 Create test module structure at `crates/core/src/tests/mod.rs`
+- [x] T002 [P] Create test file for classifier at `crates/core/src/tests/test_classify.rs`
+- [x] T003 [P] Create test file for TPE at `crates/core/src/tests/test_tpe.rs`
+- [x] T004 [P] Create test file for Nelder-Mead at `crates/core/src/tests/test_nelder_mead.rs`
+- [x] T005 [P] Create test file for probe at `crates/core/src/tests/test_probe.rs`
+- [x] T006 Add test module declaration to `crates/core/src/lib.rs`
 
-**Purpose**: Initialize Rust workspace and Python environment.
-
-- [x] T001 Create Cargo workspace with `core`, `cli`, `ffi`, `bindings/python` crates <!-- id: T001 -->
-- [x] T002 Configure `Cargo.toml` workspace dependencies (serde, rand, pyo3) <!-- id: T002 -->
-- [x] T003 [P] Setup Python environment (uv/poetry) and `pyproject.toml` (maturin) <!-- id: T003 -->
-- [x] T004 [P] Configure development tools (Justfile, pre-commit, clippy, rustfmt) <!-- id: T004 -->
+**Checkpoint**: Test infrastructure ready, all tests should compile and fail.
 
 ---
 
 ## Phase 2: Foundational (Blocking Prerequisites)
 
-**Purpose**: Core state machine and contracts that US1/US2 depend on.
-**⚠️ CRITICAL**: Must be complete before strategies.
+**Purpose**: Core algorithm implementations that MUST be complete before user story validation
 
-- [x] T005 Implement `SolverConfig` and `RunArtifact` structs with Serde in `crates/core` <!-- id: T005 -->
-- [x] T006 Implement Deterministic RNG wrapper (`rand_chacha`) with seed management <!-- id: T006 -->
-- [x] T007 Implement the `Probe` trait and Sobol sequence sampler <!-- id: T007 -->
-- [x] T008 Implement the `Classify` trait and Variance-based classifier <!-- id: T008 -->
-- [x] T009 Implement the `Solver` state machine (Probe -> Classify -> Select -> Refine) <!-- id: T009 -->
-- [x] T010 Create `ArqonSolver` PyO3 wrapper class in `bindings/python` <!-- id: T010 -->
-- [x] T011 Implement integration test harness in Python <!-- id: T011 -->
+**⚠️ CRITICAL**: User story integration tests cannot pass until this phase is complete
 
-**Checkpoint**: Core engine compels the state machine loop; Python can reference it.
+### 2.1 Residual Decay Classifier
+
+- [ ] T007 [P] Write failing test for α estimation in `crates/core/src/tests/test_classify.rs`
+- [ ] T008 [P] Write failing test for Sphere→Structured classification in `crates/core/src/tests/test_classify.rs`
+- [ ] T009 [P] Write failing test for Rastrigin→Chaotic classification in `crates/core/src/tests/test_classify.rs`
+- [ ] T010 Add `ResidualDecayClassifier` struct to `crates/core/src/classify.rs`
+- [ ] T011 Implement α estimation from E_k decay curve in `crates/core/src/classify.rs`
+- [ ] T012 Implement `Classify` trait for `ResidualDecayClassifier` with α < 0.5 threshold in `crates/core/src/classify.rs`
+- [ ] T013 Update `Solver` to use `ResidualDecayClassifier` as default in `crates/core/src/machine.rs`
+
+### 2.2 Scott's Rule TPE Bandwidth
+
+- [ ] T014 [P] Write failing test for Scott's Rule σ calculation in `crates/core/src/tests/test_tpe.rs`
+- [ ] T015 [P] Write failing test for bandwidth adaptation across dimensions in `crates/core/src/tests/test_tpe.rs`
+- [ ] T016 Add `scotts_bandwidth(values: &[f64]) -> f64` function to `crates/core/src/strategies/tpe.rs`
+- [ ] T017 Replace fixed `sigma = range * 0.1` with `scotts_bandwidth()` in `crates/core/src/strategies/tpe.rs`
+- [ ] T018 Add minimum bandwidth clamp (1e-6) to prevent degenerate kernels in `crates/core/src/strategies/tpe.rs`
+
+### 2.3 Complete Nelder-Mead Operations
+
+- [ ] T019 [P] Write failing test for Expansion operation in `crates/core/src/tests/test_nelder_mead.rs`
+- [ ] T020 [P] Write failing test for Outside Contraction in `crates/core/src/tests/test_nelder_mead.rs`
+- [ ] T021 [P] Write failing test for Inside Contraction in `crates/core/src/tests/test_nelder_mead.rs`
+- [ ] T022 [P] Write failing test for Shrink operation in `crates/core/src/tests/test_nelder_mead.rs`
+- [ ] T023 [P] Write failing test for simplex convergence on Sphere in `crates/core/src/tests/test_nelder_mead.rs`
+- [ ] T024 Implement Expansion handler in `crates/core/src/strategies/nelder_mead.rs` (γ = 2.0)
+- [ ] T025 Implement Outside Contraction handler in `crates/core/src/strategies/nelder_mead.rs` (ρ = 0.5)
+- [ ] T026 Implement Inside Contraction handler in `crates/core/src/strategies/nelder_mead.rs` (ρ = 0.5)
+- [ ] T027 Implement Shrink handler in `crates/core/src/strategies/nelder_mead.rs` (σ = 0.5)
+- [ ] T028 Add convergence detection (simplex diameter < ε) in `crates/core/src/strategies/nelder_mead.rs`
+
+### 2.4 Prime-Index Probe
+
+- [ ] T029 [P] Write failing test for prime sequence generation in `crates/core/src/tests/test_probe.rs`
+- [ ] T030 [P] Write failing test for deterministic sampling in `crates/core/src/tests/test_probe.rs`
+- [ ] T031 Add `PrimeIndexProbe` struct to `crates/core/src/probe.rs`
+- [ ] T032 Implement Sieve of Eratosthenes for prime generation (up to 1000) in `crates/core/src/probe.rs`
+- [ ] T033 Implement `Probe` trait for `PrimeIndexProbe` with prime ratio sampling in `crates/core/src/probe.rs`
+- [ ] T034 Update `Solver` to use `PrimeIndexProbe` as default in `crates/core/src/machine.rs`
+
+### 2.5 Probe-to-Refiner Seeding
+
+- [ ] T035 [P] Write failing test for NM seeding from probe points in `crates/core/src/tests/test_nelder_mead.rs`
+- [ ] T036 Add `with_seed_points(dim: usize, seeds: Vec<(f64, Vec<f64>)>) -> Self` to `crates/core/src/strategies/nelder_mead.rs`
+- [ ] T037 Modify `NMState::Init` to use seed points as first k simplex vertices in `crates/core/src/strategies/nelder_mead.rs`
+- [ ] T038 Add perturbation generation for remaining (N+1-k) vertices in `crates/core/src/strategies/nelder_mead.rs`
+- [ ] T039 Update `Solver` to pass top-k probe results to NM in `crates/core/src/machine.rs`
+
+**Checkpoint**: `cargo test --package arqonhpo-core` should pass all unit tests.
 
 ---
 
-## Phase 3: User Story 1 - Fast Simulation Tuning (P0)
+## Phase 3: User Story 1 - Fast Simulation Tuning (Priority: P1) 🎯 MVP
 
-**Goal**: Nelder-Mead strategy for expensive, smooth simulations.
+**Goal**: Reach target threshold faster than Optuna-TPE on structured objectives
 
-### Tests for US1
-- [x] T012 [P] [US1] Create synthetic "smooth expensive" benchmark function (sleep-injected) <!-- id: T012 -->
-- [x] T013 [P] [US1] Write integration test expecting Nelder-Mead selection for smooth surface <!-- id: T013 -->
+**Independent Test**: Run solver on Sphere function → should classify as Structured, converge faster than baseline
 
-### Implementation for US1
-- [x] T014 [US1] Implement `Strategy` trait in `crates/core` <!-- id: T014 -->
-- [x] T015 [US1] Implement `NelderMead` strategy logic (simplex) <!-- id: T015 -->
-- [x] T016 [US1] Wire `NelderMead` into `Solver` selection logic (Structured mode) <!-- id: T016 -->
-- [x] T017 [US1] Expose strategy configuration in `SolverConfig` (Rust & Python) <!-- id: T017 -->
-- [x] T018 [US1] Verify determinism and artifacts for Sim Tuning run <!-- id: T018 -->
+### Tests for User Story 1
 
-**Checkpoint**: Sim Engineers can use ArqonHPO for smooth functions.
+- [ ] T040 [P] [US1] Write integration test for Sphere optimization in `bindings/python/tests/test_us1_sphere.py`
+- [ ] T041 [P] [US1] Write integration test for Rosenbrock optimization in `bindings/python/tests/test_us1_rosenbrock.py`
+- [ ] T042 [US1] Write time-to-target comparison test vs baseline in `bindings/python/tests/test_us1_benchmark.py`
 
----
+### Implementation for User Story 1
 
-## Phase 4: User Story 2 - Sklearn ML Tuning (P0)
+- [ ] T043 [US1] Add structured objective fixtures (Sphere, Rosenbrock) to `bindings/python/tests/fixtures/structured.py`
+- [ ] T044 [US1] Run end-to-end test: Sphere classification → Structured → NM refinement in Python
+- [ ] T045 [US1] Verify probe seeding improves convergence vs random init
+- [ ] T046 [US1] Add logging for classification rationale in artifact output
 
-**Goal**: TPE strategy for rugged/ML landscapes.
-
-### Tests for US2
-- [x] T019 [P] [US2] Create synthetic "rugged" benchmark function <!-- id: T019 -->
-- [x] T020 [P] [US2] Write integration test expecting TPE selection for noisy surface <!-- id: T020 -->
-
-### Implementation for US2
-- [x] T021 [US2] Implement `TPE` (Tree-structured Parzen Estimator) strategy logic <!-- id: T021 -->
-- [x] T022 [US2] Wire `TPE` into `Solver` selection logic (Chaotic mode) <!-- id: T022 -->
-- [x] T023 [US2] Ensure `PYTHONNOUSERSITE` compatibility for benchmark runs <!-- id: T023 -->
-- [ ] T024 [US2] Run comparison benchmark vs Optuna (Time-to-target) <!-- id: T024 -->
-
-**Checkpoint**: ML Engineers can use ArqonHPO for model tuning.
+**Checkpoint**: US1 complete - Structured objectives reach target faster than baseline.
 
 ---
 
-## Phase 5: Production Readiness & Documentation ("The Gamut")
+## Phase 4: User Story 2 - Sklearn ML Tuning (Priority: P2)
 
-**Purpose**: "Million Dollar" Polish NFRs and Documentation.
+**Goal**: Competitive time-to-target with bounded optimizer overhead on chaotic objectives
 
-### Documentation (The Gamut)
-- [x] T025 [P] Init `mkdocs-material` site with `mike` and deployment workflow <!-- id: T025 -->
-- [x] T026 [P] Write "First Run" Quickstart Tutorial <!-- id: T026 -->
-- [x] T027 [P] Implement Cookbook with Sim and ML recipes <!-- id: T027 -->
-- [x] T028 [P] Setup Reference docs pipeline (Rustdoc, Mkdocstrings, Manpages) <!-- id: T028 -->
-- [x] T029 Write ADR-001 (Core Arch) and ADR-002 (Python Bridge) <!-- id: T029 -->
-- [x] T030 Add Community files (`CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SECURITY.md`) <!-- id: T030 -->
-- [x] T031 Write OPS Runbooks (`RELEASE_RUNBOOK.md`, `CI_DEBUG_RUNBOOK.md`) <!-- id: T031 -->
+**Independent Test**: Run solver on Rastrigin function → should classify as Chaotic, use TPE with adapted bandwidth
 
-### "Million Dollar" NFRs
-- [x] T032 [Security] Configure SLSA Level 3 generator in GitHub Actions <!-- id: T032 -->
-- [x] T033 [Security] Configure SBOM (CycloneDX) generation <!-- id: T033 -->
-- [x] T034 [Quality] Setup continuous fuzzing (`cargo-fuzz`) for `SolverConfig` <!-- id: T034 -->
-- [x] T035 [DX] Integrate `miette` for rich error reporting in Core/CLI <!-- id: T035 -->
-- [x] T036 [DX] Publish JSON Schema to SchemaStore (or prepare PR) <!-- id: T036 -->
-- [x] T037 [Ops] Instrument core with `tracing` spans <!-- id: T037 -->
+### Tests for User Story 2
+
+- [ ] T047 [P] [US2] Write integration test for Rastrigin optimization in `bindings/python/tests/test_us2_rastrigin.py`
+- [ ] T048 [P] [US2] Write integration test for sklearn SGDClassifier tuning in `bindings/python/tests/test_us2_sklearn.py`
+
+### Implementation for User Story 2
+
+- [ ] T049 [US2] Add chaotic objective fixtures (Rastrigin, Ackley) to `bindings/python/tests/fixtures/chaotic.py`
+- [ ] T050 [US2] Run end-to-end test: Rastrigin classification → Chaotic → TPE refinement in Python
+- [ ] T051 [US2] Verify Scott's Rule bandwidth adapts correctly per dimension
+- [ ] T052 [US2] Verify optimizer overhead < 100µs per evaluation
+
+**Checkpoint**: US2 complete - Chaotic objectives handled with competitive performance.
+
+---
+
+## Phase 5: Polish & Cross-Cutting Concerns
+
+**Purpose**: Documentation, benchmarks, and final validation
+
+- [ ] T053 [P] Update `docs/docs/reference/rust.md` with new classifier/probe API
+- [ ] T054 [P] Update `docs/docs/cookbook/sim_tuning.md` with RPZL algorithm explanation
+- [ ] T055 [P] Update `docs/docs/cookbook/ml_tuning.md` with TPE bandwidth details
+- [ ] T056 Run full benchmark suite: `python benchmarks/run_benchmarks.py`
+- [ ] T057 Generate benchmark report comparing ArqonHPO vs Optuna-TPE
+- [ ] T058 Run `specs/002-two-use-cases/quickstart.md` validation
+- [ ] T059 Update `CHANGELOG.md` with RPZL algorithm improvements
 
 ---
 
 ## Dependencies & Execution Order
 
-- Phase 2 (Foundation) BLOCKS Phase 3 & 4.
-- Phase 3 & 4 can run in parallel.
-- Phase 5 can start anytime but typically matches Phase 3/4 completion.
+### Phase Dependencies
+
+- **Phase 1 (Setup)**: No dependencies - start immediately
+- **Phase 2 (Foundational)**: Depends on Phase 1 - BLOCKS all user stories
+- **Phase 3 (US1)**: Depends on Phase 2 completion
+- **Phase 4 (US2)**: Depends on Phase 2 completion (can parallel with US1)
+- **Phase 5 (Polish)**: Depends on US1 + US2 completion
+
+### Within Phase 2 (Foundational)
+
+```text
+T007-T009 (tests) → T010-T013 (classifier impl)
+T014-T015 (tests) → T016-T018 (TPE impl)
+T019-T023 (tests) → T024-T028 (NM impl)
+T029-T030 (tests) → T031-T034 (probe impl)
+T035 (test) → T036-T039 (seeding impl)
+```
+
+### Parallel Opportunities
+
+**Phase 1**:
+- T002, T003, T004, T005 can run in parallel
+
+**Phase 2**:
+- All test tasks (T007-T009, T014-T015, T019-T023, T029-T030, T035) can run in parallel
+- Classifier (T010-T013) and TPE (T016-T018) and Probe (T031-T034) can run in parallel after their tests
+
+**Phase 3+**:
+- US1 and US2 can run in parallel once Phase 2 is complete
+
+---
+
+## Parallel Example: Phase 2 Tests
+
+```bash
+# Launch all Phase 2 tests together:
+cargo test --package arqonhpo-core test_classify -- --nocapture
+cargo test --package arqonhpo-core test_tpe -- --nocapture
+cargo test --package arqonhpo-core test_nelder_mead -- --nocapture
+cargo test --package arqonhpo-core test_probe -- --nocapture
+```
+
+---
+
+## Implementation Strategy
+
+### MVP First (User Story 1 Only)
+
+1. Complete Phase 1: Setup (T001-T006)
+2. Complete Phase 2: All foundational tasks (T007-T039)
+3. Complete Phase 3: US1 (T040-T046)
+4. **VALIDATE**: `cargo test && pytest bindings/python/tests/test_us1*.py`
+5. Demo MVP: Structured objectives work correctly
+
+### Verification Commands
+
+```bash
+# Rust unit tests
+cd /home/irbsurfer/Projects/arqon/ArqonHPO
+cargo test --package arqonhpo-core
+
+# Python integration tests
+conda run -n helios-gpu-118 pytest bindings/python/tests/ -v
+
+# Full benchmark
+conda run -n helios-gpu-118 python benchmarks/run_benchmarks.py
+```
+
+---
+
+## Summary
+
+| Phase | Tasks | Parallel Tasks |
+|-------|-------|----------------|
+| Setup | T001-T006 | 4 |
+| Foundational | T007-T039 | 15 |
+| US1 (MVP) | T040-T046 | 2 |
+| US2 | T047-T052 | 2 |
+| Polish | T053-T059 | 3 |
+| **Total** | **59** | **26** |

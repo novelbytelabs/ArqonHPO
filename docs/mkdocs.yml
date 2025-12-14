@@ -52,8 +52,8 @@ extra:
   generator: false
 
 nav:
-  - Home: index.md
-  - Quickstart: quickstart.md
+  - Home: "index.md"
+  - Quickstart: "quickstart.md"
   - Cookbook:
       - Overview: cookbook/index.md
       - Simulation Tuning: cookbook/sim_tuning.md
@@ -88,3 +88,4 @@ markdown_extensions:
   - tables
   - toc:
       permalink: true
+
