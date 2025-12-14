@@ -13,13 +13,15 @@ use std::collections::HashMap;
 
 /// Helper to create EvalTrace
 fn trace(value: f64, x: f64) -> EvalTrace {
+    use std::sync::atomic::{AtomicU64, Ordering};
+    static COUNTER: AtomicU64 = AtomicU64::new(0);
     let mut params = HashMap::new();
     params.insert("x".to_string(), x);
     EvalTrace {
-        phase: "test".to_string(),
+        eval_id: COUNTER.fetch_add(1, Ordering::SeqCst),
         params,
         value,
-        best_so_far: value,
+        cost: 1.0,
     }
 }
 
