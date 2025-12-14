@@ -10,23 +10,24 @@ Implement the ArqonHPO probe-gated optimization engine as a **Rust Core** librar
 
 **Language**: Rust 1.75+ (Core), Python 3.10+ (SDK)
 **Primary Dependencies**:
-- Rust: `serde` (serialization), `rand_chacha` (determinism), `pyo3` (bindings), `thiserror` (error handling).
+- Rust: `serde` (serialization), `rand_chacha` (determinism), `pyo3` (bindings), `miette` (rich errors), `tracing` (telemetry).
 - Python: `numpy` (numeric types).
 **Testing**:
-- Rust: `cargo test` (Unit/Prop).
+- Rust: `cargo test` (Unit/Prop), `cargo-fuzz` (Stability).
 - Python: `pytest` (End-to-End).
 **Target Platform**: Linux (x86_64), macOS (universal), Windows (x86_64).
-**Performance Goals**: < 100µs optimizer overhead per step (Rust side).
-**Constraints**: Strict O(1) memory/compute per eval.
+*Performance Goals**: < 100µs optimizer overhead.
+**Constraints**: Strict O(1) memory/compute.
 
 ## Constitution Check
 *GATE: Passed*
 
-- [x] **Warm-start enforcement**: The `Solver` struct state machine will enforce strictly typed transitions (Probe -> Classify -> Refine).
-- [x] **No bypass**: The `step()` method will match on the internal state; no user-facing method allows skipping phases.
-- [x] **Purity**: The Core crate will be `#[no_std]` compatible (conceptually) - pure logic, no I/O. I/O happens only in the CLI/Bindings layer.
-- [x] **Reproducibility**: `SolverConfig` captures all inputs. `RunArtifact` captures the fingerprint.
-- [x] **Canonical Env**: CI pipeline will use `helios-gpu-118` equivalent container.
+- [x] **Warm-start enforcement**: `Solver` state machine enforced.
+- [x] **No bypass**: No `step()` bypass allowed.
+- [x] **Purity**: `no_std` compatible core logic.
+- [x] **Reproducibility**: Config & Artifact capture.
+- [x] **Canonical Env**: CI uses `helios-gpu-118`.
+- [x] **Production Readiness**: Plan includes SLSA, Fuzzing, DX, and Docs (NFR 7.1).
 
 ## Project Structure
 
@@ -39,7 +40,7 @@ crates/
 │   │   ├── lib.rs
 │   │   ├── config.rs      # Typed contracts
 │   │   ├── machine.rs     # State machine logic
-│   │   ├── probe.rs       # Deterministic samplers (Sobol/Grid)
+│   │   ├── probe.rs       # Deterministic samplers
 │   │   ├── strategies/    # Nelder-Mead, TPE
 │   │   └── artifact.rs    # JSON schema structs
 │   └── Cargo.toml
@@ -51,46 +52,31 @@ crates/
 
 bindings/
 └── python/                # arqonhpo (Python Package)
-    ├── src/lib.rs         # PyO3 bindings
+    ├── src/lib.rs
     ├── python/
-    │   └── arqonhpo/      # Type stubs (.pyi) and helpers
+    │   └── arqonhpo/      # Type stubs (.pyi)
     ├── pyproject.toml     # Maturin config
-    └── tests/             # Pytest suite
+    └── tests/
 ```
 
-## Data Model & Contracts
-
-### 1. SolverConfig (The Input)
-The single source of truth for a run.
-- `budget`: u64
-- `seed`: u64
-- `probe_ratio`: f64 (Default 0.2)
-- `bounds`: Map<String, Domain>
-- `defaults`: StrategyConfig
-
-### 2. RunArtifact (The Output)
-The schema-versioned evidence track.
-- `meta`: Version, Timestamp, Fingerprint
-- `config`: SolverConfig
-- `trace`: List<StepEvent> (Probe | Classify | Refine)
-- `result`: BestParam, BestValue, TotalDuration
+## Data Model & Contracts (See contracts/)
+- `SolverConfig`: Input definition.
+- `RunArtifact`: Output schema.
 
 ## Implementation Phases
 
 ### Phase 1: The Core Foundation
 - [ ] Setup Cargo workspace and crates.
-- [ ] Implement `SolverConfig` and `Domain` types with Serde.
-- [ ] Implement `RunArtifact` schema and serialization.
-- [ ] Implement Deterministic RNG wrapper (`rand_chacha`).
+- [ ] Implement `SolverConfig`/`RunArtifact` with Serde.
+- [ ] Implement Deterministic RNG (`rand_chacha`).
 
 ### Phase 2: The Solver State Machine
-- [ ] Implement `Probe` phase (Sobol sampler).
-- [ ] Implement `Classify` phase (Variance calculator).
-- [ ] Implement `State` transitions (Probe -> Classify -> Refine).
+- [ ] Implement `Probe` (Sobol) and `Classify` (Variance).
+- [ ] Implement `State` transitions.
 
 ### Phase 3: Refinement Strategies (MVP)
-- [ ] Implement `Nelder-Mead` (Structured).
-- [ ] Implement `TPE` (Chaotic) - *Note: TPE is complex, we may start with Random for MVP alpha if TPE is too heavy, but spec says TPE.*
+- [ ] Implement `Nelder-Mead`.
+- [ ] Implement `TPE` (Chaotic).
 
 ### Phase 4: Bindings & CLI
 - [ ] Implement `ArqonSolver` PyO3 class.
@@ -122,4 +108,3 @@ The schema-versioned evidence track.
 - [ ] **[DX]** Register `contracts/config.json` with SchemaStore (PR to `SchemaStore/schemastore`).
 - [ ] **[Ops]** Instrument `step()` loop with `tracing::span!` and `tracing-subscriber`.
 - [ ] **[Release]** Configure `python-semantic-release` or standard `release-plz` for semantic versioning.
-
