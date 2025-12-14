@@ -1,47 +1,47 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
-         <loc>https://arqon.dev/hpo/</loc>
+         <loc>https://novelbytelabs.github.io/ArqonHPO/</loc>
          <lastmod>2025-12-14</lastmod>
     </url>
     <url>
-         <loc>https://arqon.dev/hpo/contributing/</loc>
+         <loc>https://novelbytelabs.github.io/ArqonHPO/contributing/</loc>
          <lastmod>2025-12-14</lastmod>
     </url>
     <url>
-         <loc>https://arqon.dev/hpo/quickstart/</loc>
+         <loc>https://novelbytelabs.github.io/ArqonHPO/quickstart/</loc>
          <lastmod>2025-12-14</lastmod>
     </url>
     <url>
-         <loc>https://arqon.dev/hpo/adrs/001-core-architecture/</loc>
+         <loc>https://novelbytelabs.github.io/ArqonHPO/adrs/001-core-architecture/</loc>
          <lastmod>2025-12-14</lastmod>
     </url>
     <url>
-         <loc>https://arqon.dev/hpo/adrs/002-python-bridge/</loc>
+         <loc>https://novelbytelabs.github.io/ArqonHPO/adrs/002-python-bridge/</loc>
          <lastmod>2025-12-14</lastmod>
     </url>
     <url>
-         <loc>https://arqon.dev/hpo/cookbook/</loc>
+         <loc>https://novelbytelabs.github.io/ArqonHPO/cookbook/</loc>
          <lastmod>2025-12-14</lastmod>
     </url>
     <url>
-         <loc>https://arqon.dev/hpo/cookbook/ml_tuning/</loc>
+         <loc>https://novelbytelabs.github.io/ArqonHPO/cookbook/ml_tuning/</loc>
          <lastmod>2025-12-14</lastmod>
     </url>
     <url>
-         <loc>https://arqon.dev/hpo/cookbook/sim_tuning/</loc>
+         <loc>https://novelbytelabs.github.io/ArqonHPO/cookbook/sim_tuning/</loc>
          <lastmod>2025-12-14</lastmod>
     </url>
     <url>
-         <loc>https://arqon.dev/hpo/reference/cli/</loc>
+         <loc>https://novelbytelabs.github.io/ArqonHPO/reference/cli/</loc>
          <lastmod>2025-12-14</lastmod>
     </url>
     <url>
-         <loc>https://arqon.dev/hpo/reference/python/</loc>
+         <loc>https://novelbytelabs.github.io/ArqonHPO/reference/python/</loc>
          <lastmod>2025-12-14</lastmod>
     </url>
     <url>
-         <loc>https://arqon.dev/hpo/reference/rust/</loc>
+         <loc>https://novelbytelabs.github.io/ArqonHPO/reference/rust/</loc>
          <lastmod>2025-12-14</lastmod>
     </url>
 </urlset>
