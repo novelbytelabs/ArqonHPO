@@ -1,7 +1,7 @@
 use crate::artifact::EvalTrace;
 use crate::classify::{Classify, Landscape, ResidualDecayClassifier, VarianceClassifier};
 use crate::config::SolverConfig;
-use crate::probe::{Probe, UniformProbe};
+use crate::probe::{Probe, PrimeIndexProbe, UniformProbe};
 use crate::strategies::nelder_mead::NelderMead;
 use crate::strategies::tpe::TPE;
 use crate::strategies::{Strategy, StrategyAction};
@@ -15,17 +15,36 @@ pub enum Phase {
     Done,
 }
 
+/// Configuration for solver seeding behavior
+#[derive(Debug, Clone)]
+pub struct SeedingConfig {
+    /// Number of top probe points to use for seeding (default: dim + 1)
+    pub top_k: Option<usize>,
+    /// Whether to use probe points to seed Nelder-Mead simplex
+    pub seed_nm: bool,
+}
+
+impl Default for SeedingConfig {
+    fn default() -> Self {
+        Self {
+            top_k: None, // Will default to dim + 1
+            seed_nm: true,
+        }
+    }
+}
+
 pub struct Solver {
     pub config: SolverConfig,
     pub history: Vec<EvalTrace>,
     pub phase: Phase,
     pub probe: Box<dyn Probe>,
     pub classifier: Box<dyn Classify>,
-    pub strategy: Option<Box<dyn Strategy>>, // Only exists in Refine phase
+    pub strategy: Option<Box<dyn Strategy>>,
+    pub seeding: SeedingConfig,
 }
 
 impl Solver {
-    /// Create a new solver with default components (UniformProbe, VarianceClassifier)
+    /// Create a new solver with MVP defaults (UniformProbe, VarianceClassifier)
     pub fn new(config: SolverConfig) -> Self {
         Self {
             config,
@@ -34,6 +53,7 @@ impl Solver {
             probe: Box::new(UniformProbe),
             classifier: Box::new(VarianceClassifier::default()),
             strategy: None,
+            seeding: SeedingConfig::default(),
         }
     }
 
@@ -46,12 +66,44 @@ impl Solver {
             probe: Box::new(UniformProbe),
             classifier,
             strategy: None,
+            seeding: SeedingConfig::default(),
         }
     }
 
-    /// Create a solver with the RPZL ResidualDecayClassifier (recommended for production)
+    /// Create a solver with the RPZL ResidualDecayClassifier
     pub fn with_residual_decay(config: SolverConfig) -> Self {
         Self::with_classifier(config, Box::new(ResidualDecayClassifier::default()))
+    }
+
+    /// Create a solver with full RPZL production configuration:
+    /// - PrimeIndexProbe for multi-scale probing
+    /// - ResidualDecayClassifier for α-based classification
+    /// - Top-K probe seeding for Nelder-Mead
+    /// - Scott's Rule bandwidth for TPE
+    pub fn rpzl(config: SolverConfig) -> Self {
+        Self {
+            config,
+            history: Vec::new(),
+            phase: Phase::Probe,
+            probe: Box::new(PrimeIndexProbe::default()),
+            classifier: Box::new(ResidualDecayClassifier::default()),
+            strategy: None,
+            seeding: SeedingConfig {
+                top_k: None,
+                seed_nm: true,
+            },
+        }
+    }
+
+    /// Get top-k best probe points for seeding
+    fn get_top_k_seed_points(&self, k: usize) -> Vec<HashMap<String, f64>> {
+        let mut sorted: Vec<_> = self.history.iter().collect();
+        sorted.sort_by(|a, b| a.value.partial_cmp(&b.value).unwrap_or(std::cmp::Ordering::Equal));
+        
+        sorted.iter()
+            .take(k)
+            .map(|t| t.params.clone())
+            .collect()
     }
 
     /// Ask the solver what to do next.
@@ -66,28 +118,14 @@ impl Solver {
                     let current_count = self.history.len();
 
                     if current_count < probe_budget {
-                        // In MVP, UniformProbe generates *all* samples at once.
-                        // But we want to support iterative asking.
-                        // UniformProbe implementation generated full set.
-                        // Let's modify Probe trait or usages if we want chunked.
-                        // For now, let's just generate candidates if we have none yet?
-                        // Actually, if we just started, generate all probe samples.
                         if current_count == 0 {
                             let candidates = self.probe.sample(&self.config);
                             return Some(candidates);
                         } else {
-                            // If we already yielded samples, we wait for them to be reported via tell()
-                            // If we are here, it means we are waiting for results or done.
-                            // If we have results for all probe samples, transition.
                             if self.history.len() >= probe_budget {
                                 self.phase = Phase::Classify;
                                 continue;
                             } else {
-                                // Waiting for user to report results.
-                                // Return empty/None implies "nothing to do yet"?
-                                // Or "Wait"?
-                                // The user calls `ask` then `tell`.
-                                // If they called `ask` and we yielded 10 points, they must `tell` 10 points.
                                 return None;
                             }
                         }
@@ -99,14 +137,24 @@ impl Solver {
                     let (mode, _score) = self.classifier.classify(&self.history);
                     self.phase = Phase::Refine(mode);
 
-                    // Factory Strategy
+                    // Factory Strategy with probe seeding
+                    let dim = self.config.bounds.len();
                     match mode {
                         Landscape::Structured => {
-                            self.strategy =
-                                Some(Box::new(NelderMead::new(self.config.bounds.len())));
+                            // Use Top-K seeding for Nelder-Mead initialization
+                            if self.seeding.seed_nm {
+                                let k = self.seeding.top_k.unwrap_or(dim + 1);
+                                let seeds = self.get_top_k_seed_points(k);
+                                self.strategy = Some(Box::new(
+                                    NelderMead::with_seed_points(dim, seeds)
+                                ));
+                            } else {
+                                self.strategy = Some(Box::new(NelderMead::new(dim)));
+                            }
                         }
                         Landscape::Chaotic => {
-                            self.strategy = Some(Box::new(TPE::new(self.config.bounds.len())));
+                            // TPE uses Scott's Rule by default (implemented in TPE::new)
+                            self.strategy = Some(Box::new(TPE::new(dim)));
                         }
                     }
                     continue;
@@ -126,9 +174,6 @@ impl Solver {
                             }
                         }
                     } else {
-                        // Strategy not initialized.
-                        // In full impl, `machine` would factory the strategy based on mode.
-                        // For Phase 2 Checkpoint, we might just return None or TODO.
                         eprintln!("Strategy not wired for mode: {:?}", mode);
                         self.phase = Phase::Done;
                         return None;
@@ -144,3 +189,4 @@ impl Solver {
         self.history.extend(eval_results);
     }
 }
+

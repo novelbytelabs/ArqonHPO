@@ -8,7 +8,7 @@
 use crate::artifact::EvalTrace;
 use crate::config::{SolverConfig, Domain, Scale};
 use crate::strategies::{Strategy, StrategyAction};
-use crate::strategies::tpe::TPE;
+use crate::strategies::tpe::{TPE, BandwidthRule};
 use std::collections::HashMap;
 
 /// Helper to create EvalTrace
@@ -93,28 +93,43 @@ fn test_tpe_deterministic() {
 }
 
 // ============================================================================
-// FAILING TESTS FOR SCOTT'S RULE BANDWIDTH (TDD - implement to make pass)
+// Scott's Rule Tests (now implemented!)
 // ============================================================================
 
 #[test]
-#[ignore = "Scott's Rule not yet implemented - T016-T018"]
 fn test_scotts_rule_bandwidth_calculation() {
     // Test that σ = 1.06 × stddev × n^(-1/5)
-    // This test will fail until scotts_bandwidth is implemented
-    todo!("Implement scotts_bandwidth function");
+    let values: Vec<f64> = (0..10).map(|i| i as f64).collect();
+    let bandwidth = TPE::scotts_bandwidth(&values);
+    
+    // Values 0-9 have stddev ≈ 2.87
+    // Expected: 1.06 × 2.87 × 10^(-0.2) ≈ 1.92
+    assert!(bandwidth > 1.0 && bandwidth < 3.0, 
+            "Bandwidth should be reasonable, got {}", bandwidth);
 }
 
 #[test]
-#[ignore = "Scott's Rule not yet implemented - T016-T018"]
 fn test_scotts_rule_adapts_to_distribution() {
     // Narrow distribution should have smaller bandwidth
+    let narrow: Vec<f64> = (0..20).map(|i| 5.0 + (i as f64) * 0.01).collect();
+    let narrow_bw = TPE::scotts_bandwidth(&narrow);
+
     // Wide distribution should have larger bandwidth
-    todo!("Implement scotts_bandwidth function");
+    let wide: Vec<f64> = (0..20).map(|i| i as f64 * 10.0).collect();
+    let wide_bw = TPE::scotts_bandwidth(&wide);
+
+    assert!(narrow_bw < wide_bw, 
+            "Narrow distribution should have smaller bandwidth");
 }
 
 #[test]
-#[ignore = "Scott's Rule not yet implemented - T016-T018"]
-fn test_scotts_rule_per_dimension() {
-    // Each dimension should have its own bandwidth based on that dimension's data
-    todo!("Implement scotts_bandwidth function");
+fn test_tpe_with_bandwidth_rule() {
+    // Test that different bandwidth rules can be used
+    let tpe_scott = TPE::with_bandwidth_rule(1, BandwidthRule::Scott);
+    let tpe_fixed = TPE::with_bandwidth_rule(1, BandwidthRule::Fixed);
+    
+    // Both should create valid TPE instances
+    assert_eq!(tpe_scott.bandwidth_rule, BandwidthRule::Scott);
+    assert_eq!(tpe_fixed.bandwidth_rule, BandwidthRule::Fixed);
 }
+

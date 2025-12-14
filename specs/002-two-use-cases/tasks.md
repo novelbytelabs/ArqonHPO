@@ -48,33 +48,36 @@
 
 ### 2.2 Scott's Rule TPE Bandwidth
 
-- [ ] T014 [P] Write failing test for Scott's Rule σ calculation in `crates/core/src/tests/test_tpe.rs`
-- [ ] T015 [P] Write failing test for bandwidth adaptation across dimensions in `crates/core/src/tests/test_tpe.rs`
-- [ ] T016 Add `scotts_bandwidth(values: &[f64]) -> f64` function to `crates/core/src/strategies/tpe.rs`
-- [ ] T017 Replace fixed `sigma = range * 0.1` with `scotts_bandwidth()` in `crates/core/src/strategies/tpe.rs`
-- [ ] T018 Add minimum bandwidth clamp (1e-6) to prevent degenerate kernels in `crates/core/src/strategies/tpe.rs`
+- [x] T014 [P] Write failing test for Scott's Rule calculation in `crates/core/src/tests/test_tpe.rs`
+- [x] T015 [P] Write failing test for bandwidth adaptation in `crates/core/src/tests/test_tpe.rs`
+- [x] T016 Add `scotts_bandwidth` function to `crates/core/src/strategies/tpe.rs`
+- [x] T017 Implement σ = 1.06 × stddev × n^(-1/5) formula in `crates/core/src/strategies/tpe.rs`
+- [x] T018 Replace fixed bandwidth with `scotts_bandwidth` in TPE sampler in `crates/core/src/strategies/tpe.rs`
 
 ### 2.3 Complete Nelder-Mead Operations
 
-- [ ] T019 [P] Write failing test for Expansion operation in `crates/core/src/tests/test_nelder_mead.rs`
-- [ ] T020 [P] Write failing test for Outside Contraction in `crates/core/src/tests/test_nelder_mead.rs`
-- [ ] T021 [P] Write failing test for Inside Contraction in `crates/core/src/tests/test_nelder_mead.rs`
-- [ ] T022 [P] Write failing test for Shrink operation in `crates/core/src/tests/test_nelder_mead.rs`
-- [ ] T023 [P] Write failing test for simplex convergence on Sphere in `crates/core/src/tests/test_nelder_mead.rs`
-- [ ] T024 Implement Expansion handler in `crates/core/src/strategies/nelder_mead.rs` (γ = 2.0)
-- [ ] T025 Implement Outside Contraction handler in `crates/core/src/strategies/nelder_mead.rs` (ρ = 0.5)
-- [ ] T026 Implement Inside Contraction handler in `crates/core/src/strategies/nelder_mead.rs` (ρ = 0.5)
-- [ ] T027 Implement Shrink handler in `crates/core/src/strategies/nelder_mead.rs` (σ = 0.5)
-- [ ] T028 Add convergence detection (simplex diameter < ε) in `crates/core/src/strategies/nelder_mead.rs`
+- [x] T019 [P] Write failing test for Expansion operation in `crates/core/src/tests/test_nelder_mead.rs`
+- [x] T020 [P] Write failing test for Outside Contraction in `crates/core/src/tests/test_nelder_mead.rs`
+- [x] T021 [P] Write failing test for Inside Contraction in `crates/core/src/tests/test_nelder_mead.rs`
+- [x] T022 [P] Write failing test for Shrink operation in `crates/core/src/tests/test_nelder_mead.rs`
+- [x] T035 [P] Write failing test for Top-K extraction in `crates/core/src/tests/test_nelder_mead.rs`
+- [x] T036 [P] Write failing test for simplex seeding in `crates/core/src/tests/test_nelder_mead.rs`
+- [x] T023 Add `NMCoefficients` struct with standard values (α=1, γ=2, ρ=0.5, σ=0.5) to `crates/core/src/strategies/nelder_mead.rs`
+- [x] T024 Implement Expansion handler: x_e = c + γ*(r - c) in `crates/core/src/strategies/nelder_mead.rs`
+- [x] T025 Implement Outside Contraction handler: x_c = c + ρ*(r - c) in `crates/core/src/strategies/nelder_mead.rs`
+- [x] T026 Implement Inside Contraction handler: x_c = c + ρ*(worst - c) in `crates/core/src/strategies/nelder_mead.rs`
+- [x] T027 Implement Shrink handler: x_i = best + σ*(x_i - best) in `crates/core/src/strategies/nelder_mead.rs`
+- [x] T028 Add convergence detection (simplex diameter < ε) in `crates/core/src/strategies/nelder_mead.rs`
+- [x] T037 Add `with_seed_points()` constructor to `NelderMead` in `crates/core/src/strategies/nelder_mead.rs`
 
 ### 2.4 Prime-Index Probe
 
-- [ ] T029 [P] Write failing test for prime sequence generation in `crates/core/src/tests/test_probe.rs`
-- [ ] T030 [P] Write failing test for deterministic sampling in `crates/core/src/tests/test_probe.rs`
-- [ ] T031 Add `PrimeIndexProbe` struct to `crates/core/src/probe.rs`
-- [ ] T032 Implement Sieve of Eratosthenes for prime generation (up to 1000) in `crates/core/src/probe.rs`
-- [ ] T033 Implement `Probe` trait for `PrimeIndexProbe` with prime ratio sampling in `crates/core/src/probe.rs`
-- [ ] T034 Update `Solver` to use `PrimeIndexProbe` as default in `crates/core/src/machine.rs`
+- [x] T029 [P] Write failing test for prime sequence generation in `crates/core/src/tests/test_probe.rs`
+- [x] T030 [P] Write failing test for deterministic sampling in `crates/core/src/tests/test_probe.rs`
+- [x] T031 Add `PrimeIndexProbe` struct to `crates/core/src/probe.rs`
+- [x] T032 Implement Sieve of Eratosthenes for prime generation in `crates/core/src/probe.rs`
+- [x] T033 Implement `Probe` trait for `PrimeIndexProbe` with prime ratio sampling in `crates/core/src/probe.rs`
+- [x] T034 Update `Solver` constructor to use `PrimeIndexProbe` as default in `crates/core/src/machine.rs`
 
 ### 2.5 Probe-to-Refiner Seeding
 

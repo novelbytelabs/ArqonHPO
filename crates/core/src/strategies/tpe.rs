@@ -28,7 +28,7 @@ pub struct TPE {
     dim: usize,
     gamma: f64,
     candidates: usize,
-    bandwidth_rule: BandwidthRule,
+    pub bandwidth_rule: BandwidthRule,
 }
 
 impl TPE {
