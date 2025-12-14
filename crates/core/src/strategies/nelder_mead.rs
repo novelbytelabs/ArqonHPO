@@ -3,6 +3,7 @@ use crate::artifact::EvalTrace;
 use crate::strategies::{Strategy, StrategyAction};
 use std::collections::HashMap;
 
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 enum NMState {
     Init,
@@ -65,9 +66,9 @@ impl Strategy for NelderMead {
                 }
 
                 self.simplex.clear();
-                for i in 0..=n {
-                    let vec = self.dict_to_vec(&sorted[i].params, &keys);
-                    self.simplex.push((sorted[i].value, vec));
+                for trace in sorted.iter().take(n + 1) {
+                    let vec = self.dict_to_vec(&trace.params, &keys);
+                    self.simplex.push((trace.value, vec));
                 }
                 
                 // Now we have a simplex. Transition to Reflection immediately?
@@ -122,13 +123,13 @@ impl NelderMead {
         
         // Centroid of [0..n-1]
         let mut centroid = vec![0.0; n];
-        for i in 0..n {
-            for j in 0..n {
-                centroid[j] += self.simplex[i].1[j];
+        for simplex_point in self.simplex.iter().take(n) {
+            for (j, c) in centroid.iter_mut().enumerate().take(n) {
+                *c += simplex_point.1[j];
             }
         }
-        for j in 0..n {
-            centroid[j] /= n as f64;
+        for c in centroid.iter_mut().take(n) {
+            *c /= n as f64;
         }
 
         // Reflect: r = c + alpha * (c - worst_pt)

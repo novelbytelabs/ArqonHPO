@@ -25,12 +25,12 @@ impl Probe for UniformProbe {
             let mut point = HashMap::new();
             for (name, domain) in &config.bounds {
                 let val = match domain.scale {
-                    Scale::Linear => rng.gen_range(domain.min..=domain.max),
+                    Scale::Linear => rng.random_range(domain.min..=domain.max),
                     Scale::Log => {
                         // linear sample in log space
                         let min_log = domain.min.ln();
                         let max_log = domain.max.ln();
-                        let s = rng.gen_range(min_log..=max_log);
+                        let s = rng.random_range(min_log..=max_log);
                         s.exp()
                     }
                 };

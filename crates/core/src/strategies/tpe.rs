@@ -6,6 +6,7 @@ use rand::Rng;
 use std::collections::HashMap;
 use rand_chacha::ChaCha8Rng;
 
+#[allow(dead_code)]
 pub struct TPE {
     dim: usize,
     gamma: f64, 
@@ -31,9 +32,9 @@ impl TPE {
     // Sample from GMM: Pick a component (point), then sample Gaussian.
     fn sample_gmm(rng: &mut ChaCha8Rng, points: &[f64], sigma: f64, min: f64, max: f64) -> f64 {
         if points.is_empty() {
-            return rng.gen_range(min..=max);
+            return rng.random_range(min..=max);
         }
-        let idx = rng.gen_range(0..points.len());
+        let idx = rng.random_range(0..points.len());
         let mean = points[idx];
         let val = mean + rng.sample::<f64, _>(rand_distr::StandardNormal) * sigma;
         val.clamp(min, max)

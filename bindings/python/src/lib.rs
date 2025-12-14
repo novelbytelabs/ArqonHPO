@@ -1,5 +1,4 @@
 use pyo3::prelude::*;
-use pyo3::types::{PyDict, PyList};
 use arqonhpo_core::machine::Solver;
 use arqonhpo_core::config::SolverConfig;
 use arqonhpo_core::artifact::EvalTrace;
@@ -10,6 +9,7 @@ struct ArqonSolver {
     inner: Solver,
 }
 
+#[allow(non_local_definitions)]
 #[pymethods]
 impl ArqonSolver {
     #[new]
