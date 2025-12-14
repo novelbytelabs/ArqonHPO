@@ -10,5 +10,3 @@ rand_chacha = { workspace = true }
 thiserror = { workspace = true }
 miette = { workspace = true }
 tracing = { workspace = true }
-
-[dev-dependencies]

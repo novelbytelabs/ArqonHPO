@@ -1,0 +1,14 @@
+[package]
+name = "arqonhpo"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "arqonhpo"
+crate-type = ["cdylib"]
+
+[dependencies]
+pyo3 = { workspace = true, features = ["extension-module", "serde"] }
+serde = { workspace = true }
+serde_json = { workspace = true }
+arqonhpo-core = { workspace = true }

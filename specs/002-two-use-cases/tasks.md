@@ -12,10 +12,10 @@ description: "Task list for ArqonHPO v1 implementation"
 
 **Purpose**: Initialize Rust workspace and Python environment.
 
-- [ ] T001 Create Cargo workspace with `core`, `cli`, `ffi`, `bindings/python` crates <!-- id: T001 -->
-- [ ] T002 Configure `Cargo.toml` workspace dependencies (serde, rand, pyo3) <!-- id: T002 -->
-- [ ] T003 [P] Setup Python environment (uv/poetry) and `pyproject.toml` (maturin) <!-- id: T003 -->
-- [ ] T004 [P] Configure development tools (Justfile, pre-commit, clippy, rustfmt) <!-- id: T004 -->
+- [x] T001 Create Cargo workspace with `core`, `cli`, `ffi`, `bindings/python` crates <!-- id: T001 -->
+- [x] T002 Configure `Cargo.toml` workspace dependencies (serde, rand, pyo3) <!-- id: T002 -->
+- [x] T003 [P] Setup Python environment (uv/poetry) and `pyproject.toml` (maturin) <!-- id: T003 -->
+- [x] T004 [P] Configure development tools (Justfile, pre-commit, clippy, rustfmt) <!-- id: T004 -->
 
 ---
 
@@ -24,13 +24,13 @@ description: "Task list for ArqonHPO v1 implementation"
 **Purpose**: Core state machine and contracts that US1/US2 depend on.
 **⚠️ CRITICAL**: Must be complete before strategies.
 
-- [ ] T005 Implement `SolverConfig` and `RunArtifact` structs with Serde in `crates/core` <!-- id: T005 -->
-- [ ] T006 Implement Deterministic RNG wrapper (`rand_chacha`) with seed management <!-- id: T006 -->
-- [ ] T007 Implement the `Probe` trait and Sobol sequence sampler <!-- id: T007 -->
-- [ ] T008 Implement the `Classify` trait and Variance-based classifier <!-- id: T008 -->
-- [ ] T009 Implement the `Solver` state machine (Probe -> Classify -> Select -> Refine) <!-- id: T009 -->
-- [ ] T010 Create `ArqonSolver` PyO3 wrapper class in `bindings/python` <!-- id: T010 -->
-- [ ] T011 Implement integration test harness in Python <!-- id: T011 -->
+- [x] T005 Implement `SolverConfig` and `RunArtifact` structs with Serde in `crates/core` <!-- id: T005 -->
+- [x] T006 Implement Deterministic RNG wrapper (`rand_chacha`) with seed management <!-- id: T006 -->
+- [x] T007 Implement the `Probe` trait and Sobol sequence sampler <!-- id: T007 -->
+- [x] T008 Implement the `Classify` trait and Variance-based classifier <!-- id: T008 -->
+- [x] T009 Implement the `Solver` state machine (Probe -> Classify -> Select -> Refine) <!-- id: T009 -->
+- [x] T010 Create `ArqonSolver` PyO3 wrapper class in `bindings/python` <!-- id: T010 -->
+- [x] T011 Implement integration test harness in Python <!-- id: T011 -->
 
 **Checkpoint**: Core engine compels the state machine loop; Python can reference it.
 
@@ -41,15 +41,15 @@ description: "Task list for ArqonHPO v1 implementation"
 **Goal**: Nelder-Mead strategy for expensive, smooth simulations.
 
 ### Tests for US1
-- [ ] T012 [P] [US1] Create synthetic "smooth expensive" benchmark function (sleep-injected) <!-- id: T012 -->
-- [ ] T013 [P] [US1] Write integration test expecting Nelder-Mead selection for smooth surface <!-- id: T013 -->
+- [x] T012 [P] [US1] Create synthetic "smooth expensive" benchmark function (sleep-injected) <!-- id: T012 -->
+- [x] T013 [P] [US1] Write integration test expecting Nelder-Mead selection for smooth surface <!-- id: T013 -->
 
 ### Implementation for US1
-- [ ] T014 [US1] Implement `Strategy` trait in `crates/core` <!-- id: T014 -->
-- [ ] T015 [US1] Implement `NelderMead` strategy logic (simplex) <!-- id: T015 -->
-- [ ] T016 [US1] Wire `NelderMead` into `Solver` selection logic (Structured mode) <!-- id: T016 -->
-- [ ] T017 [US1] Expose strategy configuration in `SolverConfig` (Rust & Python) <!-- id: T017 -->
-- [ ] T018 [US1] Verify determinism and artifacts for Sim Tuning run <!-- id: T018 -->
+- [x] T014 [US1] Implement `Strategy` trait in `crates/core` <!-- id: T014 -->
+- [x] T015 [US1] Implement `NelderMead` strategy logic (simplex) <!-- id: T015 -->
+- [x] T016 [US1] Wire `NelderMead` into `Solver` selection logic (Structured mode) <!-- id: T016 -->
+- [x] T017 [US1] Expose strategy configuration in `SolverConfig` (Rust & Python) <!-- id: T017 -->
+- [x] T018 [US1] Verify determinism and artifacts for Sim Tuning run <!-- id: T018 -->
 
 **Checkpoint**: Sim Engineers can use ArqonHPO for smooth functions.
 
