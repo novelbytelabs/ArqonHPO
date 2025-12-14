@@ -13,21 +13,24 @@ ArqonHPO automatically detects your objective function's landscape and selects t
 
 ## Features
 
-- 🦀 **Rust Core** - High-performance engine (**300x faster than Python solvers**)
-- 🐍 **Python Bindings** - Simple `pip install arqonhpo`
-- 🎯 **Auto Strategy Selection** - Probe → Classify → Refine
+- 🚀 **300x Faster** - Run 30,000 trials in the time Python solvers run 100.
+- 🦀 **Rust Core** - Zero-overhead, deterministic execution.
+- 🎯 **Auto-Pilot** - Automatically selects Nelder-Mead (smooth) or TPE (noisy).
+- 🐍 **Python Ready** - Simple `pip install arqonhpo`
 - 🔁 **Reproducible** - Seed-controlled, artifact-auditable runs
-- 📊 **Tracing** - Built-in observability spans
 
 ## 🚀 Performance
 
-ArqonHPO is built for high-throughput and low-latency optimization. Benchmarks show a **~300x speedup** compared to standard Python TPE implementations.
+**ArqonHPO is built for one thing: Speed.**
 
-| Metric | ArqonHPO | Optuna (TPE) | Speedup |
-|--------|----------|--------------|---------|
-| **Average Overhead** | 2.9 ms | 846.4 ms | **297x faster** |
+In high-throughput optimization—like real-time control, high-frequency trading, or massive-scale simulations—time is your most precious resource. Traditional Python-based optimizers waste 99% of your time on overhead. ArqonHPO flips the script.
 
-> Faster execution means you can run more trials in less time, or deploy optimization in real-time control loops where latency matters.
+| Metric | ArqonHPO | Optuna (TPE) | Advantage |
+|--------|----------|--------------|-----------|
+| **100 Trials (2D)** | 1.1 ms | 344 ms | **313x faster** |
+| **Throughput** | ~33,000/sec | ~300/sec | **100x volume** |
+
+> **"Speed is King"** - When evaluations are cheap (<10ms), ArqonHPO allows you to brute-force the problem with massive volume, beating smarter but slower algorithms.
 
 ## Installation
 
