@@ -39,15 +39,15 @@ def test_solver_basics():
     
     solver.tell(json.dumps(results))
     
-    # Next Ask should trigger transition or more points
+    # Next Ask should trigger transition to Refine phase
     # Since budget > probe count, should move to Classify -> Refine
-    # Note: Refine strategy not implemented yet (Phase 2), so expect None or Done?
-    # Logic: Classify -> Refine -> Strategy::step.
-    # Current code returns None if strategy not set.
+    # Strategy IS now implemented (Nelder-Mead for smooth functions),
+    # so it should return new candidates for evaluation.
     
     next_step = solver.ask()
-    # Expect None because strategy is missing in Phase 2
-    assert next_step is None
+    # Now that strategies are implemented, we expect candidates not None
+    assert next_step is not None
+    assert len(next_step) > 0
 
     # Determinism check (Run 2)
     solver2 = ArqonSolver(json.dumps(config))
