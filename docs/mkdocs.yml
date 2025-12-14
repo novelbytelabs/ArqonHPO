@@ -62,6 +62,7 @@ nav:
       - Python API: reference/python.md
       - Rust API: reference/rust.md
       - CLI: reference/cli.md
+  - Benchmarks: benchmarks.md
   - Architecture:
       - "ADR-001 Core": adrs/001-core-architecture.md
       - "ADR-002 Python Bridge": adrs/002-python-bridge.md
