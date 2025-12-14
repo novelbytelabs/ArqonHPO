@@ -3,6 +3,7 @@ use crate::artifact::EvalTrace;
 use std::collections::HashMap;
 
 pub mod nelder_mead;
+pub mod tpe;
 
 /// Result of a strategy step.
 pub enum StrategyAction {

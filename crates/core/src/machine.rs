@@ -4,6 +4,7 @@ use crate::probe::{Probe, UniformProbe};
 use crate::classify::{Classify, VarianceClassifier, Landscape};
 use crate::strategies::{Strategy, StrategyAction};
 use crate::strategies::nelder_mead::NelderMead;
+use crate::strategies::tpe::TPE;
 use std::collections::HashMap;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -84,10 +85,7 @@ impl Solver {
                             self.strategy = Some(Box::new(NelderMead::new(self.config.bounds.len())));
                         }
                         Landscape::Chaotic => {
-                            // T022 will implement TPE
-                            eprintln!("Chaotic mode selected but TPE not implemented yet. Fallback to NM or Stop.");
-                            // For US1 we focus on Structured.
-                            self.strategy = None; 
+                            self.strategy = Some(Box::new(TPE::new(self.config.bounds.len())));
                         }
                     }
                     continue;

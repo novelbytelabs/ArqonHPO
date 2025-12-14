@@ -60,13 +60,13 @@ description: "Task list for ArqonHPO v1 implementation"
 **Goal**: TPE strategy for rugged/ML landscapes.
 
 ### Tests for US2
-- [ ] T019 [P] [US2] Create synthetic "rugged" benchmark function <!-- id: T019 -->
-- [ ] T020 [P] [US2] Write integration test expecting TPE selection for rugged surface <!-- id: T020 -->
+- [x] T019 [P] [US2] Create synthetic "rugged" benchmark function <!-- id: T019 -->
+- [x] T020 [P] [US2] Write integration test expecting TPE selection for noisy surface <!-- id: T020 -->
 
 ### Implementation for US2
-- [ ] T021 [US2] Implement `TPE` (Tree-structured Parzen Estimator) strategy logic <!-- id: T021 -->
-- [ ] T022 [US2] Wire `TPE` into `Solver` selection logic (Chaotic mode) <!-- id: T022 -->
-- [ ] T023 [US2] Ensure `PYTHONNOUSERSITE` compatibility for benchmark runs <!-- id: T023 -->
+- [x] T021 [US2] Implement `TPE` (Tree-structured Parzen Estimator) strategy logic <!-- id: T021 -->
+- [x] T022 [US2] Wire `TPE` into `Solver` selection logic (Chaotic mode) <!-- id: T022 -->
+- [x] T023 [US2] Ensure `PYTHONNOUSERSITE` compatibility for benchmark runs <!-- id: T023 -->
 - [ ] T024 [US2] Run comparison benchmark vs Optuna (Time-to-target) <!-- id: T024 -->
 
 **Checkpoint**: ML Engineers can use ArqonHPO for model tuning.
