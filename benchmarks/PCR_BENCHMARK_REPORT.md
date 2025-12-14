@@ -9,10 +9,10 @@ and chaotic (Rastrigin, Ackley) optimization landscapes.
 
 | Benchmark | Best Value | Avg Evals | Target Rate | Avg Time |
 |-----------|------------|-----------|-------------|----------|
-| Sphere (2D) | 1.712197 | 100.0 | 0% | 0.0158s |
-| Rosenbrock (2D) | 3.126026 | 100.0 | 0% | 0.0134s |
-| Rastrigin (2D) | 2.487617 | 100.0 | 0% | 0.0145s |
-| Ackley (2D) | 3.912624 | 100.0 | 0% | 0.0165s |
+| Sphere (2D) | 1.688382 | 100.0 | 0% | 0.0152s |
+| Rosenbrock (2D) | 5.925850 | 100.0 | 0% | 0.0142s |
+| Rastrigin (2D) | 3.120101 | 100.0 | 0% | 0.0149s |
+| Ackley (2D) | 3.946138 | 100.0 | 0% | 0.0167s |
 
 ## Classification Accuracy
 

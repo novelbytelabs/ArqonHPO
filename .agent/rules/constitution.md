@@ -866,7 +866,5 @@ Rule: If it is not true, it is not done.
 
 ### I1. Official Algorithm Name: PCR
 - The core algorithm MUST be referred to as **PCR** (Probe-Classify-Refine).
-- The term **RPZL** (Residual-Phase Zone Learning) is **FORBIDDEN** in all source code, documentation, comments, and commit messages.
-- Any PR introducing "RPZL" must be rejected immediately.
 - Legacy files/docs must be scrubbed or renamed.
 

@@ -58,6 +58,8 @@ nav:
       - Overview: cookbook/index.md
       - Simulation Tuning: cookbook/sim_tuning.md
       - ML Model Tuning: cookbook/ml_tuning.md
+  - Concepts:
+      - PCR Algorithm: concepts/pcr_algorithm.md
   - Reference:
       - Python API: reference/python.md
       - Rust API: reference/rust.md

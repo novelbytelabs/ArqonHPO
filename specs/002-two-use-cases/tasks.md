@@ -85,7 +85,7 @@
 - [x] T036 Add `with_seed_points(dim: usize, seeds: Vec<HashMap<String, f64>>)` constructor to `NelderMead`
 - [x] T037 Modify `NMState::Init` to use seed points as first k simplex vertices
 - [x] T038 Add `SeedingConfig` and `get_top_k_seed_points` to `machine.rs`
-- [x] T039 Update `Solver::rpzl()` to pass top-k probe results to NM
+- [x] T039 Update `Solver::pcr()` to pass top-k probe results to NM
 
 **Checkpoint**: `cargo test --package arqonhpo-core` passes all 36 unit tests. ✅
 
