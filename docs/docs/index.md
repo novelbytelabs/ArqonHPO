@@ -11,9 +11,10 @@ ArqonHPO automatically selects the best optimization strategy based on your obje
 
 - 🚀 **300x Faster**: Run 30,000 trials in the time Python solvers run 100.
 - 🦀 **Rust Core**: Zero-overhead, deterministic execution.
-- 🎯 **Auto-Pilot**: Automatically picks Nelder-Mead or TPE based on your problem.
+- 🎯 **RPZL Auto-Pilot**: ResidualDecayClassifier detects landscape structure → picks Nelder-Mead (structured) or TPE (chaotic).
 - 🐍 **Python Ready**: `pip install arqonhpo`.
 - 🔁 **Reproducible**: Seed-controlled, artifact-auditable runs.
+- 📐 **Scott's Rule TPE**: Adaptive kernel bandwidth for optimal density estimation.
 
 ## ⚡ Multi-Agent Ready
 Perfect for **MAS** and **Actor Models** (Rust, Elixir, Go).

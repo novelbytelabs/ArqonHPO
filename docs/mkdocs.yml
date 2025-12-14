@@ -68,6 +68,7 @@ nav:
       - "ADR-002 Python Bridge": adrs/002-python-bridge.md
   - Assessments:
       - "TDD Assessment": reports/TDD_ASSESSMENT_REPORT.md
+  - Changelog: "changelog.md"
   - Contributing: contributing.md
 
 plugins:

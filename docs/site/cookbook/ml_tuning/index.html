@@ -464,6 +464,15 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#how-classification-works" class="md-nav__link">
+    <span class="md-ellipsis">
+      How Classification Works
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#example-sklearn-randomforest" class="md-nav__link">
     <span class="md-ellipsis">
       Example: Sklearn RandomForest
@@ -476,6 +485,15 @@
   <a href="#why-tpe" class="md-nav__link">
     <span class="md-ellipsis">
       Why TPE?
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scotts-rule-bandwidth" class="md-nav__link">
+    <span class="md-ellipsis">
+      Scott's Rule Bandwidth
     </span>
   </a>
   
@@ -744,6 +762,103 @@
   
   
   
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Assessments
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            Assessments
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reports/TDD_ASSESSMENT_REPORT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    TDD Assessment
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Changelog
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
     <li class="md-nav__item">
       <a href="../../contributing/" class="md-nav__link">
         
@@ -796,6 +911,15 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#how-classification-works" class="md-nav__link">
+    <span class="md-ellipsis">
+      How Classification Works
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#example-sklearn-randomforest" class="md-nav__link">
     <span class="md-ellipsis">
       Example: Sklearn RandomForest
@@ -808,6 +932,15 @@
   <a href="#why-tpe" class="md-nav__link">
     <span class="md-ellipsis">
       Why TPE?
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scotts-rule-bandwidth" class="md-nav__link">
+    <span class="md-ellipsis">
+      Scott's Rule Bandwidth
     </span>
   </a>
   
@@ -850,6 +983,13 @@
 <li>You have a generous budget (e.g., 100-500 runs).</li>
 </ul>
 <p>ArqonHPO will detect the noise/variance and use <strong>TPE (Tree-structured Parzen Estimator)</strong>.</p>
+<h2 id="how-classification-works">How Classification Works<a class="headerlink" href="#how-classification-works" title="Permanent link">&para;</a></h2>
+<p>When probe samples show flat or irregular residual patterns (no geometric decay), ArqonHPO classifies the landscape as <strong>Chaotic</strong> and selects TPE:</p>
+<ul>
+<li><strong>α ≤ 0.5</strong> → Many local optima, noisy evaluations → <strong>TPE</strong></li>
+<li>TPE models "good" (l(x)) and "bad" (g(x)) distributions using kernel density estimation</li>
+<li>Samples are drawn to maximize Expected Improvement (EI)</li>
+</ul>
 <h2 id="example-sklearn-randomforest">Example: Sklearn RandomForest<a class="headerlink" href="#example-sklearn-randomforest" title="Permanent link">&para;</a></h2>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.datasets</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_iris</span>
@@ -910,6 +1050,43 @@
 </span></code></pre></div>
 <h2 id="why-tpe">Why TPE?<a class="headerlink" href="#why-tpe" title="Permanent link">&para;</a></h2>
 <p>TPE builds probabilistic models of "good" and "bad" regions of the hyperparameter space, making it robust to noise and efficient at exploration.</p>
+<h2 id="scotts-rule-bandwidth">Scott's Rule Bandwidth<a class="headerlink" href="#scotts-rule-bandwidth" title="Permanent link">&para;</a></h2>
+<p>ArqonHPO uses <strong>Scott's Rule</strong> for adaptive kernel bandwidth in TPE:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>σ = 1.06 × stddev × n^(-1/5)
+</span></code></pre></div>
+<p>This provides:</p>
+<ul>
+<li><strong>Automatic adaptation</strong>: Bandwidth shrinks as more samples are collected</li>
+<li><strong>Data-driven scaling</strong>: Uses sample standard deviation, not fixed percentages</li>
+<li><strong>Asymptotic optimality</strong>: Minimizes mean integrated squared error for Gaussian kernels</li>
+</ul>
+<p>Compared to fixed bandwidth (e.g., 10% of range):</p>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Pros</th>
+<th>Cons</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Scott's Rule</strong></td>
+<td>Adapts to data distribution, optimal for smooth densities</td>
+<td>May under-smooth in tails</td>
+</tr>
+<tr>
+<td><strong>Fixed 10%</strong></td>
+<td>Simple, predictable</td>
+<td>Ignores data structure, often suboptimal</td>
+</tr>
+</tbody>
+</table>
+<p>ArqonHPO defaults to Scott's Rule but supports alternatives via <code>BandwidthRule</code>:</p>
+<div class="language-rust highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">TPE</span><span class="p">::</span><span class="n">with_bandwidth_rule</span><span class="p">(</span><span class="n">dim</span><span class="p">,</span><span class="w"> </span><span class="n">BandwidthRule</span><span class="p">::</span><span class="n">Scott</span><span class="p">)</span><span class="w">    </span><span class="c1">// Default</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="n">TPE</span><span class="p">::</span><span class="n">with_bandwidth_rule</span><span class="p">(</span><span class="n">dim</span><span class="p">,</span><span class="w"> </span><span class="n">BandwidthRule</span><span class="p">::</span><span class="n">Silverman</span><span class="p">)</span><span class="w">  </span><span class="c1">// Alternative</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="n">TPE</span><span class="p">::</span><span class="n">with_bandwidth_rule</span><span class="p">(</span><span class="n">dim</span><span class="p">,</span><span class="w"> </span><span class="n">BandwidthRule</span><span class="p">::</span><span class="n">Fixed</span><span class="p">(</span><span class="mf">0.1</span><span class="p">))</span><span class="w"> </span><span class="c1">// Legacy behavior</span>
+</span></code></pre></div>
 
 
 

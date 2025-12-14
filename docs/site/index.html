@@ -327,6 +327,15 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#multi-agent-ready" class="md-nav__link">
+    <span class="md-ellipsis">
+      ⚡ Multi-Agent Ready
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#installation" class="md-nav__link">
     <span class="md-ellipsis">
       Installation
@@ -742,6 +751,103 @@
   
   
   
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Assessments
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            Assessments
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="reports/TDD_ASSESSMENT_REPORT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    TDD Assessment
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Changelog
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
     <li class="md-nav__item">
       <a href="contributing/" class="md-nav__link">
         
@@ -788,6 +894,15 @@
   <a href="#features" class="md-nav__link">
     <span class="md-ellipsis">
       Features
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#multi-agent-ready" class="md-nav__link">
+    <span class="md-ellipsis">
+      ⚡ Multi-Agent Ready
     </span>
   </a>
   
@@ -849,10 +964,15 @@
 <ul>
 <li>🚀 <strong>300x Faster</strong>: Run 30,000 trials in the time Python solvers run 100.</li>
 <li>🦀 <strong>Rust Core</strong>: Zero-overhead, deterministic execution.</li>
-<li>🎯 <strong>Auto-Pilot</strong>: Automatically picks Nelder-Mead or TPE based on your problem.</li>
+<li>🎯 <strong>RPZL Auto-Pilot</strong>: ResidualDecayClassifier detects landscape structure → picks Nelder-Mead (structured) or TPE (chaotic).</li>
 <li>🐍 <strong>Python Ready</strong>: <code>pip install arqonhpo</code>.</li>
 <li>🔁 <strong>Reproducible</strong>: Seed-controlled, artifact-auditable runs.</li>
+<li>📐 <strong>Scott's Rule TPE</strong>: Adaptive kernel bandwidth for optimal density estimation.</li>
 </ul>
+<h2 id="multi-agent-ready">⚡ Multi-Agent Ready<a class="headerlink" href="#multi-agent-ready" title="Permanent link">&para;</a></h2>
+<p>Perfect for <strong>MAS</strong> and <strong>Actor Models</strong> (Rust, Elixir, Go).
+*   <strong>Zero Latency</strong>: 2.9ms overhead means you can optimize <em>inside</em> your message loop.
+*   <strong>No GIL</strong>: Rust core won't block your async Python agents.</p>
 <h2 id="installation">Installation<a class="headerlink" href="#installation" title="Permanent link">&para;</a></h2>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>pip<span class="w"> </span>install<span class="w"> </span>arqonhpo
 </span></code></pre></div>

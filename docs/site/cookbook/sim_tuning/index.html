@@ -441,6 +441,15 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#how-rpzl-classification-works" class="md-nav__link">
+    <span class="md-ellipsis">
+      How RPZL Classification Works
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#example-cfd-parameter-sweep" class="md-nav__link">
     <span class="md-ellipsis">
       Example: CFD Parameter Sweep
@@ -455,6 +464,21 @@
       Why Nelder-Mead?
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="Why Nelder-Mead?">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#nelder-mead-operations" class="md-nav__link">
+    <span class="md-ellipsis">
+      Nelder-Mead Operations
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -744,6 +768,103 @@
   
   
   
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Assessments
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            Assessments
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reports/TDD_ASSESSMENT_REPORT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    TDD Assessment
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Changelog
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
     <li class="md-nav__item">
       <a href="../../contributing/" class="md-nav__link">
         
@@ -796,6 +917,15 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#how-rpzl-classification-works" class="md-nav__link">
+    <span class="md-ellipsis">
+      How RPZL Classification Works
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#example-cfd-parameter-sweep" class="md-nav__link">
     <span class="md-ellipsis">
       Example: CFD Parameter Sweep
@@ -810,6 +940,21 @@
       Why Nelder-Mead?
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="Why Nelder-Mead?">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#nelder-mead-operations" class="md-nav__link">
+    <span class="md-ellipsis">
+      Nelder-Mead Operations
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -850,6 +995,20 @@
 <li>You have a tight evaluation budget (e.g., 50-100 runs).</li>
 </ul>
 <p>ArqonHPO will automatically detect this and use <strong>Nelder-Mead</strong>, which minimizes evaluations.</p>
+<h2 id="how-rpzl-classification-works">How RPZL Classification Works<a class="headerlink" href="#how-rpzl-classification-works" title="Permanent link">&para;</a></h2>
+<p>ArqonHPO uses the RPZL (Residual-Phase Zone Learning) algorithm to automatically detect landscape structure:</p>
+<ol>
+<li><strong>Probe Phase</strong>: Sample using PrimeIndexProbe (multi-scale coverage via prime ratios)</li>
+<li><strong>Classify Phase</strong>: Uses ResidualDecayClassifier to estimate α from residual decay:</li>
+<li>Sorted probe values are analyzed for geometric decay patterns</li>
+<li><strong>α &gt; 0.5</strong> → Structured landscape → <strong>Nelder-Mead</strong></li>
+<li><strong>α ≤ 0.5</strong> → Chaotic landscape → <strong>TPE</strong></li>
+<li><strong>Refine Phase</strong>: Best probe points seed Nelder-Mead simplex (Top-K seeding)</li>
+</ol>
+<p>This means for CFD simulations with smooth, bowl-shaped objectives, ArqonHPO will:
+- Detect geometric decay in residuals (fast convergence signature)
+- Automatically select Nelder-Mead without manual configuration
+- Use probe results to intelligently initialize the simplex</p>
 <h2 id="example-cfd-parameter-sweep">Example: CFD Parameter Sweep<a class="headerlink" href="#example-cfd-parameter-sweep" title="Permanent link">&para;</a></h2>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
@@ -904,6 +1063,45 @@
 </span></code></pre></div>
 <h2 id="why-nelder-mead">Why Nelder-Mead?<a class="headerlink" href="#why-nelder-mead" title="Permanent link">&para;</a></h2>
 <p>For smooth landscapes, Nelder-Mead's simplex operations converge faster than random search or TPE because it exploits local gradient information without needing derivatives.</p>
+<h3 id="nelder-mead-operations">Nelder-Mead Operations<a class="headerlink" href="#nelder-mead-operations" title="Permanent link">&para;</a></h3>
+<p>ArqonHPO implements all 5 standard NM operations:</p>
+<table>
+<thead>
+<tr>
+<th>Operation</th>
+<th>When Used</th>
+<th>Formula</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Reflection</strong></td>
+<td>Always tried first</td>
+<td>x_r = c + α(c - worst)</td>
+</tr>
+<tr>
+<td><strong>Expansion</strong></td>
+<td>Reflection is best so far</td>
+<td>x_e = c + γ(r - c)</td>
+</tr>
+<tr>
+<td><strong>Outside Contraction</strong></td>
+<td>Reflection between 2nd-worst and worst</td>
+<td>x_c = c + ρ(r - c)</td>
+</tr>
+<tr>
+<td><strong>Inside Contraction</strong></td>
+<td>Reflection worse than worst</td>
+<td>x_c = c + ρ(worst - c)</td>
+</tr>
+<tr>
+<td><strong>Shrink</strong></td>
+<td>Contraction fails</td>
+<td>x_i = best + σ(x_i - best)</td>
+</tr>
+</tbody>
+</table>
+<p>Standard coefficients: α=1.0, γ=2.0, ρ=0.5, σ=0.5</p>
 
 
 
