@@ -10,7 +10,7 @@ The algorithm begins by sampling the landscape using a deterministic **Prime-Ind
 Instead of random sampling, it uses prime number ratios to generate a low-discrepancy sequence that covers multiple scales simultaneously.
 
 - **Goal**: Gather enough data to estimate the landscape's "roughness".
-- **Method**: Evaluate $N$ points (configurable, default 20% of budget).
+- **Method**: Evaluate *N* points (configurable, default 20% of budget).
 
 ## 2. Classify (Residual Decay Analysis)
 
