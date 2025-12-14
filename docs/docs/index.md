@@ -15,6 +15,11 @@ ArqonHPO automatically selects the best optimization strategy based on your obje
 - 🐍 **Python Ready**: `pip install arqonhpo`.
 - 🔁 **Reproducible**: Seed-controlled, artifact-auditable runs.
 
+## ⚡ Multi-Agent Ready
+Perfect for **MAS** and **Actor Models** (Rust, Elixir, Go).
+*   **Zero Latency**: 2.9ms overhead means you can optimize *inside* your message loop.
+*   **No GIL**: Rust core won't block your async Python agents.
+
 ## Installation
 
 ```bash
