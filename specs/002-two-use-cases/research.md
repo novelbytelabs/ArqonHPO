@@ -55,3 +55,31 @@ This document resolves the open questions from `spec.md` (R1, R2) and documents 
 - `mike`: For versioned docs (v1.0, v1.1...).
 - `mdbook`: For "The Book" (Rust conceptual guide).
 
+---
+
+## RPZL Algorithm Decisions (Session 2025-12-14)
+
+### D6: Classification Algorithm
+**Decision**: Residual Decay Analysis with α < 0.5 threshold.
+**Rationale**: Coefficient of Variation (CV) incorrectly classifies high-range smooth functions as chaotic. Residual decay directly measures smoothness by analyzing how errors decrease across iterative refinement passes.
+**Alternative Rejected**: CV-based classification (too sensitive to objective value ranges).
+
+### D7: TPE Bandwidth Selection
+**Decision**: Scott's Rule (σ = 1.06 × stddev × n^(-1/5)).
+**Rationale**: Standard KDE bandwidth estimation that adapts to sample distribution. Fixed 10% range is too coarse for narrow parameter ranges and too fine for wide ranges.
+**Alternative Rejected**: Fixed percentage (doesn't adapt to data), Silverman's Rule (more complex, marginal benefit).
+
+### D8: Nelder-Mead Operations
+**Decision**: Implement all 5 operations (Reflection, Expansion, Outside Contraction, Inside Contraction, Shrink).
+**Rationale**: Current implementation only has reflection, which causes the algorithm to stall on any non-trivial optimization. Full NM is required for proper convergence.
+**Alternative Rejected**: Reflection-only (incomplete algorithm, cannot converge).
+
+### D9: Probe Sampling Strategy
+**Decision**: Prime-Index Sampling (sample at prime ratios p_k/N).
+**Rationale**: RPZL methodology uses prime-index probing for multi-scale structure detection without aliasing. Deterministic and simple to implement.
+**Alternative Rejected**: Uniform random (poor multi-scale coverage), Sobol (requires external library).
+
+### D10: Probe-to-Refiner Seeding
+**Decision**: Initialize NM simplex from top-k best probe points, with perturbations for remaining vertices.
+**Rationale**: The RPZL "secret sauce" - using probe information to seed the refiner dramatically improves convergence by starting from known-good regions.
+**Alternative Rejected**: Random init (ignores probe signal), centroid-only (insufficient diversity).

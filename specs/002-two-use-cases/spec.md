@@ -6,6 +6,18 @@
 
 ---
 
+## Clarifications
+
+### Session 2025-12-14
+
+- Q: Which classification algorithm should ArqonHPO use to determine landscape structure? → A: **Residual Decay Analysis** — Estimate α from E_k decay curve; structured if α < 0.5.
+- Q: Which bandwidth selection rule should TPE use? → A: **Scott's Rule** — σ = 1.06 × stddev × n^(-1/5).
+- Q: Which Nelder-Mead operations should be implemented? → A: **Full Implementation** — Reflection + Expansion + Outside/Inside Contraction + Shrink.
+- Q: Which probe sampling strategy should ArqonHPO use? → A: **Prime-Index Sampling** — Sample at prime ratios for multi-scale coverage.
+- Q: How should probe results seed the refinement strategy? → A: **Top-K Best Seeds** — Initialize NM simplex from k best probe points + perturbations.
+
+---
+
 ## 1. Product Overview
 
 ArqonHPO v1 is a **probe‑gated optimization engine** focused on two concrete, high‑value use cases:
@@ -117,7 +129,8 @@ Current tools also frequently lack:
 ### 4.3 Functional Requirements
 
 **FR1 – Probe phase**
-- Evaluate a fixed number of probe samples derived deterministically from `seed`, `bounds`, and `probe_ratio`.
+- Evaluate a fixed number of probe samples using **Prime-Index Sampling**: sample at prime ratios (2/N, 3/N, 5/N, 7/N...) for multi-scale structure detection.
+- Probe samples derived deterministically from `seed`, `bounds`, and `probe_ratio`.
 - Record probe samples and objective values in artifacts (or a replayable digest).
 
 **FR2 – Classification phase**
@@ -129,8 +142,8 @@ Current tools also frequently lack:
 
 **FR3 – Refinement modes**
 - Support these refinement strategies as first‑class modes:
-  - **Structured mode**: guided strategy that exploits the probe signal.
-  - **Chaotic mode**: general‑purpose strategy (e.g., TPE‑like) suitable for rugged objectives.
+  - **Structured mode**: Nelder-Mead with **full operations** (Reflection, Expansion, Outside/Inside Contraction, Shrink), **seeded from top-k best probe points** with random perturbations for remaining simplex vertices.
+  - **Chaotic mode**: TPE with adaptive bandwidth using **Scott's Rule** (σ = 1.06 × stddev × n^(-1/5)).
 
 **FR4 – Artifacts**
 - Emit a schema‑versioned run artifact containing at minimum:
@@ -180,13 +193,12 @@ Current tools also frequently lack:
 - [NEEDS CLARIFICATION] Exact target thresholds per benchmark objective for time‑to‑target comparisons.
 
 **R2 – Structured vs chaotic thresholds**  
-- [NEEDS CLARIFICATION] Numerical thresholds and rules for "structured" vs "chaotic" labels.
+- **RESOLVED**: Use **Residual Decay Analysis** to classify landscapes. Estimate decay rate α from E_k residual curve. Label as `structured` if α < 0.5 (geometric decay), otherwise `chaotic`.
 
 **R3 – Mode strategy variants**  
-- [NEEDS CLARIFICATION] Which refinement strategies are in‑scope for MVP (one per mode vs more options behind config/flags).
-- MVP defaults:
-  - Structured mode: Nelder-Mead (robust, gradient-free, suited to smooth sims).
-  - Chaotic mode: TPE (Tree-structured Parzen Estimator, standard for ML tuning).
+- **RESOLVED**: MVP strategies defined:
+  - Structured mode: Full Nelder-Mead (all 5 operations) seeded from top-k probe points.
+  - Chaotic mode: TPE with Scott's Rule adaptive bandwidth.
 
 ---
 
