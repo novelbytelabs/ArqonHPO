@@ -12,6 +12,14 @@ You have an ML training loop that:
 
 ArqonHPO will detect the noise/variance and use **TPE (Tree-structured Parzen Estimator)**.
 
+## How Classification Works
+
+When probe samples show flat or irregular residual patterns (no geometric decay), ArqonHPO classifies the landscape as **Chaotic** and selects TPE:
+
+- **α ≤ 0.5** → Many local optima, noisy evaluations → **TPE**
+- TPE models "good" (l(x)) and "bad" (g(x)) distributions using kernel density estimation
+- Samples are drawn to maximize Expected Improvement (EI)
+
 ## Example: Sklearn RandomForest
 
 ```python
@@ -76,3 +84,33 @@ print(f"Accuracy: {-best['value']:.4f}")
 ## Why TPE?
 
 TPE builds probabilistic models of "good" and "bad" regions of the hyperparameter space, making it robust to noise and efficient at exploration.
+
+## Scott's Rule Bandwidth
+
+ArqonHPO uses **Scott's Rule** for adaptive kernel bandwidth in TPE:
+
+```
+σ = 1.06 × stddev × n^(-1/5)
+```
+
+This provides:
+
+- **Automatic adaptation**: Bandwidth shrinks as more samples are collected
+- **Data-driven scaling**: Uses sample standard deviation, not fixed percentages
+- **Asymptotic optimality**: Minimizes mean integrated squared error for Gaussian kernels
+
+Compared to fixed bandwidth (e.g., 10% of range):
+
+| Method | Pros | Cons |
+|--------|------|------|
+| **Scott's Rule** | Adapts to data distribution, optimal for smooth densities | May under-smooth in tails |
+| **Fixed 10%** | Simple, predictable | Ignores data structure, often suboptimal |
+
+ArqonHPO defaults to Scott's Rule but supports alternatives via `BandwidthRule`:
+
+```rust
+TPE::with_bandwidth_rule(dim, BandwidthRule::Scott)    // Default
+TPE::with_bandwidth_rule(dim, BandwidthRule::Silverman)  // Alternative
+TPE::with_bandwidth_rule(dim, BandwidthRule::Fixed(0.1)) // Legacy behavior
+```
+

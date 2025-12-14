@@ -12,6 +12,22 @@ You have a CFD or physics simulation that:
 
 ArqonHPO will automatically detect this and use **Nelder-Mead**, which minimizes evaluations.
 
+## How RPZL Classification Works
+
+ArqonHPO uses the RPZL (Residual-Phase Zone Learning) algorithm to automatically detect landscape structure:
+
+1. **Probe Phase**: Sample using PrimeIndexProbe (multi-scale coverage via prime ratios)
+2. **Classify Phase**: Uses ResidualDecayClassifier to estimate α from residual decay:
+   - Sorted probe values are analyzed for geometric decay patterns
+   - **α > 0.5** → Structured landscape → **Nelder-Mead**
+   - **α ≤ 0.5** → Chaotic landscape → **TPE**
+3. **Refine Phase**: Best probe points seed Nelder-Mead simplex (Top-K seeding)
+
+This means for CFD simulations with smooth, bowl-shaped objectives, ArqonHPO will:
+- Detect geometric decay in residuals (fast convergence signature)
+- Automatically select Nelder-Mead without manual configuration
+- Use probe results to intelligently initialize the simplex
+
 ## Example: CFD Parameter Sweep
 
 ```python
@@ -70,3 +86,18 @@ print(f"Optimal: {best}")
 ## Why Nelder-Mead?
 
 For smooth landscapes, Nelder-Mead's simplex operations converge faster than random search or TPE because it exploits local gradient information without needing derivatives.
+
+### Nelder-Mead Operations
+
+ArqonHPO implements all 5 standard NM operations:
+
+| Operation | When Used | Formula |
+|-----------|-----------|---------|
+| **Reflection** | Always tried first | x_r = c + α(c - worst) |
+| **Expansion** | Reflection is best so far | x_e = c + γ(r - c) |
+| **Outside Contraction** | Reflection between 2nd-worst and worst | x_c = c + ρ(r - c) |
+| **Inside Contraction** | Reflection worse than worst | x_c = c + ρ(worst - c) |
+| **Shrink** | Contraction fails | x_i = best + σ(x_i - best) |
+
+Standard coefficients: α=1.0, γ=2.0, ρ=0.5, σ=0.5
+

@@ -11,14 +11,19 @@ cargo doc --open
 
 ### `arqonhpo_core::machine::Solver`
 
-The core state machine.
+The core state machine with probe-classify-refine pipeline.
 
 ```rust
 use arqonhpo_core::machine::Solver;
 use arqonhpo_core::config::SolverConfig;
 
 let config: SolverConfig = serde_json::from_str(r#"..."#)?;
-let mut solver = Solver::new(config);
+
+// MVP mode (VarianceClassifier, UniformProbe)
+let mut solver = Solver::new(config.clone());
+
+// RPZL Production mode (ResidualDecayClassifier, PrimeIndexProbe, Top-K seeding)
+let mut solver = Solver::rpzl(config);
 
 loop {
     match solver.ask() {
@@ -29,6 +34,42 @@ loop {
         None => break,
     }
 }
+```
+
+### `arqonhpo_core::classify::ResidualDecayClassifier`
+
+RPZL algorithm classifier using α estimation from residual decay curves.
+
+```rust
+use arqonhpo_core::classify::{ResidualDecayClassifier, Classify, Landscape};
+
+let classifier = ResidualDecayClassifier::default(); // α_threshold = 0.5
+
+let (landscape, alpha) = classifier.classify(&history);
+// α > 0.5 → Structured (use Nelder-Mead)
+// α ≤ 0.5 → Chaotic (use TPE)
+```
+
+### `arqonhpo_core::probe::PrimeIndexProbe`
+
+Multi-scale sampling using prime ratios for better structure detection.
+
+```rust
+use arqonhpo_core::probe::{PrimeIndexProbe, Probe};
+
+let probe = PrimeIndexProbe::default();
+let candidates = probe.sample(&config);
+```
+
+### `arqonhpo_core::strategies::tpe::BandwidthRule`
+
+Adaptive bandwidth calculation for TPE kernel density estimation.
+
+```rust
+use arqonhpo_core::strategies::tpe::{TPE, BandwidthRule};
+
+let tpe = TPE::with_bandwidth_rule(dim, BandwidthRule::Scott);
+// Scott's Rule: σ = 1.06 × stddev × n^(-1/5)
 ```
 
 ### `arqonhpo_core::config::SolverConfig`
@@ -53,3 +94,4 @@ pub struct EvalTrace {
     pub cost: f64,
 }
 ```
+
