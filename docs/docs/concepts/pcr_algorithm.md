@@ -10,7 +10,7 @@ The algorithm begins by sampling the landscape using a deterministic **Prime-Ind
 Instead of random sampling, it uses prime number ratios to generate a low-discrepancy sequence that covers multiple scales simultaneously.
 
 - **Goal**: Gather enough data to estimate the landscape's "roughness".
-- **Method**: Evaluate *N* points (configurable, default 20% of budget).
+- **Method**: Evaluate `N` points (configurable, default 20% of budget).
 
 ## 2. Classify (Residual Decay Analysis)
 
@@ -18,12 +18,12 @@ The algorithm analyzes the probe data using a **ResidualDecayClassifier**. It lo
 
 - **Structured Landscapes** (Smooth, Convex-ish):
     - Exhibit **geometric decay** in residuals.
-    - Estimates characteristic decay exponent $\alpha > 0.5$.
+    - Estimates characteristic decay exponent `α > 0.5`.
     - **Classification**: `Structured`.
 
 - **Chaotic Landscapes** (Noisy, Multimodal, Discontinuous):
     - Exhibit **irregular/flat** residuals.
-    - Estimates $\alpha \le 0.5$.
+    - Estimates `α ≤ 0.5`.
     - **Classification**: `Chaotic`.
 
 ## 3. Refine (Strategy Selection)
