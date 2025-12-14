@@ -43,10 +43,10 @@ impl Probe for UniformProbe {
 }
 
 // ============================================================================
-// Prime-Index Probe (RPZL Algorithm)
+// Prime-Index Probe (PCR Algorithm)
 // ============================================================================
 
-/// Prime-Index Probe for multi-scale structure detection (RPZL methodology).
+/// Prime-Index Probe for multi-scale structure detection (PCR methodology).
 ///
 /// Samples at prime ratios (2/N, 3/N, 5/N, 7/N, ...) to avoid aliasing
 /// and provide coverage across multiple scales simultaneously.

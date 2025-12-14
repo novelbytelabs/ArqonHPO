@@ -22,8 +22,8 @@ let config: SolverConfig = serde_json::from_str(r#"..."#)?;
 // MVP mode (VarianceClassifier, UniformProbe)
 let mut solver = Solver::new(config.clone());
 
-// RPZL Production mode (ResidualDecayClassifier, PrimeIndexProbe, Top-K seeding)
-let mut solver = Solver::rpzl(config);
+// PCR Production mode (ResidualDecayClassifier, PrimeIndexProbe, Top-K seeding)
+let mut solver = Solver::pcr(config);
 
 loop {
     match solver.ask() {
@@ -36,9 +36,26 @@ loop {
 }
 ```
 
+### `Solver::pcr()` ("Probe-Classify-Refine")
+
+The standard ArqonHPO V2 strategy pipeline.
+
+1. **Probe**: `PrimeIndexProbe` scans the landscape.
+2. **Classify**: `ResidualDecayClassifier` measures structural decay ($\alpha$).
+3. **Refine**:
+    - $\alpha > 0.5$ (Structured) $\rightarrow$ `NelderMead` (seeded with best Probe points)
+    - $\alpha \le 0.5$ (Chaotic) $\rightarrow$ `TPE` (seeded with all Probe history)
+
+```rust
+use arqonhpo::Solver;
+
+let config = SolverConfig::default();
+let solver = Solver::pcr(config); // Standard production solver
+```
+
 ### `arqonhpo_core::classify::ResidualDecayClassifier`
 
-RPZL algorithm classifier using α estimation from residual decay curves.
+PCR algorithm classifier using α estimation from residual decay curves.
 
 ```rust
 use arqonhpo_core::classify::{ResidualDecayClassifier, Classify, Landscape};

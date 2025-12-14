@@ -5,7 +5,7 @@
 ### ✅ What's Working
 - **Speed**: 177x average speedup on time-to-target
 - **Peak Performance**: 318x on Sphere-5D, 138x on Rosenbrock-2D
-- **RPZL Algorithm**: Successfully implemented and merged to main
+- **PCR Algorithm**: Successfully implemented and merged to main
 - **Infrastructure**: Tests, docs, benchmarks all in place
 
 ### ⚠️ Critical Gap: Target Reach Rate

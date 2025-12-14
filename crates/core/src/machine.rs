@@ -70,17 +70,20 @@ impl Solver {
         }
     }
 
-    /// Create a solver with the RPZL ResidualDecayClassifier
+    /// Create a solver with the ResidualDecayClassifier (used in PCR)
     pub fn with_residual_decay(config: SolverConfig) -> Self {
         Self::with_classifier(config, Box::new(ResidualDecayClassifier::default()))
     }
 
-    /// Create a solver with full RPZL production configuration:
-    /// - PrimeIndexProbe for multi-scale probing
-    /// - ResidualDecayClassifier for α-based classification
-    /// - Top-K probe seeding for Nelder-Mead
-    /// - Scott's Rule bandwidth for TPE
-    pub fn rpzl(config: SolverConfig) -> Self {
+    /// Creates a Solver with the PCR (Probe-Classify-Refine) strategy.
+    ///
+    /// This runs the complete ArqonHPO V2 algorithm:
+    /// 1. **Probe**: Use `PrimeIndexProbe` to sample the landscape at multiple scales.
+    /// 2. **Classify**: Use `ResidualDecayClassifier` to detect structure (α > 0.5) vs chaos.
+    /// 3. **Refine**: Use `Top-K` seeding to initialize the chosen strategy.
+    ///    - Structured -> Nelder-Mead (initialized with best probe points)
+    ///    - Chaotic -> TPE (initialized with all probe points)
+    pub fn pcr(config: SolverConfig) -> Self {
         Self {
             config,
             history: Vec::new(),

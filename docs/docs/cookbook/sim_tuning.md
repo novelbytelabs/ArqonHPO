@@ -12,17 +12,15 @@ You have a CFD or physics simulation that:
 
 ArqonHPO will automatically detect this and use **Nelder-Mead**, which minimizes evaluations.
 
-## How RPZL Classification Works
+## The PCR Algorithm
 
-ArqonHPO uses the RPZL (Residual-Phase Zone Learning) algorithm to automatically detect landscape structure:
+For simulation tuning, ArqonHPO uses the **Probe-Classify-Refine (PCR)** algorithm:
 
-1. **Probe Phase**: Sample using PrimeIndexProbe (multi-scale coverage via prime ratios)
-2. **Classify Phase**: Uses ResidualDecayClassifier to estimate α from residual decay:
-   - Sorted probe values are analyzed for geometric decay patterns
-   - **α > 0.5** → Structured landscape → **Nelder-Mead**
-   - **α ≤ 0.5** → Chaotic landscape → **TPE**
-3. **Refine Phase**: Best probe points seed Nelder-Mead simplex (Top-K seeding)
+1. **Probe**: It samples the parameter space using a multi-scale prime-index grid.
+2. **Classify**: It analyzes the residuals of the probe phase. Smooth simulations show fast residual decay ($\alpha > 0.5$).
+3. **Refine**: If structured, it launches **Nelder-Mead** initialized from the best probe points.
 
+This "Hybrid Seeding" allows Nelder-Mead to start exploitation immediately from a high-quality region.
 This means for CFD simulations with smooth, bowl-shaped objectives, ArqonHPO will:
 - Detect geometric decay in residuals (fast convergence signature)
 - Automatically select Nelder-Mead without manual configuration

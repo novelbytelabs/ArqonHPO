@@ -2,17 +2,13 @@
 
 Tune sklearn or PyTorch hyperparameters with TPE.
 
-## Scenario
+## The PCR Algorithm for ML
 
-You have an ML training loop that:
+While ArqonHPO is known for fast simulation tuning, it excels at ML tuning via the **PCR (Probe-Classify-Refine)** algorithm:
 
-- Is **cheap** (seconds per evaluation).
-- Has a **noisy landscape** (variance from random seeds, data splits).
-- You have a generous budget (e.g., 100-500 runs).
-
-ArqonHPO will detect the noise/variance and use **TPE (Tree-structured Parzen Estimator)**.
-
-## How Classification Works
+1. **Probe**: Scans the hyperparameter space.
+2. **Classify**: **ResidualDecayClassifier** detects that ML loss surfaces are chaotic/noisy (slow residual decay, $\alpha \le 0.5$).
+3. **Refine**: Automatically selects **TPE (Tree-structured Parzen Estimator)** instead of Nelder-Mead.
 
 When probe samples show flat or irregular residual patterns (no geometric decay), ArqonHPO classifies the landscape as **Chaotic** and selects TPE:
 

@@ -12,8 +12,8 @@
   that are relevant to this feature (delete non-applicable bullets).
 -->
 
-- Warm-start flow remains RPZL probe → variance-gated selection → refinement (no bypasses).
-- Runs remain reproducible (seeds, bounds, budget, probe_ratio, RPZL primes/stride recorded).
+- Warm-start flow remains PCR probe → variance-gated selection → refinement (no bypasses).
+- Runs remain reproducible (seeds, bounds, budget, probe_ratio, PCR primes/stride recorded).
 - Benchmarks and published numbers use conda env `helios-gpu-118` (or documented equivalent) with environment export captured.
 - Objective remains pure and side-effect free.
 - Tests precede implementation for solver logic/sampling math.

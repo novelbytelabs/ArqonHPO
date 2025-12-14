@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-RPZL Algorithm Benchmark Suite
-Tests the RPZL algorithm improvements against baseline.
+PCR Algorithm Benchmark Suite
+Tests the PCR algorithm improvements against baseline.
 
 This benchmark specifically tests:
 1. Classification accuracy (Structured vs Chaotic detection)
-2. Convergence speed improvement with RPZL
+2. Convergence speed improvement with PCR
 3. Time-to-target comparison
 """
 
@@ -231,7 +231,7 @@ def print_summary(results: Dict[str, List[BenchmarkResult]]):
     """Print summary statistics for all benchmarks."""
     
     print("\n" + "="*80)
-    print("RPZL BENCHMARK SUMMARY")
+    print("PCR BENCHMARK SUMMARY")
     print("="*80)
     
     print(f"\n{'Benchmark':<20} | {'Best Value':>12} | {'Avg Evals':>10} | {'Target Rate':>12} | {'Avg Time':>10}")
@@ -256,11 +256,11 @@ def print_summary(results: Dict[str, List[BenchmarkResult]]):
 def generate_report(results: Dict[str, List[BenchmarkResult]]) -> str:
     """Generate markdown benchmark report."""
     
-    report = """# RPZL Algorithm Benchmark Report
+    report = """# PCR Algorithm Benchmark Report
 
 ## Overview
 
-This report compares the RPZL algorithm performance on structured (Sphere, Rosenbrock) 
+This report compares the PCR algorithm performance on structured (Sphere, Rosenbrock) 
 and chaotic (Rastrigin, Ackley) optimization landscapes.
 
 ## Results Summary
@@ -285,13 +285,13 @@ and chaotic (Rastrigin, Ackley) optimization landscapes.
     report += """
 ## Classification Accuracy
 
-The RPZL algorithm uses ResidualDecayClassifier to detect landscape structure:
+The PCR algorithm uses ResidualDecayClassifier to detect landscape structure:
 - **α > 0.5** → Structured → Nelder-Mead
 - **α ≤ 0.5** → Chaotic → TPE
 
 ## Conclusions
 
-The RPZL algorithm successfully:
+The PCR algorithm successfully:
 1. Detects landscape structure during the probe phase
 2. Selects appropriate refinement strategy
 3. Uses Top-K probe seeding for faster Nelder-Mead convergence
@@ -303,7 +303,7 @@ The RPZL algorithm successfully:
 
 if __name__ == "__main__":
     print("="*60)
-    print("RPZL Algorithm Benchmark Suite")
+    print("PCR Algorithm Benchmark Suite")
     print("="*60)
     
     # Run benchmarks
@@ -316,7 +316,7 @@ if __name__ == "__main__":
     report = generate_report(results)
     
     # Save report
-    with open("RPZL_BENCHMARK_REPORT.md", "w") as f:
+    with open("PCR_BENCHMARK_REPORT.md", "w") as f:
         f.write(report)
     
-    print(f"\nReport saved to: RPZL_BENCHMARK_REPORT.md")
+    print(f"\nReport saved to: PCR_BENCHMARK_REPORT.md")

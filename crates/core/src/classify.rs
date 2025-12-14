@@ -53,10 +53,10 @@ impl Classify for VarianceClassifier {
 }
 
 // ============================================================================
-// ResidualDecayClassifier - RPZL algorithm (α decay analysis)
+// ResidualDecayClassifier - PCR algorithm (α decay analysis)
 // ============================================================================
 
-/// Classifies landscapes using residual decay analysis (RPZL methodology).
+/// Classifies landscapes using residual decay analysis (PCR methodology).
 /// 
 /// The algorithm measures how errors decrease across iterative refinement:
 /// - For smooth/structured functions, errors decay geometrically (α < 0.5)
@@ -185,7 +185,7 @@ impl Classify for ResidualDecayClassifier {
 
         let alpha = self.estimate_alpha(&residuals);
 
-        // Classification per RPZL methodology:
+        // Classification per PCR methodology:
         // α > threshold → Structured (geometric decay - residuals decrease quickly)
         // α ≤ threshold → Chaotic (flat or irregular residuals)
         // 

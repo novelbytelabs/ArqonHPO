@@ -57,7 +57,7 @@ This document resolves the open questions from `spec.md` (R1, R2) and documents 
 
 ---
 
-## RPZL Algorithm Decisions (Session 2025-12-14)
+## PCR Algorithm Decisions (Session 2025-12-14)
 
 ### D6: Classification Algorithm
 **Decision**: Residual Decay Analysis with α < 0.5 threshold.
@@ -76,10 +76,10 @@ This document resolves the open questions from `spec.md` (R1, R2) and documents 
 
 ### D9: Probe Sampling Strategy
 **Decision**: Prime-Index Sampling (sample at prime ratios p_k/N).
-**Rationale**: RPZL methodology uses prime-index probing for multi-scale structure detection without aliasing. Deterministic and simple to implement.
+**Rationale**: PCR methodology uses prime-index probing for multi-scale structure detection without aliasing. Deterministic and simple to implement.
 **Alternative Rejected**: Uniform random (poor multi-scale coverage), Sobol (requires external library).
 
 ### D10: Probe-to-Refiner Seeding
 **Decision**: Initialize NM simplex from top-k best probe points, with perturbations for remaining vertices.
-**Rationale**: The RPZL "secret sauce" - using probe information to seed the refiner dramatically improves convergence by starting from known-good regions.
+**Rationale**: The PCR "secret sauce" - using probe information to seed the refiner dramatically improves convergence by starting from known-good regions.
 **Alternative Rejected**: Random init (ignores probe signal), centroid-only (insufficient diversity).

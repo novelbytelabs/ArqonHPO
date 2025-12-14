@@ -1,4 +1,4 @@
-# Tasks: RPZL Algorithm Production Implementation
+# Tasks: PCR Algorithm Production Implementation
 
 **Input**: Design documents from `/specs/002-two-use-cases/`
 **Prerequisites**: plan.md ✅, spec.md ✅, research.md ✅, data-model.md ✅
@@ -141,12 +141,12 @@
 **Purpose**: Documentation, benchmarks, and final validation
 
 - [x] T053 [P] Update `docs/docs/reference/rust.md` with new classifier/probe API
-- [x] T054 [P] Update `docs/docs/cookbook/sim_tuning.md` with RPZL algorithm explanation
+- [x] T054 [P] Update `docs/docs/cookbook/sim_tuning.md` with PCR algorithm explanation
 - [x] T055 [P] Update `docs/docs/cookbook/ml_tuning.md` with TPE bandwidth details
 - [ ] T056 Run full benchmark suite (OPTIONAL: requires external deps)
 - [ ] T057 Generate benchmark report (OPTIONAL: skipped)
 - [ ] T058 Run quickstart validation (OPTIONAL: skipped)
-- [x] T059 Update `CHANGELOG.md` with RPZL algorithm improvements
+- [x] T059 Update `CHANGELOG.md` with PCR algorithm improvements
 
 **Checkpoint**: Documentation complete ✅
 

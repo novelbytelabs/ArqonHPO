@@ -23,7 +23,8 @@ impl ArqonSolver {
         })?;
 
         Ok(ArqonSolver {
-            inner: Solver::new(config),
+            // Use the standard PCR (Probe-Classify-Refine) algorithm for all Python consumers
+            inner: Solver::pcr(config),
         })
     }
 

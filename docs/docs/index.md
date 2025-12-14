@@ -1,17 +1,14 @@
 # ArqonHPO
 
-**Adaptive Hyperparameter Optimization for Simulations and ML.**
-
-ArqonHPO automatically selects the best optimization strategy based on your objective function's landscape:
-
-- **Smooth, Expensive Simulations?** → Nelder-Mead (fewest evaluations)
-- **Noisy, Cheap ML Models?** → TPE (handles variance)
+**Adaptive Hyperparameter Optimization for Simulations- **Smart**: The **PCR (Probe-Classify-Refine)** engine automatically switches between Nelder-Mead (for smooth physics) and TPE (for noisy ML) based on landscape analysis.
+- **Probe-Gated**: Uses prime-index sampling to "scan" the terrain before committing to a strategy.
+- **Zero-Config**: No need to choose a sampler. Just define bounds and budget.
 
 ## Features
 
 - 🚀 **300x Faster**: Run 30,000 trials in the time Python solvers run 100.
 - 🦀 **Rust Core**: Zero-overhead, deterministic execution.
-- 🎯 **RPZL Auto-Pilot**: ResidualDecayClassifier detects landscape structure → picks Nelder-Mead (structured) or TPE (chaotic).
+- 🎯 **PCR Auto-Pilot**: ResidualDecayClassifier detects landscape structure → picks Nelder-Mead (structured) or TPE (chaotic).
 - 🐍 **Python Ready**: `pip install arqonhpo`.
 - 🔁 **Reproducible**: Seed-controlled, artifact-auditable runs.
 - 📐 **Scott's Rule TPE**: Adaptive kernel bandwidth for optimal density estimation.

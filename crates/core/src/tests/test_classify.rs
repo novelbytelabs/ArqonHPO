@@ -91,7 +91,7 @@ fn test_classifier_deterministic() {
 }
 
 // ============================================================================
-// ResidualDecayClassifier Tests (RPZL Algorithm)
+// ResidualDecayClassifier Tests (PCR Algorithm)
 // ============================================================================
 
 #[test]

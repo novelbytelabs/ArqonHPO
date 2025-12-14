@@ -1,11 +1,11 @@
-# Implementation Plan: RPZL Algorithm Production Implementation
+# Implementation Plan: PCR Algorithm Production Implementation
 
 **Branch**: `002-two-use-cases` | **Date**: 2025-12-14 | **Spec**: [spec.md](./spec.md)
 **Status**: PENDING APPROVAL
 
 ## Summary
 
-Implement production-quality RPZL algorithms for ArqonHPO to achieve time-to-target parity with Optuna. This update addresses 5 algorithm gaps identified in the clarification session, targeting existing files in `crates/core/src/`.
+Implement production-quality PCR algorithms for ArqonHPO to achieve time-to-target parity with Optuna. This update addresses 5 algorithm gaps identified in the clarification session, targeting existing files in `crates/core/src/`.
 
 **Key Changes**:
 1. Replace CV classifier with Residual Decay Analysis (α < 0.5 = structured)

@@ -5,14 +5,28 @@ All notable changes to ArqonHPO will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2025-12-14
+
+### Added
+- **PCR Algorithm**: Complete Probe-Classify-Refine implementation (`Solver::pcr`).
+- **ResidualDecayClassifier**: Automatic landscape detection (Structured vs Chaotic).
+- **Scott's Rule TPE**: Adaptive bandwidth selection for chaotic landscapes.
+- **PrimeIndexProbe**: Multi-scale deterministic sampling.
+- **Full Nelder-Mead**: production-grade implementation with all 5 operations.
+- **Benchmarks**: Comprehensive suite comparing ArqonHPO vs Optuna vs Random.
+
+### Changed
+- Refactored core `Solver` to use the V2 **PCR** pipeline by default.
+- Updated documentation with **PCR** methodology and examples.
+
 ## [Unreleased]
 
 ### Added
 
-- **RPZL Algorithm Implementation** - Complete production-ready optimization pipeline:
+- **PCR Algorithm Implementation** - Complete production-ready optimization pipeline:
   - `ResidualDecayClassifier`: Automatic landscape classification using α estimation from residual decay curves. α > 0.5 → Structured (Nelder-Mead), α ≤ 0.5 → Chaotic (TPE)
   - `PrimeIndexProbe`: Multi-scale sampling using prime ratios via Sieve of Eratosthenes for better structure detection
-  - `Solver::rpzl()`: Production constructor combining all RPZL components with Top-K probe seeding
+  - `Solver::pcr()`: Production constructor combining all PCR components with Top-K probe seeding
   - `SeedingConfig`: Configurable Top-K seeding for Nelder-Mead simplex initialization
 
 - **Full Nelder-Mead Implementation** - All 5 standard operations:
@@ -34,10 +48,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Documentation
 
 - Updated `docs/docs/reference/rust.md` with new API documentation
-- Updated `docs/docs/cookbook/sim_tuning.md` with RPZL algorithm explanation
+- Updated `docs/docs/cookbook/sim_tuning.md` with PCR algorithm explanation
 - Updated `docs/docs/cookbook/ml_tuning.md` with Scott's Rule bandwidth details
 
 ### Tests
 
-- 36 Rust unit tests for all RPZL components
+- 36 Rust unit tests for all PCR components
 - 3 Python integration tests (test_integration, test_us1, test_us2)

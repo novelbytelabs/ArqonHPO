@@ -31,10 +31,10 @@
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-- Verify warm-start flow is enforced: RPZL probe → variance classification → mode selection → refinement.
+- Verify warm-start flow is enforced: PCR probe → variance classification → mode selection → refinement.
 - Verify no bypass/override exists without explicit, auditable configuration and ADR justification.
 - Verify objective evaluation is pure and deterministic (no hidden globals, no mutation, no I/O side effects).
-- Verify reproducibility metadata is captured (seeds, bounds, budget, probe_ratio, RPZL primes/stride, dependency versions).
+- Verify reproducibility metadata is captured (seeds, bounds, budget, probe_ratio, PCR primes/stride, dependency versions).
 - Verify the canonical environment is identified for benchmark claims (default: conda env `helios-gpu-118`) and an environment export is captured for reproducibility.
 - Verify tests exist/are planned first for solver logic and sampling math; integration test covers end-to-end flow.
 - Verify observability exists (phase timings + mode selection rationale) and that all loops are bounded with timeouts.
