@@ -28,18 +28,22 @@ theme:
         icon: material/brightness-4
         name: Switch to system preference
   features:
-    - navigation.tabs
     - navigation.sections
     - navigation.expand
-    - navigation.top
+    #    - toc.integrate
     - search.suggest
     - search.highlight
-    - content.code.copy
+    - content.tabs.link
     - content.code.annotate
+    - navigation.top
+    - announce.dismiss
+    - content.code.copy
+    - content.action.copy
+    - content.action.view
   icon:
     repo: fontawesome/brands/github
-  logo: https://raw.githubusercontent.com/novelbytelabs/ArqonHPO/main/docs/assets/logo.svg
-  favicon: https://raw.githubusercontent.com/novelbytelabs/ArqonHPO/main/docs/assets/favicon.ico
+  logo: assets/logo.svg
+  favicon: assets/favicon.svg
 
 extra:
   social:

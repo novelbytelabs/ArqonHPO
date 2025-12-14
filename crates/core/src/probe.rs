@@ -1,4 +1,4 @@
-use crate::config::{SolverConfig, Scale};
+use crate::config::{Scale, SolverConfig};
 use crate::rng::get_rng;
 use rand::Rng;
 use std::collections::HashMap;
@@ -11,7 +11,7 @@ pub trait Probe: Send + Sync {
 }
 
 /// A deterministic Uniform Random probe.
-/// 
+///
 /// Replaces Sobol for MVP to minimize dependencies while maintaining strict determinism.
 pub struct UniformProbe;
 

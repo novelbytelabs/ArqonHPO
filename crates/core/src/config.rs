@@ -29,4 +29,3 @@ pub enum Scale {
     Linear,
     Log,
 }
-
