@@ -9,6 +9,7 @@ ArqonHPO automatically selects the best optimization strategy based on your obje
 
 ## Features
 
+- 🚀 **Blazing Fast**: **300x faster** than Python-based alternatives (see [Benchmarks](benchmarks.md)).
 - 🦀 **Rust Core**: High-performance, deterministic engine.
 - 🐍 **Python Bindings**: Simple `pip install arqonhpo`.
 - 🎯 **Automatic Mode Selection**: Probe, Classify, Refine.

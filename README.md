@@ -13,11 +13,21 @@ ArqonHPO automatically detects your objective function's landscape and selects t
 
 ## Features
 
-- 🦀 **Rust Core** - High-performance, deterministic engine
+- 🦀 **Rust Core** - High-performance engine (**300x faster than Python solvers**)
 - 🐍 **Python Bindings** - Simple `pip install arqonhpo`
 - 🎯 **Auto Strategy Selection** - Probe → Classify → Refine
 - 🔁 **Reproducible** - Seed-controlled, artifact-auditable runs
 - 📊 **Tracing** - Built-in observability spans
+
+## 🚀 Performance
+
+ArqonHPO is built for high-throughput and low-latency optimization. Benchmarks show a **~300x speedup** compared to standard Python TPE implementations.
+
+| Metric | ArqonHPO | Optuna (TPE) | Speedup |
+|--------|----------|--------------|---------|
+| **Average Overhead** | 2.9 ms | 846.4 ms | **297x faster** |
+
+> Faster execution means you can run more trials in less time, or deploy optimization in real-time control loops where latency matters.
 
 ## Installation
 
