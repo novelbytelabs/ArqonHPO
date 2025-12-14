@@ -1,6 +1,4 @@
 import json
-import pytest
-import math
 from arqonhpo import ArqonSolver
 
 def test_solver_basics():

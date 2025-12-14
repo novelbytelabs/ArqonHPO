@@ -3,6 +3,7 @@ use arqonhpo_core::artifact::EvalTrace;
 use arqonhpo_core::config::SolverConfig;
 use arqonhpo_core::machine::Solver;
 use pyo3::prelude::*;
+use pyo3::types::PyModule;
 use std::collections::HashMap;
 
 #[pyclass]
@@ -45,7 +46,7 @@ impl ArqonSolver {
 }
 
 #[pymodule]
-fn _internal(_py: Python, m: &PyModule) -> PyResult<()> {
+fn _internal(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<ArqonSolver>()?;
     Ok(())
 }
