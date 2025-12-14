@@ -1,0 +1,250 @@
+🚀 ArqonHPO Extended Benchmark Suite
+======================================================================
+   ArqonHPO: ✅
+   Optuna:   ✅
+
+======================================================================
+USE CASE: US1: Smooth Functions
+======================================================================
+
+📊 Sphere-2D (dims=2)
+   ArqonHPO        seed=0: best=      0.0000 time=     6.1ms
+   Optuna-TPE      seed=0: best=      0.0011 time=   343.5ms
+   Random          seed=0: best=      0.4851 time=     0.2ms
+   ArqonHPO        seed=1: best=      0.0000 time=     6.1ms
+   Optuna-TPE      seed=1: best=      0.0335 time=   335.3ms
+   Random          seed=1: best=      0.0250 time=     0.2ms
+   ArqonHPO        seed=2: best=      0.6711 time=     5.7ms
+   Optuna-TPE      seed=2: best=      0.0312 time=   332.7ms
+   Random          seed=2: best=      0.0333 time=     0.2ms
+
+📊 Sphere-5D (dims=5)
+   ArqonHPO        seed=0: best=      0.7008 time=     8.3ms
+   Optuna-TPE      seed=0: best=      0.3796 time=   835.2ms
+   Random          seed=0: best=      4.9325 time=     0.4ms
+   ArqonHPO        seed=1: best=      0.0338 time=     8.1ms
+   Optuna-TPE      seed=1: best=      0.8976 time=   866.0ms
+   Random          seed=1: best=      6.1159 time=     0.4ms
+   ArqonHPO        seed=2: best=      0.0066 time=    10.0ms
+   Optuna-TPE      seed=2: best=      0.8045 time=  1010.9ms
+   Random          seed=2: best=     11.2365 time=     0.4ms
+
+📊 Sphere-10D (dims=10)
+   ArqonHPO        seed=0: best=      0.4728 time=    13.8ms
+   Optuna-TPE      seed=0: best=     12.3297 time=  1761.4ms
+   Random          seed=0: best=     22.3095 time=     0.7ms
+   ArqonHPO        seed=1: best=      0.6789 time=    13.3ms
+   Optuna-TPE      seed=1: best=     17.0074 time=  1797.3ms
+   Random          seed=1: best=     27.0162 time=     0.7ms
+   ArqonHPO        seed=2: best=      0.9875 time=    13.8ms
+   Optuna-TPE      seed=2: best=      5.4699 time=  1776.3ms
+   Random          seed=2: best=     36.0345 time=     0.7ms
+
+📊 Rosenbrock-2D (dims=2)
+   ArqonHPO        seed=0: best=      0.3303 time=     5.7ms
+   Optuna-TPE      seed=0: best=      0.1101 time=   363.2ms
+   Random          seed=0: best=      7.9888 time=     0.2ms
+   ArqonHPO        seed=1: best=      1.0502 time=   121.0ms
+   Optuna-TPE      seed=1: best=      1.0208 time=   359.2ms
+   Random          seed=1: best=      0.3733 time=     0.2ms
+   ArqonHPO        seed=2: best=     34.6757 time=     5.3ms
+   Optuna-TPE      seed=2: best=      7.6889 time=   357.0ms
+   Random          seed=2: best=     16.6148 time=     0.3ms
+
+📊 Rosenbrock-5D (dims=5)
+   ArqonHPO        seed=0: best=     81.5188 time=     7.1ms
+   Optuna-TPE      seed=0: best=    366.5997 time=   887.7ms
+   Random          seed=0: best=   8509.9744 time=     0.6ms
+   ArqonHPO        seed=1: best=      6.2535 time=     8.8ms
+   Optuna-TPE      seed=1: best=     48.9817 time=   883.9ms
+   Random          seed=1: best=   5039.1081 time=     0.5ms
+   ArqonHPO        seed=2: best=    378.7418 time=     7.8ms
+   Optuna-TPE      seed=2: best=    211.5563 time=   889.3ms
+   Random          seed=2: best=   3574.7885 time=     0.5ms
+
+📊 Beale-2D (dims=2)
+   ArqonHPO        seed=0: best=      1.5740 time=     6.1ms
+   Optuna-TPE      seed=0: best=      0.0189 time=   375.6ms
+   Random          seed=0: best=      0.0584 time=     0.2ms
+   ArqonHPO        seed=1: best=      1.4795 time=     5.2ms
+   Optuna-TPE      seed=1: best=      0.0420 time=   369.3ms
+   Random          seed=1: best=      0.0003 time=     0.3ms
+   ArqonHPO        seed=2: best=      0.3114 time=     6.0ms
+   Optuna-TPE      seed=2: best=      0.0086 time=   359.8ms
+   Random          seed=2: best=      0.8482 time=     0.3ms
+
+📊 Booth-2D (dims=2)
+   ArqonHPO        seed=0: best=      0.5933 time=     5.6ms
+   Optuna-TPE      seed=0: best=      0.0789 time=   363.7ms
+   Random          seed=0: best=      6.3867 time=     0.2ms
+   ArqonHPO        seed=1: best=      0.0001 time=     6.0ms
+   Optuna-TPE      seed=1: best=      0.0433 time=   364.3ms
+   Random          seed=1: best=      2.6485 time=     0.2ms
+   ArqonHPO        seed=2: best=      0.2670 time=     5.5ms
+   Optuna-TPE      seed=2: best=      0.1864 time=   391.4ms
+   Random          seed=2: best=      2.2583 time=     0.3ms
+
+📊 Quadratic-10D (dims=10)
+   ArqonHPO        seed=0: best=      4.5582 time=    15.8ms
+   Optuna-TPE      seed=0: best=     36.3913 time=  1726.8ms
+   Random          seed=0: best=     71.3187 time=     0.8ms
+   ArqonHPO        seed=1: best=      5.4547 time=    13.0ms
+   Optuna-TPE      seed=1: best=     25.2787 time=  1695.4ms
+   Random          seed=1: best=    119.6625 time=     0.8ms
+   ArqonHPO        seed=2: best=      4.4066 time=    13.6ms
+   Optuna-TPE      seed=2: best=     72.4468 time=  1682.1ms
+   Random          seed=2: best=    156.9736 time=     0.8ms
+
+📊 Quadratic-20D (dims=20)
+   ArqonHPO        seed=0: best=    835.2866 time=     2.3ms
+   Optuna-TPE      seed=0: best=    406.9988 time=  3236.7ms
+   Random          seed=0: best=    915.4189 time=     1.3ms
+   ArqonHPO        seed=1: best=    982.5840 time=     2.2ms
+   Optuna-TPE      seed=1: best=    449.1501 time=  3167.6ms
+   Random          seed=1: best=    729.8860 time=     1.3ms
+   ArqonHPO        seed=2: best=   1023.2688 time=     2.1ms
+   Optuna-TPE      seed=2: best=    284.2110 time=  3224.4ms
+   Random          seed=2: best=    888.0113 time=     1.5ms
+
+======================================================================
+USE CASE: US2: Noisy/Multimodal
+======================================================================
+
+📊 Rastrigin-2D (dims=2)
+   ArqonHPO        seed=0: best=     17.4594 time=     6.3ms
+   Optuna-TPE      seed=0: best=      3.1839 time=   335.2ms
+   Random          seed=0: best=      3.6173 time=     0.6ms
+   ArqonHPO        seed=1: best=      5.6346 time=     6.2ms
+   Optuna-TPE      seed=1: best=      2.3128 time=   334.0ms
+   Random          seed=1: best=      2.9163 time=     0.5ms
+   ArqonHPO        seed=2: best=     11.7858 time=     5.8ms
+   Optuna-TPE      seed=2: best=      2.1226 time=   332.5ms
+   Random          seed=2: best=      5.4432 time=     0.5ms
+
+📊 Rastrigin-5D (dims=5)
+   ArqonHPO        seed=0: best=     39.6345 time=     8.7ms
+   Optuna-TPE      seed=0: best=     30.8997 time=   826.7ms
+   Random          seed=0: best=     27.6392 time=     0.9ms
+   ArqonHPO        seed=1: best=     28.4177 time=     8.9ms
+   Optuna-TPE      seed=1: best=     11.5258 time=   823.7ms
+   Random          seed=1: best=     41.7748 time=     1.0ms
+   ArqonHPO        seed=2: best=     22.6771 time=     8.9ms
+   Optuna-TPE      seed=2: best=     28.3590 time=   829.4ms
+   Random          seed=2: best=     47.8084 time=     1.0ms
+
+📊 Rastrigin-10D (dims=10)
+   ArqonHPO        seed=0: best=     38.6974 time=    13.0ms
+   Optuna-TPE      seed=0: best=     76.0625 time=  1604.8ms
+   Random          seed=0: best=    113.0056 time=     1.8ms
+   ArqonHPO        seed=1: best=     63.1749 time=    12.4ms
+   Optuna-TPE      seed=1: best=     77.4848 time=  1579.8ms
+   Random          seed=1: best=    109.3189 time=     1.8ms
+   ArqonHPO        seed=2: best=     71.0320 time=    12.8ms
+   Optuna-TPE      seed=2: best=     95.3437 time=  1591.0ms
+   Random          seed=2: best=     86.5128 time=     1.7ms
+
+📊 Ackley-2D (dims=2)
+   ArqonHPO        seed=0: best=      0.0000 time=     8.9ms
+   Optuna-TPE      seed=0: best=      0.1975 time=   326.7ms
+   Random          seed=0: best=      2.8973 time=     1.7ms
+   ArqonHPO        seed=1: best=      0.3400 time=     9.0ms
+   Optuna-TPE      seed=1: best=      0.9901 time=   329.4ms
+   Random          seed=1: best=      1.0000 time=     2.0ms
+   ArqonHPO        seed=2: best=      2.5855 time=     9.2ms
+   Optuna-TPE      seed=2: best=      0.2257 time=   324.6ms
+   Random          seed=2: best=      1.2094 time=     1.7ms
+
+📊 Ackley-5D (dims=5)
+   ArqonHPO        seed=0: best=      2.8372 time=    10.6ms
+   Optuna-TPE      seed=0: best=      3.1423 time=   806.5ms
+   Random          seed=0: best=      4.8736 time=     2.0ms/home/irbsurfer/Projects/arqon/ArqonHPO/benchmarks/run_extended_benchmarks.py:507: UserWarning: Glyph 128640 (\N{ROCKET}) missing from font(s) DejaVu Sans.
+  plt.tight_layout()
+/home/irbsurfer/Projects/arqon/ArqonHPO/benchmarks/run_extended_benchmarks.py:508: UserWarning: Glyph 128640 (\N{ROCKET}) missing from font(s) DejaVu Sans.
+  plt.savefig(f"{output_dir}/speedup_comparison.png", dpi=150, bbox_inches="tight")
+
+   ArqonHPO        seed=1: best=      2.6754 time=    11.4ms
+   Optuna-TPE      seed=1: best=      2.6817 time=   806.6ms
+   Random          seed=1: best=      6.0101 time=     2.0ms
+   ArqonHPO        seed=2: best=      0.2017 time=    10.9ms
+   Optuna-TPE      seed=2: best=      2.8764 time=   833.7ms
+   Random          seed=2: best=      6.7959 time=     2.0ms
+
+📊 Levy-2D (dims=2)
+   ArqonHPO        seed=0: best=      0.0014 time=     9.8ms
+   Optuna-TPE      seed=0: best=      0.0049 time=   338.7ms
+   Random          seed=0: best=      0.2640 time=     2.6ms
+   ArqonHPO        seed=1: best=      0.2084 time=     9.9ms
+   Optuna-TPE      seed=1: best=      0.0537 time=   339.0ms
+   Random          seed=1: best=      0.2623 time=     2.5ms
+   ArqonHPO        seed=2: best=      0.1234 time=     9.5ms
+   Optuna-TPE      seed=2: best=      0.0241 time=   340.2ms
+   Random          seed=2: best=      0.2054 time=     2.4ms
+
+📊 Levy-5D (dims=5)
+   ArqonHPO        seed=0: best=      1.0230 time=    11.8ms
+   Optuna-TPE      seed=0: best=      0.4488 time=   838.9ms
+   Random          seed=0: best=      5.0710 time=     2.8ms
+   ArqonHPO        seed=1: best=      2.0276 time=    11.7ms
+   Optuna-TPE      seed=1: best=      0.5181 time=   827.5ms
+   Random          seed=1: best=      7.0197 time=     2.8ms
+   ArqonHPO        seed=2: best=      1.9880 time=    11.0ms
+   Optuna-TPE      seed=2: best=      7.7536 time=   825.1ms
+   Random          seed=2: best=      9.8399 time=     2.7ms
+
+📊 Griewank-5D (dims=5)
+   ArqonHPO        seed=0: best=      3.4683 time=    11.0ms
+   Optuna-TPE      seed=0: best=      2.4541 time=   824.6ms
+   Random          seed=0: best=     18.6490 time=     2.6ms
+   ArqonHPO        seed=1: best=      0.4263 time=    12.6ms
+   Optuna-TPE      seed=1: best=      4.0017 time=   824.6ms
+   Random          seed=1: best=     23.1845 time=     2.6ms
+   ArqonHPO        seed=2: best=      0.7293 time=    11.8ms
+   Optuna-TPE      seed=2: best=      4.4163 time=   831.1ms
+   Random          seed=2: best=     41.4513 time=     3.0ms
+
+📊 Schwefel-2D (dims=2)
+   ArqonHPO        seed=0: best=    176.3657 time=     7.2ms
+   Optuna-TPE      seed=0: best=     46.6592 time=   336.1ms
+   Random          seed=0: best=     63.8437 time=     1.2ms
+   ArqonHPO        seed=1: best=    324.1148 time=     7.8ms
+   Optuna-TPE      seed=1: best=     15.9437 time=   342.3ms
+   Random          seed=1: best=    304.9159 time=     1.2ms
+   ArqonHPO        seed=2: best=    430.7931 time=     7.6ms
+   Optuna-TPE      seed=2: best=      4.6852 time=   337.7ms
+   Random          seed=2: best=    145.1678 time=     1.2ms
+
+📊 NoisySphere-5D (dims=5)
+   ArqonHPO        seed=0: best=      0.5090 time=     8.1ms
+   Optuna-TPE      seed=0: best=      1.2577 time=   826.7ms
+   Random          seed=0: best=      4.5706 time=     0.5ms
+   ArqonHPO        seed=1: best=     -0.1630 time=     7.8ms
+   Optuna-TPE      seed=1: best=      0.1199 time=   838.0ms
+   Random          seed=1: best=      6.1237 time=     0.5ms
+   ArqonHPO        seed=2: best=      2.3566 time=     7.7ms
+   Optuna-TPE      seed=2: best=      1.1642 time=   959.1ms
+   Random          seed=2: best=     11.1501 time=     0.6ms
+
+📊 StochasticRosen-2D (dims=2)
+   ArqonHPO        seed=0: best=      0.4922 time=     2.5ms
+   Optuna-TPE      seed=0: best=     -0.0171 time=   421.9ms
+   Random          seed=0: best=      8.1398 time=     0.5ms
+   ArqonHPO        seed=1: best=      2.1484 time=   126.9ms
+   Optuna-TPE      seed=1: best=      1.0026 time=   384.4ms
+   Random          seed=1: best=      0.3261 time=     0.5ms
+   ArqonHPO        seed=2: best=      3.0672 time=     6.3ms
+   Optuna-TPE      seed=2: best=      7.5287 time=   365.5ms
+   Random          seed=2: best=     16.8268 time=     0.5ms
+
+======================================================================
+📊 Generating Analysis...
+======================================================================
+  💾 Saved: benchmarks/us1_smooth_functions_comparison.png
+  💾 Saved: benchmarks/us2_noisy_multimodal_comparison.png
+  💾 Saved: benchmarks/speedup_comparison.png
+  💾 Saved: benchmarks/scaling_analysis.png
+  💾 Saved: benchmarks/EXTENDED_BENCHMARK_REPORT.md
+
+======================================================================
+✅ Extended benchmarks complete!
+   Results in: benchmarks/
+======================================================================
