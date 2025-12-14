@@ -196,8 +196,28 @@ Current tools also frequently lack:
 - CLI MUST be a thin **Rust binary crate** that delegates to the core.
 - SDKs (for example, Python) MUST be **thin bindings** over the same core, not reimplementing solver logic.
 - Artifacts MUST be language‑agnostic (JSON) and used as the compatibility contract between surfaces.
+### 7.1 Production Readiness Standards (The "Million Dollar" NFRs)
 
-### 7.1 Python Binding Strategy (Non‑functional)
+**Security & Integrity**
+- **S1 (SLSA)**: Build pipeline MUST generate SLSA Level 3 attestations (provenance) to prove artifact integrity.
+- **S2 (SBOM)**: Every release MUST include a CycloneDX Software Bill of Materials.
+- **S3 (Fuzzing)**: Critical parsing logic (e.g., `SolverConfig`) MUST be continuously fuzzed (`cargo-fuzz` / OSS-Fuzz).
+- **S4 (Policy)**: Repository MUST contain `SECURITY.md` with PGP keys and reporting policy.
+
+**Developer Experience (DX)**
+- **DX1 (Rich Errors)**: The CLI and Library MUST emit diagnostic-rich errors (using `miette` or compatible) with "Did you mean?" suggestions and error codes.
+- **DX2 (Schema)**: The project MUST publish a JSON Schema to SchemaStore.org to enable zero-config auto-completion in VS Code.
+- **DX3 (Telemetry)**: The core MUST emit structured `tracing` events (JSON capable) for performance debugging.
+
+**Documentation ("The Gamut")**
+- **Doc1 (Diátaxis)**: Documentation MUST follow the 4-quadrant structure:
+  1. **Tutorials**: "Zero to Hero" quickstarts.
+  2. **Cookbook**: Runnable recipes for real-world scenarios (Sims, ML).
+  3. **Reference**: Automated API docs (Rustdoc + Mkdocstrings) and Manpages.
+  4. **Explanation**: Architecture Decision Records (ADRs) explaining the "Why".
+- **Doc2 (Community)**: Repo MUST contain standard health files: `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `gov.md`.
+
+### 7.2 Python Binding Strategy (Non‑functional)
 
 - The Python SDK MUST use **PyO3 directly** over the Rust core crate (no ctypes or cffi wrapper over the C ABI for primary usage).
 - A minimal C‑ABI crate MAY exist for non‑Python SDKs; it MUST remain small and stable and MUST NOT contain business logic.
@@ -215,3 +235,8 @@ This spec defines **what** ArqonHPO v1 must do and how success is measured. Impl
   - Config and artifact type definitions.
   - Benchmark harness and evidence pack locations.
 - A follow‑on `tasks.md` breaking implementation into test‑first tasks mapped to FRs and user stories.
+- **Production Readiness Deliverables:**
+  - Full CI/CD pipeline (GitHub Actions) for testing, building, and publishing.
+  - Public Documentation site (e.g., MkDocs/mdBook) covering API, CLI, and Architecture.
+  - SDK Type Stubs (`.pyi`) and Docstrings for all public APIs.
+
