@@ -277,6 +277,7 @@ impl Strategy for NelderMead {
                 }
 
                 // Select K=3 diverse seeds from top-10 using farthest-point selection
+                // [A/B CONFIG C/D: Top-K ENABLED]
                 let k = 3;
                 let pool_size = 10.min(sorted.len());
                 let mut seeds: Vec<(f64, Vec<f64>)> = Vec::new();

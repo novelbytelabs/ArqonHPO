@@ -207,16 +207,18 @@ pub struct PrimeSqrtSlopesRotConfig {
     pub rot_alpha: f64,
     /// Fraction of samples to replace with random points for multimodal robustness (default: 0.1)
     pub random_spice_ratio: f64,
+    /// Cranley-Patterson shift vector (randomized QMC)
+    pub cp_shift: Option<Vec<f64>>,
 }
 
 impl PrimeSqrtSlopesRotConfig {
     /// Compute adaptive spice ratio based on landscape classification
     /// 
-    /// - Structured: 5% spice (low random noise)
-    /// - Chaotic: 30% spice (more exploration) 
-    /// - Unknown: 15% spice (balanced default)
+    /// - Structured: 1% spice (minimal random noise, rely on CP shift)
+    /// - Chaotic: 20% spice (moderate exploration) 
+    /// - Unknown: 10% spice (balanced default)
     pub fn adaptive_spice_for_landscape(is_chaotic: bool) -> f64 {
-        if is_chaotic { 0.30 } else { 0.05 }
+        if is_chaotic { 0.20 } else { 0.00 }
     }
 
     /// Create config with custom spice ratio
@@ -225,6 +227,12 @@ impl PrimeSqrtSlopesRotConfig {
             random_spice_ratio: spice_ratio.clamp(0.0, 1.0),
             ..Self::default()
         }
+    }
+
+    /// Create config with CP shift
+    pub fn with_cp_shift(mut self, shift: Vec<f64>) -> Self {
+        self.cp_shift = Some(shift);
+        self
     }
 }
 
@@ -235,6 +243,7 @@ impl Default for PrimeSqrtSlopesRotConfig {
             rot_offset: 200,
             rot_alpha: std::f64::consts::SQRT_2 - 1.0, // ≈ 0.4142...
             random_spice_ratio: 0.1, // 10% random points for multimodal hedge
+            cp_shift: None,
         }
     }
 }
@@ -364,6 +373,11 @@ impl Probe for PrimeSqrtSlopesRotProbe {
             })
             .collect();
 
+        // PHASE 6: Apply Cranley-Patterson shift if provided in config
+        // "Structured Primary: Δ=0" -> Config will have cp_shift = None (or Some(dataset to 0))
+        // "Chaotic/Fallback: Δ=random" -> Config will have cp_shift = Some(random)
+        let cp_delta = self.config.cp_shift.clone().unwrap_or_else(|| vec![0.0; num_dims]);
+
         let mut candidates = Vec::with_capacity(num_samples);
 
         // 1. Inject Deterministic Anchors (Origin + Center)
@@ -394,8 +408,11 @@ impl Probe for PrimeSqrtSlopesRotProbe {
             for (dim_idx, name) in keys.iter().enumerate() {
                 if let Some(domain) = config.bounds.get(name) {
                     // Fast unit_value using precomputed slopes/rotations
-                    let pos = ((i + 1) as f64 * slopes[dim_idx] + rotations[dim_idx] + self.seed_rotation) % 1.0;
-                    let unit_pos = if pos < 0.0 { pos + 1.0 } else { pos };
+                    let base_pos = ((i + 1) as f64 * slopes[dim_idx] + rotations[dim_idx] + self.seed_rotation) % 1.0;
+                    
+                    // Apply Cranley-Patterson shift for randomized QMC
+                    let shifted_pos = (base_pos + cp_delta[dim_idx]).fract();
+                    let unit_pos = if shifted_pos < 0.0 { shifted_pos + 1.0 } else { shifted_pos };
 
                     let val = match domain.scale {
                         Scale::Linear => {
@@ -417,7 +434,6 @@ impl Probe for PrimeSqrtSlopesRotProbe {
         // Use seed_rotation to derive deterministic random seed
         let random_seed = (self.seed_rotation * 1e9) as u64;
         use rand::SeedableRng;
-        use rand::Rng;
         let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(random_seed);
 
         for _ in 0..num_random {
