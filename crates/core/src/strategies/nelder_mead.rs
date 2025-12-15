@@ -76,6 +76,10 @@ enum NMState {
         dim_idx: usize,
         /// Pending candidate points to evaluate (+δ, -δ)
         pending: Vec<Vec<f64>>,
+        /// For multi-seed: remaining seeds to try after this one
+        remaining_seeds: Vec<(f64, Vec<f64>)>,
+        /// For multi-seed: best refined result so far
+        global_best: Option<(f64, Vec<f64>)>,
     },
     /// Building initial simplex: waiting for vertex evaluations
     SimplexBuild {
@@ -264,7 +268,7 @@ impl Strategy for NelderMead {
 
         match &self.state {
             NMState::Init => {
-                // PHASE 4.2: Start with coordinate prepass before simplex
+                // PHASE 5: Multi-seed prepass - pick K=3 diverse seeds from top candidates
                 let mut sorted: Vec<_> = history.iter().collect();
                 sorted.sort_by(|a, b| a.value.partial_cmp(&b.value).unwrap_or(std::cmp::Ordering::Equal));
 
@@ -272,18 +276,68 @@ impl Strategy for NelderMead {
                     return StrategyAction::Wait;
                 }
 
-                // Get best probe point as starting anchor
-                let best_trace = &sorted[0];
-                let best_vec = self.dict_to_vec(&best_trace.params, &keys);
-                let best_val = best_trace.value;
-
-                // Start coordinate prepass with δ = [0.05, 0.01]
-                let deltas = vec![0.05, 0.01];
+                // Select K=3 diverse seeds from top-10 using farthest-point selection
+                let k = 3;
+                let pool_size = 10.min(sorted.len());
+                let mut seeds: Vec<(f64, Vec<f64>)> = Vec::new();
                 
-                // Generate first pair of candidates: best ± δ[0] in dimension 0
+                // Always include best point
+                let best = &sorted[0];
+                seeds.push((best.value, self.dict_to_vec(&best.params, &keys)));
+                
+                // Farthest-point selection for remaining seeds
+                for _ in 1..k {
+                    if seeds.len() >= pool_size {
+                        break;
+                    }
+                    
+                    let mut best_min_dist = -1.0;
+                    let mut best_idx = 1;
+                    
+                    for i in 1..pool_size {
+                        let candidate = self.dict_to_vec(&sorted[i].params, &keys);
+                        
+                        // Check if already selected
+                        let already_selected = seeds.iter().any(|(_, s)| {
+                            s.iter().zip(candidate.iter())
+                                .all(|(a, b)| (a - b).abs() < 1e-9)
+                        });
+                        if already_selected {
+                            continue;
+                        }
+                        
+                        // Compute min distance to all selected seeds
+                        let min_dist = seeds.iter()
+                            .map(|(_, s)| {
+                                s.iter().zip(candidate.iter())
+                                    .map(|(a, b)| (a - b).powi(2))
+                                    .sum::<f64>()
+                                    .sqrt()
+                            })
+                            .fold(f64::INFINITY, f64::min);
+                        
+                        if min_dist > best_min_dist {
+                            best_min_dist = min_dist;
+                            best_idx = i;
+                        }
+                    }
+                    
+                    if best_min_dist > 0.0 {
+                        let selected = &sorted[best_idx];
+                        seeds.push((selected.value, self.dict_to_vec(&selected.params, &keys)));
+                    }
+                }
+                
+                // Start coordinate prepass on first seed
+                let (seed_val, seed_vec) = seeds.remove(0);
+                let remaining_seeds = seeds;
+                
+                // Simplified prepass: just δ=0.05 (one pass for speed)
+                let deltas = vec![0.05];
                 let delta = deltas[0];
-                let mut plus = best_vec.clone();
-                let mut minus = best_vec.clone();
+                
+                let mut plus = seed_vec.clone();
+                let mut minus = seed_vec.clone();
                 plus[0] = (plus[0] + delta).min(1.0);
                 minus[0] = (minus[0] - delta).max(0.0);
                 
@@ -293,18 +347,20 @@ impl Strategy for NelderMead {
                     .collect();
 
                 self.state = NMState::CoordinatePrepass {
-                    best_point: best_vec,
-                    best_value: best_val,
+                    best_point: seed_vec,
+                    best_value: seed_val,
                     deltas,
                     delta_idx: 0,
                     dim_idx: 0,
                     pending,
+                    remaining_seeds,
+                    global_best: None,
                 };
 
                 StrategyAction::Evaluate(candidates)
             }
 
-            NMState::CoordinatePrepass { best_point, best_value, deltas, delta_idx, dim_idx, pending } => {
+            NMState::CoordinatePrepass { best_point, best_value, deltas, delta_idx, dim_idx, pending, remaining_seeds, global_best } => {
                 // Process evaluation results: take greedy improving move
                 let mut current_best = best_point.clone();
                 let mut current_val = *best_value;
@@ -340,18 +396,28 @@ impl Strategy for NelderMead {
                         delta_idx: *delta_idx,
                         dim_idx: next_dim,
                         pending: new_pending,
+                        remaining_seeds: remaining_seeds.clone(),
+                        global_best: global_best.clone(),
                     };
 
                     StrategyAction::Evaluate(candidates)
                 } else {
-                    // Finished all dimensions, check if more deltas
-                    let next_delta_idx = delta_idx + 1;
+                    // Finished all dimensions for this seed
+                    // Update global best
+                    let new_global_best = match global_best {
+                        Some((gv, gp)) if *gv < current_val => Some((*gv, gp.clone())),
+                        _ => Some((current_val, current_best.clone())),
+                    };
                     
-                    if next_delta_idx < deltas.len() {
-                        // Start next delta pass from dimension 0
-                        let delta = deltas[next_delta_idx];
-                        let mut plus = current_best.clone();
-                        let mut minus = current_best.clone();
+                    // Check if more seeds to try
+                    let mut remaining = remaining_seeds.clone();
+                    if !remaining.is_empty() {
+                        // Start prepass on next seed
+                        let (next_val, next_vec) = remaining.remove(0);
+                        let delta = deltas[0];
+                        
+                        let mut plus = next_vec.clone();
+                        let mut minus = next_vec.clone();
                         plus[0] = (plus[0] + delta).min(1.0);
                         minus[0] = (minus[0] - delta).max(0.0);
                         
@@ -361,24 +427,28 @@ impl Strategy for NelderMead {
                             .collect();
 
                         self.state = NMState::CoordinatePrepass {
-                            best_point: current_best,
-                            best_value: current_val,
+                            best_point: next_vec,
+                            best_value: next_val,
                             deltas: deltas.clone(),
-                            delta_idx: next_delta_idx,
+                            delta_idx: 0,
                             dim_idx: 0,
                             pending: new_pending,
+                            remaining_seeds: remaining,
+                            global_best: new_global_best,
                         };
 
                         StrategyAction::Evaluate(candidates)
                     } else {
-                        // Coordinate prepass complete, build simplex from improved point
-                        self.simplex.clear();
-                        self.simplex.push((current_val, current_best.clone()));
+                        // All seeds processed - use global best for simplex
+                        let (final_val, final_point) = new_global_best.unwrap_or((current_val, current_best));
                         
-                        // Build axis-aligned simplex around improved point
+                        self.simplex.clear();
+                        self.simplex.push((final_val, final_point.clone()));
+                        
+                        // Build axis-aligned simplex around best refined point
                         let scale = 0.05;
                         for dim_idx in 0..n {
-                            let mut vertex = current_best.clone();
+                            let mut vertex = final_point.clone();
                             let new_val = (vertex[dim_idx] + scale).min(1.0);
                             if (new_val - vertex[dim_idx]).abs() < 1e-6 {
                                 vertex[dim_idx] = (vertex[dim_idx] - scale).max(0.0);
