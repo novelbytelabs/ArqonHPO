@@ -196,15 +196,17 @@ impl Probe for PrimeIndexProbe {
 // Prime-Sqrt-Slopes-Rot Probe (Validated Kronecker Sequence)
 // ============================================================================
 
-/// Configuration for the prime-sqrt-slopes-rot sampler.
+/// Configuration for PrimeSqrtSlopesRotProbe
 #[derive(Debug, Clone)]
 pub struct PrimeSqrtSlopesRotConfig {
-    /// Prime index offset for slope generation (default: 50)
+    /// Starting index in prime table for slope primes (default: 50)
     pub prime_offset: usize,
-    /// Prime index offset for rotation terms (default: 200)
+    /// Starting index in prime table for rotation primes (default: 200)  
     pub rot_offset: usize,
-    /// Irrational multiplier for rotation (default: sqrt(2) - 1)
+    /// Irrational multiplier for rotation phase (default: sqrt(2) - 1)
     pub rot_alpha: f64,
+    /// Fraction of samples to replace with random points for multimodal robustness (default: 0.1)
+    pub random_spice_ratio: f64,
 }
 
 impl Default for PrimeSqrtSlopesRotConfig {
@@ -212,7 +214,8 @@ impl Default for PrimeSqrtSlopesRotConfig {
         Self {
             prime_offset: 50,
             rot_offset: 200,
-            rot_alpha: std::f64::consts::SQRT_2 - 1.0,
+            rot_alpha: std::f64::consts::SQRT_2 - 1.0, // ≈ 0.4142...
+            random_spice_ratio: 0.1, // 10% random points for multimodal hedge
         }
     }
 }
@@ -309,15 +312,48 @@ impl Probe for PrimeSqrtSlopesRotProbe {
         let primes_needed = self.config.rot_offset.max(self.config.prime_offset) + num_dims + 10;
         let primes = PrimeIndexProbe::first_n_primes(primes_needed);
 
+        // Determine how many points to spice with random
+        let num_random = (num_samples as f64 * self.config.random_spice_ratio).floor() as usize;
+        let num_qmc = num_samples - num_random;
+
         let mut candidates = Vec::with_capacity(num_samples);
 
-        for i in 0..num_samples {
+        // Generate QMC (prime-sqrt-slopes-rot) points
+        for i in 0..num_qmc {
             let mut point = HashMap::new();
 
             for (dim_idx, name) in keys.iter().enumerate() {
                 if let Some(domain) = config.bounds.get(name) {
                     let unit_pos = self.unit_value(i, dim_idx, &primes);
 
+                    let val = match domain.scale {
+                        Scale::Linear => {
+                            domain.min + unit_pos * (domain.max - domain.min)
+                        }
+                        Scale::Log => {
+                            let min_log = domain.min.ln();
+                            let max_log = domain.max.ln();
+                            (min_log + unit_pos * (max_log - min_log)).exp()
+                        }
+                    };
+                    point.insert(name.clone(), val);
+                }
+            }
+            candidates.push(point);
+        }
+
+        // Add random spice points for multimodal robustness
+        // Use seed_rotation to derive deterministic random seed
+        let random_seed = (self.seed_rotation * 1e9) as u64;
+        use rand::SeedableRng;
+        use rand::Rng;
+        let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(random_seed);
+
+        for _ in 0..num_random {
+            let mut point = HashMap::new();
+            for name in keys.iter() {
+                if let Some(domain) = config.bounds.get(name) {
+                    let unit_pos: f64 = rng.gen();
                     let val = match domain.scale {
                         Scale::Linear => {
                             domain.min + unit_pos * (domain.max - domain.min)

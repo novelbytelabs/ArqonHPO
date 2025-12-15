@@ -253,9 +253,54 @@ impl Strategy for NelderMead {
                 }
 
                 self.simplex.clear();
-                for trace in sorted.iter().take(n + 1) {
-                    let vec = self.dict_to_vec(&trace.params, &keys);
-                    self.simplex.push((trace.value, vec));
+                
+                // Use farthest-point diversity selection instead of pure best-first
+                // 1. Take top M candidates by value (pool for diversity selection)
+                let pool_size = (5 * (n + 1)).min(sorted.len());
+                let pool: Vec<_> = sorted.iter().take(pool_size).collect();
+                
+                // 2. Start with the best point as anchor
+                let best_trace = pool[0];
+                let best_vec = self.dict_to_vec(&best_trace.params, &keys);
+                self.simplex.push((best_trace.value, best_vec.clone()));
+                
+                // 3. Select remaining N points by farthest-point sampling
+                let mut selected_vecs = vec![best_vec];
+                
+                for _ in 0..n {
+                    let mut best_idx = 1;
+                    let mut best_min_dist = -1.0_f64;
+                    
+                    for (idx, trace) in pool.iter().enumerate().skip(1) {
+                        let vec = self.dict_to_vec(&trace.params, &keys);
+                        
+                        // Skip if already selected
+                        if selected_vecs.iter().any(|s| s == &vec) {
+                            continue;
+                        }
+                        
+                        // Find minimum distance to any selected point
+                        let min_dist = selected_vecs.iter()
+                            .map(|s| {
+                                s.iter().zip(vec.iter())
+                                    .map(|(a, b)| (a - b).powi(2))
+                                    .sum::<f64>()
+                                    .sqrt()
+                            })
+                            .fold(f64::INFINITY, f64::min);
+                        
+                        // Select point with maximum min-distance (farthest from selected set)
+                        if min_dist > best_min_dist {
+                            best_min_dist = min_dist;
+                            best_idx = idx;
+                        }
+                    }
+                    
+                    // Add the farthest point
+                    let chosen = pool[best_idx];
+                    let chosen_vec = self.dict_to_vec(&chosen.params, &keys);
+                    self.simplex.push((chosen.value, chosen_vec.clone()));
+                    selected_vecs.push(chosen_vec);
                 }
                 self.sort_simplex();
 
