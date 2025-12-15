@@ -1,8 +1,9 @@
 use crate::artifact::EvalTrace;
 use crate::classify::{Classify, Landscape, ResidualDecayClassifier, VarianceClassifier};
 use crate::config::SolverConfig;
-use crate::probe::{Probe, PrimeIndexProbe, UniformProbe};
+use crate::probe::{Probe, PrimeIndexProbe, PrimeSqrtSlopesRotProbe, PrimeSqrtSlopesRotConfig, UniformProbe};
 use crate::strategies::nelder_mead::NelderMead;
+// use crate::strategies::multi_start_nm::MultiStartNM;
 use crate::strategies::tpe::TPE;
 use crate::strategies::{Strategy, StrategyAction};
 use std::collections::HashMap;
@@ -78,7 +79,7 @@ impl Solver {
     /// Creates a Solver with the PCR (Probe-Classify-Refine) strategy.
     ///
     /// This runs the complete ArqonHPO V2 algorithm:
-    /// 1. **Probe**: Use `PrimeIndexProbe` to sample the landscape at multiple scales.
+    /// 1. **Probe**: Use `PrimeSqrtSlopesRotProbe` for low-discrepancy sampling with random spice.
     /// 2. **Classify**: Use `ResidualDecayClassifier` to detect structure (α > 0.5) vs chaos.
     /// 3. **Refine**: Use `Top-K` seeding to initialize the chosen strategy.
     ///    - Structured -> Nelder-Mead (initialized with best probe points)
@@ -88,7 +89,7 @@ impl Solver {
             config,
             history: Vec::new(),
             phase: Phase::Probe,
-            probe: Box::new(PrimeIndexProbe::default()),
+            probe: Box::new(PrimeSqrtSlopesRotProbe::default()),
             classifier: Box::new(ResidualDecayClassifier::default()),
             strategy: None,
             seeding: SeedingConfig {
@@ -144,19 +145,27 @@ impl Solver {
                     let dim = self.config.bounds.len();
                     match mode {
                         Landscape::Structured => {
-                            // Use Top-K seeding for Nelder-Mead initialization
-                            if self.seeding.seed_nm {
-                                let k = self.seeding.top_k.unwrap_or(dim + 1);
-                                let seeds = self.get_top_k_seed_points(k);
-                                self.strategy = Some(Box::new(
-                                    NelderMead::with_seed_points(dim, seeds)
-                                ));
-                            } else {
-                                self.strategy = Some(Box::new(NelderMead::new(dim)));
-                            }
+                            // Update probe with low spice
+                            let spice = PrimeSqrtSlopesRotConfig::adaptive_spice_for_landscape(false);
+                            let p_config = PrimeSqrtSlopesRotConfig::with_spice(spice);
+                            self.probe = Box::new(PrimeSqrtSlopesRotProbe::with_seed_and_config(self.config.seed, p_config));
+                            
+                            // Revert: Multi-Start NM caused starvation issues.
+                            // Falling back to robust Single-Start NM.
+                            let k = self.seeding.top_k.unwrap_or(dim + 1);
+                            let seeds = self.get_top_k_seed_points(k);
+                            
+                            self.strategy = Some(Box::new(
+                                NelderMead::with_seed_points(dim, seeds)
+                            ));
                         }
                         Landscape::Chaotic => {
-                            // TPE uses Scott's Rule by default (implemented in TPE::new)
+                            // Update probe with high spice
+                            let spice = PrimeSqrtSlopesRotConfig::adaptive_spice_for_landscape(true);
+                            let p_config = PrimeSqrtSlopesRotConfig::with_spice(spice);
+                            self.probe = Box::new(PrimeSqrtSlopesRotProbe::with_seed_and_config(self.config.seed, p_config));
+                            
+                            // TPE uses Scott's Rule by default
                             self.strategy = Some(Box::new(TPE::new(dim)));
                         }
                     }

@@ -3,6 +3,7 @@ use crate::config::SolverConfig;
 use std::collections::HashMap;
 
 pub mod nelder_mead;
+pub mod multi_start_nm;
 pub mod tpe;
 
 /// Result of a strategy step.

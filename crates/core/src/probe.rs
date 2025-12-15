@@ -209,6 +209,25 @@ pub struct PrimeSqrtSlopesRotConfig {
     pub random_spice_ratio: f64,
 }
 
+impl PrimeSqrtSlopesRotConfig {
+    /// Compute adaptive spice ratio based on landscape classification
+    /// 
+    /// - Structured: 5% spice (low random noise)
+    /// - Chaotic: 30% spice (more exploration) 
+    /// - Unknown: 15% spice (balanced default)
+    pub fn adaptive_spice_for_landscape(is_chaotic: bool) -> f64 {
+        if is_chaotic { 0.30 } else { 0.05 }
+    }
+
+    /// Create config with custom spice ratio
+    pub fn with_spice(spice_ratio: f64) -> Self {
+        Self {
+            random_spice_ratio: spice_ratio.clamp(0.0, 1.0),
+            ..Self::default()
+        }
+    }
+}
+
 impl Default for PrimeSqrtSlopesRotConfig {
     fn default() -> Self {
         Self {
@@ -273,6 +292,14 @@ impl PrimeSqrtSlopesRotProbe {
         }
     }
 
+    pub fn with_seed_and_config(seed: u64, config: PrimeSqrtSlopesRotConfig) -> Self {
+        let seed_rot = ((seed as f64) * std::f64::consts::FRAC_1_PI) % 1.0;
+        Self {
+            config,
+            seed_rotation: seed_rot,
+        }
+    }
+
     /// Compute the unit-cube coordinate for sample i, dimension d.
     /// 
     /// Uses: x_{i,d} = frac(i * sqrt(p_{d+prime_offset}) + frac(p_{d+rot_offset} * rot_alpha) + seed_rot)
@@ -314,17 +341,61 @@ impl Probe for PrimeSqrtSlopesRotProbe {
 
         // Determine how many points to spice with random
         let num_random = (num_samples as f64 * self.config.random_spice_ratio).floor() as usize;
-        let num_qmc = num_samples - num_random;
+        
+        // Reserve space for deterministic anchors (Origin + Center)
+        // These are critical for convex functions like Sphere where optimum is at specific locations
+        let num_anchors = 2;
+        let num_qmc = num_samples.saturating_sub(num_random + num_anchors);
+
+        // Precompute slopes and rotations once for all dimensions (OPTIMIZATION)
+        let slopes: Vec<f64> = (0..num_dims)
+            .map(|d| {
+                let prime_idx = self.config.prime_offset + d;
+                let prime = primes.get(prime_idx).copied().unwrap_or(primes[primes.len() - 1]);
+                (prime as f64).sqrt()
+            })
+            .collect();
+        
+        let rotations: Vec<f64> = (0..num_dims)
+            .map(|d| {
+                let prime_idx = self.config.rot_offset + d;
+                let prime = primes.get(prime_idx).copied().unwrap_or(primes[primes.len() - 1]);
+                (prime as f64 * self.config.rot_alpha) % 1.0
+            })
+            .collect();
 
         let mut candidates = Vec::with_capacity(num_samples);
 
-        // Generate QMC (prime-sqrt-slopes-rot) points
+        // 1. Inject Deterministic Anchors (Origin + Center)
+        let anchors_unit = [0.0, 0.5];
+        for unit_pos in anchors_unit {
+            let mut point = HashMap::new();
+            for name in keys.iter() {
+                if let Some(domain) = config.bounds.get(name) {
+                    let val = match domain.scale {
+                        Scale::Linear => domain.min + unit_pos * (domain.max - domain.min),
+                        Scale::Log => {
+                            let min_log = domain.min.ln();
+                            let max_log = domain.max.ln();
+                            (min_log + unit_pos * (max_log - min_log)).exp()
+                        }
+                    };
+                    point.insert(name.clone(), val);
+                }
+            }
+            candidates.push(point);
+            if candidates.len() >= num_samples { break; }
+        }
+
+        // 2. Generate QMC (prime-sqrt-slopes-rot) points using precomputed values
         for i in 0..num_qmc {
             let mut point = HashMap::new();
 
             for (dim_idx, name) in keys.iter().enumerate() {
                 if let Some(domain) = config.bounds.get(name) {
-                    let unit_pos = self.unit_value(i, dim_idx, &primes);
+                    // Fast unit_value using precomputed slopes/rotations
+                    let pos = ((i + 1) as f64 * slopes[dim_idx] + rotations[dim_idx] + self.seed_rotation) % 1.0;
+                    let unit_pos = if pos < 0.0 { pos + 1.0 } else { pos };
 
                     let val = match domain.scale {
                         Scale::Linear => {
