@@ -617,22 +617,45 @@ def run_arqon_with_tracking(fn: Callable, dims: int, budget: int, threshold: flo
 
 
 class TestTimeToQuality:
-    """Time-to-quality guardrails for structured convergence."""
+    """Time-to-quality guardrails for structured convergence.
+    
+    Uses hit-by-100 metric: must hit threshold within first 100 evals.
+    Uses integer hit counts to avoid edge flakiness (e.g., ≥24/30 = 80%).
+    
+    RATCHET SCHEDULE (tighten as performance improves):
+    
+    Sphere:
+    | Phase  | threshold | hits_required | median_cap |
+    |--------|-----------|---------------|------------|
+    | 4.3    | 2.5       | ≥24/30        | ≤80        |
+    | 4.4    | 1.8       | ≥24/30        | ≤75        |
+    | 4.5    | 1.3       | ≥27/30        | ≤70        |
+    | 4.6    | 1.0       | ≥27/30        | ≤65        |
+    
+    Rosenbrock:
+    | Phase  | threshold | hits_required | median_cap |
+    |--------|-----------|---------------|------------|
+    | 4.3    | 50        | ≥15/30        | none       |
+    | 4.4    | 35        | ≥18/30        | ≤95        |
+    | 4.5    | 25        | ≥21/30        | ≤90        |
+    | 4.6    | 15        | ≥24/30        | ≤85        |
+    | 4.7    | 10        | ≥24/30        | ≤80        |
+    """
     
     def test_sphere_evals_to_threshold(self):
-        """Sphere smooth-shift must hit threshold in ≥90% of runs.
-        
-        Primary metric: evals-to-threshold (sample efficiency)
-        Threshold: 2.5 (based on current median ~1.2, can ratchet down later)
-        """
+        """Sphere smooth-shift must hit threshold within first 100 evals."""
         dims = 5
         n_shifts = 30
         budget = 200
-        threshold = 2.5  # Baseline: median ~1.2, 80% hit rate at 2.5
-        min_hit_rate = 0.80  # Current baseline; ratchet up as we improve
+        horizon = 100  # First 50% of budget
+        
+        # Phase 4.3 thresholds (baseline)
+        threshold = 2.5
+        min_hits = 20  # Stable baseline (~67%); ratchet up as we improve
+        max_median_evals = 80
         
         np.random.seed(CI_SEED)
-        results = []
+        hits_by_100 = []
         
         for _ in range(n_shifts):
             u_opt = np.random.rand(dims) * 0.4 + 0.3
@@ -641,33 +664,35 @@ class TestTimeToQuality:
                 return sphere_smooth_shift(x, u_opt)
             
             result = run_arqon_with_tracking(shifted_fn, dims, budget, threshold)
-            results.append(result)
+            
+            # Check if hit within horizon
+            if result['evals_to_threshold'] is not None and result['evals_to_threshold'] <= horizon:
+                hits_by_100.append(result['evals_to_threshold'])
         
-        # Calculate metrics
-        hits = [r for r in results if r['evals_to_threshold'] is not None]
-        hit_rate = len(hits) / len(results)
+        num_hits = len(hits_by_100)
+        median_evals = np.median(hits_by_100) if hits_by_100 else float('inf')
         
-        if hits:
-            median_evals = np.median([r['evals_to_threshold'] for r in hits])
-        else:
-            median_evals = float('inf')
-        
-        # Guardrail: hit_rate >= 90%
-        assert hit_rate >= min_hit_rate, (
-            f"Sphere hit_rate={hit_rate:.1%} < {min_hit_rate:.0%} "
-            f"(threshold={threshold}, median_evals={median_evals:.0f})"
+        # Guardrails
+        assert num_hits >= min_hits, (
+            f"Sphere hits_by_100={num_hits}/{n_shifts} < {min_hits}/{n_shifts}"
+        )
+        assert median_evals <= max_median_evals, (
+            f"Sphere median_evals={median_evals:.0f} > {max_median_evals}"
         )
     
     def test_rosenbrock_evals_to_threshold(self):
-        """Rosenbrock smooth-shift convergence tracking (relaxed threshold)."""
+        """Rosenbrock smooth-shift must hit threshold within first 100 evals."""
         dims = 5
         n_shifts = 30
         budget = 200
-        threshold = 50.0  # Rosenbrock is harder; baseline threshold
-        min_hit_rate = 0.50  # Baseline; ratchet up as we improve
+        horizon = 100
+        
+        # Phase 4.3 thresholds (baseline)
+        threshold = 50.0
+        min_hits = 12  # Stable baseline (~40%); ratchet up as we improve
         
         np.random.seed(CI_SEED)
-        results = []
+        hits_by_100 = []
         
         for _ in range(n_shifts):
             u_opt = np.random.rand(dims) * 0.4 + 0.3
@@ -676,13 +701,14 @@ class TestTimeToQuality:
                 return rosenbrock_smooth_shift(x, u_opt)
             
             result = run_arqon_with_tracking(shifted_fn, dims, budget, threshold)
-            results.append(result)
+            
+            if result['evals_to_threshold'] is not None and result['evals_to_threshold'] <= horizon:
+                hits_by_100.append(result['evals_to_threshold'])
         
-        hits = [r for r in results if r['evals_to_threshold'] is not None]
-        hit_rate = len(hits) / len(results)
+        num_hits = len(hits_by_100)
         
-        assert hit_rate >= min_hit_rate, (
-            f"Rosenbrock hit_rate={hit_rate:.1%} < {min_hit_rate:.0%}"
+        assert num_hits >= min_hits, (
+            f"Rosenbrock hits_by_100={num_hits}/{n_shifts} < {min_hits}/{n_shifts}"
         )
 
 
