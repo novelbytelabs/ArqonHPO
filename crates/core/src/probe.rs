@@ -312,13 +312,16 @@ impl PrimeSqrtSlopesRotProbe {
     /// Compute the unit-cube coordinate for sample i, dimension d.
     /// 
     /// Uses: x_{i,d} = frac(i * sqrt(p_{d+prime_offset}) + frac(p_{d+rot_offset} * rot_alpha) + seed_rot)
+    /// Compute the unit-cube coordinate for sample i, dimension d.
+    /// 
+    /// Uses: x_{i,d} = frac(i * sqrt(p_{d+prime_offset}) + frac(p_{d+rot_offset} * rot_alpha) + seed_rot)
     fn unit_value(&self, i: usize, dim: usize, primes: &[usize]) -> f64 {
         let slope_prime_idx = self.config.prime_offset + dim;
         let rot_prime_idx = self.config.rot_offset + dim;
 
         // Guard against index out of bounds (should not happen with proper prime generation)
-        let slope_prime = primes.get(slope_prime_idx).copied().unwrap_or(primes[primes.len() - 1]);
-        let rot_prime = primes.get(rot_prime_idx).copied().unwrap_or(primes[primes.len() - 1]);
+        let slope_prime = primes.get(slope_prime_idx).copied().unwrap_or(primes.last().copied().unwrap_or(2));
+        let rot_prime = primes.get(rot_prime_idx).copied().unwrap_or(primes.last().copied().unwrap_or(2));
 
         // Irrational slope from sqrt(prime)
         let slope = (slope_prime as f64).sqrt();
@@ -333,12 +336,9 @@ impl PrimeSqrtSlopesRotProbe {
         // Ensure non-negative (mod can be negative for negative inputs, but we're safe here)
         if pos < 0.0 { pos + 1.0 } else { pos }
     }
-}
 
-impl Probe for PrimeSqrtSlopesRotProbe {
-    fn sample(&self, config: &SolverConfig) -> Candidates {
-        let num_samples = (config.budget as f64 * config.probe_ratio).ceil() as usize;
-        
+    /// Prepare geometry (primes, slopes, rotations, sorted keys) for the given config
+    fn prepare_geometry(&self, config: &SolverConfig) -> (Vec<usize>, Vec<f64>, Vec<f64>, Vec<String>) {
         // Sort dimension keys for deterministic ordering
         let mut keys: Vec<_> = config.bounds.keys().cloned().collect();
         keys.sort();
@@ -348,19 +348,10 @@ impl Probe for PrimeSqrtSlopesRotProbe {
         let primes_needed = self.config.rot_offset.max(self.config.prime_offset) + num_dims + 10;
         let primes = PrimeIndexProbe::first_n_primes(primes_needed);
 
-        // Determine how many points to spice with random
-        let num_random = (num_samples as f64 * self.config.random_spice_ratio).floor() as usize;
-        
-        // Reserve space for deterministic anchors (Origin + Center)
-        // These are critical for convex functions like Sphere where optimum is at specific locations
-        let num_anchors = 2;
-        let num_qmc = num_samples.saturating_sub(num_random + num_anchors);
-
-        // Precompute slopes and rotations once for all dimensions (OPTIMIZATION)
         let slopes: Vec<f64> = (0..num_dims)
             .map(|d| {
                 let prime_idx = self.config.prime_offset + d;
-                let prime = primes.get(prime_idx).copied().unwrap_or(primes[primes.len() - 1]);
+                let prime = primes.get(prime_idx).copied().unwrap_or(primes.last().copied().unwrap_or(2));
                 (prime as f64).sqrt()
             })
             .collect();
@@ -368,15 +359,77 @@ impl Probe for PrimeSqrtSlopesRotProbe {
         let rotations: Vec<f64> = (0..num_dims)
             .map(|d| {
                 let prime_idx = self.config.rot_offset + d;
-                let prime = primes.get(prime_idx).copied().unwrap_or(primes[primes.len() - 1]);
+                let prime = primes.get(prime_idx).copied().unwrap_or(primes.last().copied().unwrap_or(2));
                 (prime as f64 * self.config.rot_alpha) % 1.0
             })
             .collect();
+            
+        (primes, slopes, rotations, keys)
+    }
+
+    /// Generate a single pure LDS point at the given global index (Sharding API)
+    /// 
+    /// This is stateless, deterministic, and collision-free.
+    /// Does NOT include anchors, spice, or CP shift.
+    pub fn sample_at(&self, index: usize, config: &SolverConfig) -> HashMap<String, f64> {
+        let (_, slopes, rotations, keys) = self.prepare_geometry(config);
+        self.generate_point_at(index, &keys, &slopes, &rotations, config)
+    }
+
+    /// Generate a range of pure LDS points [start, start+count) (Sharding API)
+    ///
+    /// This is the preferred method for workers to request a shard of trials.
+    pub fn sample_range(&self, start: usize, count: usize, config: &SolverConfig) -> Vec<HashMap<String, f64>> {
+        let (_, slopes, rotations, keys) = self.prepare_geometry(config);
+        (0..count)
+            .map(|offset| self.generate_point_at(start + offset, &keys, &slopes, &rotations, config))
+            .collect()
+    }
+
+    fn generate_point_at(&self, i: usize, keys: &[String], slopes: &[f64], rotations: &[f64], config: &SolverConfig) -> HashMap<String, f64> {
+        let mut point = HashMap::new();
+
+        for (dim_idx, name) in keys.iter().enumerate() {
+             if let Some(domain) = config.bounds.get(name) {
+                // Fast unit_value from precomputed slopes/rotations
+                let unit_pos = ((i + 1) as f64 * slopes[dim_idx] + rotations[dim_idx] + self.seed_rotation) % 1.0;
+                let unit_pos = if unit_pos < 0.0 { unit_pos + 1.0 } else { unit_pos };
+                
+                let val = match domain.scale {
+                    Scale::Linear | Scale::Periodic => {
+                        domain.min + unit_pos * (domain.max - domain.min)
+                    }
+                    Scale::Log => {
+                        let min_log = domain.min.ln();
+                        let max_log = domain.max.ln();
+                        (min_log + unit_pos * (max_log - min_log)).exp()
+                    }
+                };
+                point.insert(name.clone(), val);
+            }
+        }
+        point
+    }
+}
+
+impl Probe for PrimeSqrtSlopesRotProbe {
+    fn sample(&self, config: &SolverConfig) -> Candidates {
+        let (_, slopes, rotations, keys) = self.prepare_geometry(config);
+        
+        // Calculate budget based on config
+        let num_samples = (config.budget as f64 * config.probe_ratio).ceil() as usize;
+        
+        // Determine how many points to spice with random
+        let num_random = (num_samples as f64 * self.config.random_spice_ratio).floor() as usize;
+        
+        // Reserve space for deterministic anchors (Origin + Center)
+        let num_anchors = 2;
+        let num_qmc = num_samples.saturating_sub(num_random + num_anchors);
 
         // PHASE 6: Apply Cranley-Patterson shift if provided in config
         // "Structured Primary: Δ=0" -> Config will have cp_shift = None (or Some(dataset to 0))
         // "Chaotic/Fallback: Δ=random" -> Config will have cp_shift = Some(random)
-        let cp_delta = self.config.cp_shift.clone().unwrap_or_else(|| vec![0.0; num_dims]);
+        let cp_delta = self.config.cp_shift.clone().unwrap_or_else(|| vec![0.0; keys.len()]);
 
         let mut candidates = Vec::with_capacity(num_samples);
 
