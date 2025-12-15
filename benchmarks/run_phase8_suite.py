@@ -190,7 +190,19 @@ def run_arqon(method, config_base, objective, budget, seed):
             results = []
             for c in cands:
                 y = objective(c)
-                results.append({"cost": y, "param_values": c})
+                # Matches Rust EvalTrace: eval_id, params, value, cost
+                # Using deterministic or simple ID
+                # We don't have global ID easily unless we track it
+                # Using hash or timestamp? Or simple localized counter?
+                # Benchmark doesn't strictly rely on ID uniqueness across runs, just validity.
+                # Let's use simple random ID or hash of params
+                eid = int(hashlib.md5(json.dumps(c, sort_keys=True).encode()).hexdigest()[:8], 16)
+                results.append({
+                    "eval_id": eid,
+                    "params": c,
+                    "value": y,
+                    "cost": y
+                })
             solver.tell(json.dumps(results))
             
     return "ok", None
