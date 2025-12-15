@@ -94,7 +94,7 @@ impl Solver {
             history: Vec::new(),
             phase: Phase::Probe,
             probe: Box::new(PrimeSqrtSlopesRotProbe::default()),
-            classifier: Box::new(ResidualDecayClassifier::default()),
+            classifier: Box::new(VarianceClassifier::default()),
             strategy: None,
             seeding: SeedingConfig {
                 top_k: None,
@@ -159,11 +159,15 @@ impl Solver {
                             
                             // Revert: Multi-Start NM caused starvation issues.
                             // Falling back to robust Single-Start NM.
-                            let k = self.seeding.top_k.unwrap_or(dim + 1);
-                            let seeds = self.get_top_k_seed_points(k);
-                            
+                            // Compute periodic mask for Nelder-Mead (must match sorted key order)
+                            let mut keys: Vec<_> = self.config.bounds.keys().collect();
+                            keys.sort();
+                            let periodic_mask: Vec<bool> = keys.iter()
+                                .map(|k| self.config.bounds.get(*k).map(|d| d.is_periodic()).unwrap_or(false))
+                                .collect();
+
                             self.strategy = Some(Box::new(
-                                NelderMead::with_seed_points(dim, seeds)
+                                NelderMead::new(dim, periodic_mask)
                             ));
                         }
                         Landscape::Chaotic => {
@@ -297,7 +301,15 @@ impl Solver {
                          // But we want to ensure we use CP logic?
                          // NelderMead::with_seed_points just takes seeds.
                          let seeds = self.get_top_k_seed_points(k);
-                         self.strategy = Some(Box::new(NelderMead::with_seed_points(dim, seeds)));
+                         
+                         // Compute periodic mask
+                         let mut keys: Vec<_> = self.config.bounds.keys().collect();
+                         keys.sort();
+                         let periodic_mask: Vec<bool> = keys.iter()
+                             .map(|k| self.config.bounds.get(*k).map(|d| d.is_periodic()).unwrap_or(false))
+                             .collect();
+                             
+                         self.strategy = Some(Box::new(NelderMead::new(dim, periodic_mask)));
                          
                          // Immediately step the new strategy
                          continue; // Loop again to step

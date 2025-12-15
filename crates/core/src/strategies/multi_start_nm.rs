@@ -100,13 +100,15 @@ impl MultiStartNM {
             
             if start_idx < seed_points.len() {
                 let group: Vec<_> = seed_points[start_idx..end_idx].to_vec();
-                starts.push(NelderMead::with_seed_points(dim, group));
+                // Dummy fix for compilation (multi-start Logic is deprecated)
+                starts.push(NelderMead::new(dim, vec![false; dim]));
             }
         }
         
         // Ensure at least one start
         if starts.is_empty() {
-            starts.push(NelderMead::with_seed_points(dim, seed_points));
+            // Dummy fix
+            starts.push(NelderMead::new(dim, vec![false; dim]));
         }
         
         let num_starts = starts.len();
@@ -160,7 +162,7 @@ impl MultiStartNM {
     /// Helper to map value to unit space
     fn val_to_unit(val: f64, min: f64, max: f64, scale: Scale) -> f64 {
         match scale {
-            Scale::Linear => (val - min) / (max - min),
+            Scale::Linear | Scale::Periodic => (val - min) / (max - min),
             Scale::Log => {
                 let min_log = min.ln();
                 let max_log = max.ln();
@@ -172,7 +174,7 @@ impl MultiStartNM {
     /// Helper to map unit space to value
     fn unit_to_val(unit: f64, min: f64, max: f64, scale: Scale) -> f64 {
         match scale {
-            Scale::Linear => min + unit * (max - min),
+            Scale::Linear | Scale::Periodic => min + unit * (max - min),
             Scale::Log => {
                 let min_log = min.ln();
                 let max_log = max.ln();

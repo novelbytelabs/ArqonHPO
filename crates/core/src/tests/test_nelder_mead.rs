@@ -61,7 +61,8 @@ fn simplex_history() -> Vec<EvalTrace> {
 
 #[test]
 fn test_nelder_mead_init_builds_simplex() {
-    let mut nm = NelderMead::new(2);
+    let dim = 2;
+    let mut nm = NelderMead::new(dim, vec![false; dim]);
     let config = test_config_2d();
     let history = simplex_history();
     
@@ -84,8 +85,8 @@ fn test_nelder_mead_deterministic() {
     let config = test_config_2d();
     let history = simplex_history();
     
-    let mut nm1 = NelderMead::new(2);
-    let mut nm2 = NelderMead::new(2);
+    let mut nm1 = NelderMead::new(2, vec![false; 2]);
+    let mut nm2 = NelderMead::new(2, vec![false; 2]);
     
     let action1 = nm1.step(&config, &history);
     let action2 = nm2.step(&config, &history);

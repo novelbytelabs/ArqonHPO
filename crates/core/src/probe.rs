@@ -25,7 +25,7 @@ impl Probe for UniformProbe {
             let mut point = HashMap::new();
             for (name, domain) in &config.bounds {
                 let val = match domain.scale {
-                    Scale::Linear => rng.random_range(domain.min..=domain.max),
+                    Scale::Linear | Scale::Periodic => rng.random_range(domain.min..=domain.max),
                     Scale::Log => {
                         // linear sample in log space
                         let min_log = domain.min.ln();
@@ -161,7 +161,7 @@ impl Probe for PrimeIndexProbe {
                     let adjusted_pos = (pos + dim_offset * (i as f64 / num_samples as f64)) % 1.0;
                     
                     let val = match domain.scale {
-                        Scale::Linear => {
+                        Scale::Linear | Scale::Periodic => {
                             domain.min + adjusted_pos * (domain.max - domain.min)
                         }
                         Scale::Log => {
@@ -387,7 +387,7 @@ impl Probe for PrimeSqrtSlopesRotProbe {
             for name in keys.iter() {
                 if let Some(domain) = config.bounds.get(name) {
                     let val = match domain.scale {
-                        Scale::Linear => domain.min + unit_pos * (domain.max - domain.min),
+                        Scale::Linear | Scale::Periodic => domain.min + unit_pos * (domain.max - domain.min),
                         Scale::Log => {
                             let min_log = domain.min.ln();
                             let max_log = domain.max.ln();
@@ -415,7 +415,7 @@ impl Probe for PrimeSqrtSlopesRotProbe {
                     let unit_pos = if shifted_pos < 0.0 { shifted_pos + 1.0 } else { shifted_pos };
 
                     let val = match domain.scale {
-                        Scale::Linear => {
+                        Scale::Linear | Scale::Periodic => {
                             domain.min + unit_pos * (domain.max - domain.min)
                         }
                         Scale::Log => {
@@ -442,7 +442,7 @@ impl Probe for PrimeSqrtSlopesRotProbe {
                 if let Some(domain) = config.bounds.get(name) {
                     let unit_pos: f64 = rng.gen();
                     let val = match domain.scale {
-                        Scale::Linear => {
+                        Scale::Linear | Scale::Periodic => {
                             domain.min + unit_pos * (domain.max - domain.min)
                         }
                         Scale::Log => {
