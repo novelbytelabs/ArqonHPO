@@ -62,6 +62,21 @@ enum NMState {
         shrunk_points: Vec<Vec<f64>>,
         shrunk_idx: usize,
     },
+    /// Coordinate prepass: greedy descent before simplex
+    CoordinatePrepass {
+        /// Current best point
+        best_point: Vec<f64>,
+        /// Current best value
+        best_value: f64,
+        /// Delta values to try [0.05, 0.01]
+        deltas: Vec<f64>,
+        /// Current delta index
+        delta_idx: usize,
+        /// Current dimension index
+        dim_idx: usize,
+        /// Pending candidate points to evaluate (+δ, -δ)
+        pending: Vec<Vec<f64>>,
+    },
     /// Building initial simplex: waiting for vertex evaluations
     SimplexBuild {
         /// Number of vertices already evaluated (excluding anchor)
@@ -249,76 +264,172 @@ impl Strategy for NelderMead {
 
         match &self.state {
             NMState::Init => {
-                // Build simplex from N+1 best points in history
+                // PHASE 4.2: Start with coordinate prepass before simplex
                 let mut sorted: Vec<_> = history.iter().collect();
                 sorted.sort_by(|a, b| a.value.partial_cmp(&b.value).unwrap_or(std::cmp::Ordering::Equal));
 
-                if sorted.len() < n + 1 {
+                if sorted.is_empty() {
                     return StrategyAction::Wait;
                 }
 
-                self.simplex.clear();
-                
-                // PHASE 3: Use regular axis-aligned simplex around best seed (not probe points)
-                // This avoids clustered/degenerate simplices from farthest-point selection
-                
-                // 1. Get best point as anchor
+                // Get best probe point as starting anchor
                 let best_trace = &sorted[0];
                 let best_vec = self.dict_to_vec(&best_trace.params, &keys);
-                self.simplex.push((best_trace.value, best_vec.clone()));
+                let best_val = best_trace.value;
+
+                // Start coordinate prepass with δ = [0.05, 0.01]
+                let deltas = vec![0.05, 0.01];
                 
-                // 2. Build N additional vertices: anchor + scale * e_k (axis-aligned)
-                // Scale: 0.05 in unit space (given mapping real=(u*2-1)*5, this is ~0.5 in real space)
-                let scale = 0.05;
+                // Generate first pair of candidates: best ± δ[0] in dimension 0
+                let delta = deltas[0];
+                let mut plus = best_vec.clone();
+                let mut minus = best_vec.clone();
+                plus[0] = (plus[0] + delta).min(1.0);
+                minus[0] = (minus[0] - delta).max(0.0);
                 
-                for dim_idx in 0..n {
-                    let mut vertex = best_vec.clone();
-                    
-                    // Perturb in positive direction, clamped to [0, 1]
-                    let new_val = (vertex[dim_idx] + scale).min(1.0);
-                    
-                    // If we hit upper bound, try negative direction
-                    if (new_val - vertex[dim_idx]).abs() < 1e-6 {
-                        vertex[dim_idx] = (vertex[dim_idx] - scale).max(0.0);
-                    } else {
-                        vertex[dim_idx] = new_val;
+                let pending = vec![plus.clone(), minus.clone()];
+                let candidates: Vec<_> = pending.iter()
+                    .map(|v| self.vec_to_dict(v, &keys))
+                    .collect();
+
+                self.state = NMState::CoordinatePrepass {
+                    best_point: best_vec,
+                    best_value: best_val,
+                    deltas,
+                    delta_idx: 0,
+                    dim_idx: 0,
+                    pending,
+                };
+
+                StrategyAction::Evaluate(candidates)
+            }
+
+            NMState::CoordinatePrepass { best_point, best_value, deltas, delta_idx, dim_idx, pending } => {
+                // Process evaluation results: take greedy improving move
+                let mut current_best = best_point.clone();
+                let mut current_val = *best_value;
+                
+                // Check if any pending point improved
+                for eval in history.iter().rev().take(pending.len()) {
+                    if eval.value < current_val {
+                        current_best = self.dict_to_vec(&eval.params, &keys);
+                        current_val = eval.value;
                     }
-                    
-                    // We need to evaluate this point - add placeholder value (will be updated)
-                    // Actually, we should request evaluation of these points first
-                    self.simplex.push((f64::INFINITY, vertex));
                 }
                 
-                // Request evaluation of the N new simplex vertices (not the anchor, it's from history)
-                let new_vertices: Vec<_> = self.simplex.iter()
-                    .skip(1) // Skip anchor (already evaluated in history)
-                    .map(|(_, v)| self.vec_to_dict(v, &keys))
-                    .collect();
+                // Move to next dimension
+                let next_dim = dim_idx + 1;
                 
-                if !new_vertices.is_empty() {
-                    // Transition to SimplexBuild state to receive evaluations
-                    self.state = NMState::SimplexBuild { evals_received: 0 };
-                    return StrategyAction::Evaluate(new_vertices);
+                if next_dim < n {
+                    // Continue with current delta, next dimension
+                    let delta = deltas[*delta_idx];
+                    let mut plus = current_best.clone();
+                    let mut minus = current_best.clone();
+                    plus[next_dim] = (plus[next_dim] + delta).min(1.0);
+                    minus[next_dim] = (minus[next_dim] - delta).max(0.0);
+                    
+                    let new_pending = vec![plus.clone(), minus.clone()];
+                    let candidates: Vec<_> = new_pending.iter()
+                        .map(|v| self.vec_to_dict(v, &keys))
+                        .collect();
+
+                    self.state = NMState::CoordinatePrepass {
+                        best_point: current_best,
+                        best_value: current_val,
+                        deltas: deltas.clone(),
+                        delta_idx: *delta_idx,
+                        dim_idx: next_dim,
+                        pending: new_pending,
+                    };
+
+                    StrategyAction::Evaluate(candidates)
+                } else {
+                    // Finished all dimensions, check if more deltas
+                    let next_delta_idx = delta_idx + 1;
+                    
+                    if next_delta_idx < deltas.len() {
+                        // Start next delta pass from dimension 0
+                        let delta = deltas[next_delta_idx];
+                        let mut plus = current_best.clone();
+                        let mut minus = current_best.clone();
+                        plus[0] = (plus[0] + delta).min(1.0);
+                        minus[0] = (minus[0] - delta).max(0.0);
+                        
+                        let new_pending = vec![plus.clone(), minus.clone()];
+                        let candidates: Vec<_> = new_pending.iter()
+                            .map(|v| self.vec_to_dict(v, &keys))
+                            .collect();
+
+                        self.state = NMState::CoordinatePrepass {
+                            best_point: current_best,
+                            best_value: current_val,
+                            deltas: deltas.clone(),
+                            delta_idx: next_delta_idx,
+                            dim_idx: 0,
+                            pending: new_pending,
+                        };
+
+                        StrategyAction::Evaluate(candidates)
+                    } else {
+                        // Coordinate prepass complete, build simplex from improved point
+                        self.simplex.clear();
+                        self.simplex.push((current_val, current_best.clone()));
+                        
+                        // Build axis-aligned simplex around improved point
+                        let scale = 0.05;
+                        for dim_idx in 0..n {
+                            let mut vertex = current_best.clone();
+                            let new_val = (vertex[dim_idx] + scale).min(1.0);
+                            if (new_val - vertex[dim_idx]).abs() < 1e-6 {
+                                vertex[dim_idx] = (vertex[dim_idx] - scale).max(0.0);
+                            } else {
+                                vertex[dim_idx] = new_val;
+                            }
+                            self.simplex.push((f64::INFINITY, vertex));
+                        }
+                        
+                        // Request evaluation of simplex vertices
+                        let new_vertices: Vec<_> = self.simplex.iter()
+                            .skip(1)
+                            .map(|(_, v)| self.vec_to_dict(v, &keys))
+                            .collect();
+                        
+                        self.state = NMState::SimplexBuild { evals_received: 0 };
+                        StrategyAction::Evaluate(new_vertices)
+                    }
+                }
+            }
+
+            NMState::SimplexBuild { evals_received } => {
+                // (Previous SimplexBuild logic moved here from Init)
+                // Simplex vertices already built, receive evaluations
+                let num_vertices_needed = n;
+                let start_idx = history.len().saturating_sub(num_vertices_needed - *evals_received);
+                
+                for (i, eval) in history.iter().skip(start_idx).enumerate() {
+                    let simplex_idx = *evals_received + i + 1;
+                    if simplex_idx < self.simplex.len() {
+                        self.simplex[simplex_idx].0 = eval.value;
+                    }
                 }
                 
                 self.sort_simplex();
-
-                // Check convergence before proceeding
+                
                 if self.check_convergence() {
                     self.state = NMState::Converged;
                     return StrategyAction::Converged;
                 }
-
-                // Compute reflection point
+                
+                // Compute first reflection
                 let centroid = self.compute_centroid();
                 let worst = &self.simplex[n].1;
                 let mut reflection = self.compute_reflection(&centroid, worst);
                 self.clamp_to_bounds(&mut reflection, config, &keys);
-
+                
                 let best = self.simplex[0].0;
                 let second_worst = self.simplex[n - 1].0;
                 let worst_val = self.simplex[n].0;
-
+                
                 self.state = NMState::Reflection {
                     centroid,
                     reflection: reflection.clone(),
@@ -326,9 +437,11 @@ impl Strategy for NelderMead {
                     second_worst,
                     worst: worst_val,
                 };
-
+                
                 StrategyAction::Evaluate(vec![self.vec_to_dict(&reflection, &keys)])
             }
+
+
 
             NMState::Reflection { centroid, reflection, best, second_worst, worst } => {
                 let reflection_val = history.last().map(|t| t.value).unwrap_or(*worst);
