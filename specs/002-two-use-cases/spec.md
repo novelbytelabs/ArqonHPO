@@ -129,7 +129,8 @@ Current tools also frequently lack:
 ### 4.3 Functional Requirements
 
 **FR1 – Probe phase**
-- Evaluate a fixed number of probe samples using **Prime-Index Sampling**: sample at prime ratios (2/N, 3/N, 5/N, 7/N...) for multi-scale structure detection.
+- Evaluate probe samples using **Prime-Sqrt-Slopes-Rot Sampling**: a Kronecker sequence with per-dimension prime-derived irrational slopes (√p_d) and prime-based rotations.
+- **Anytime property**: No dependence on total N — prefixes are meaningful.
 - Probe samples derived deterministically from `seed`, `bounds`, and `probe_ratio`.
 - Record probe samples and objective values in artifacts (or a replayable digest).
 

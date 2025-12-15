@@ -192,6 +192,152 @@ impl Probe for PrimeIndexProbe {
     }
 }
 
+// ============================================================================
+// Prime-Sqrt-Slopes-Rot Probe (Validated Kronecker Sequence)
+// ============================================================================
+
+/// Configuration for the prime-sqrt-slopes-rot sampler.
+#[derive(Debug, Clone)]
+pub struct PrimeSqrtSlopesRotConfig {
+    /// Prime index offset for slope generation (default: 50)
+    pub prime_offset: usize,
+    /// Prime index offset for rotation terms (default: 200)
+    pub rot_offset: usize,
+    /// Irrational multiplier for rotation (default: sqrt(2) - 1)
+    pub rot_alpha: f64,
+}
+
+impl Default for PrimeSqrtSlopesRotConfig {
+    fn default() -> Self {
+        Self {
+            prime_offset: 50,
+            rot_offset: 200,
+            rot_alpha: std::f64::consts::SQRT_2 - 1.0,
+        }
+    }
+}
+
+/// Prime-Sqrt-Slopes-Rot Probe (Kronecker/Weyl sequence).
+///
+/// Generates low-discrepancy samples using:
+/// ```text
+/// x_{i,d} = frac(i * sqrt(p_{d+prime_offset}) + frac(p_{d+rot_offset} * rot_alpha))
+/// ```
+///
+/// **Key properties:**
+/// - **Anytime**: No dependence on total N (prefixes are meaningful)
+/// - **Deterministic**: Same seed produces identical samples
+/// - **Low discrepancy**: Competitive with scrambled Sobol/Halton
+/// - **No collisions**: Unlike p/1000, uses irrational slopes
+/// - **No striping**: Per-dimension independent phases
+///
+/// This is the recommended probe for ArqonHPO per the Prime-Driven
+/// Low-Discrepancy Sampling technical specification.
+pub struct PrimeSqrtSlopesRotProbe {
+    config: PrimeSqrtSlopesRotConfig,
+    /// Seed-based global rotation (differentiates runs while preserving determinism)
+    seed_rotation: f64,
+}
+
+impl Default for PrimeSqrtSlopesRotProbe {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl PrimeSqrtSlopesRotProbe {
+    pub fn new() -> Self {
+        Self {
+            config: PrimeSqrtSlopesRotConfig::default(),
+            seed_rotation: 0.0,
+        }
+    }
+
+    pub fn with_config(config: PrimeSqrtSlopesRotConfig) -> Self {
+        Self {
+            config,
+            seed_rotation: 0.0,
+        }
+    }
+
+    pub fn with_seed(seed: u64) -> Self {
+        // Derive a [0, 1) rotation from the seed for run differentiation
+        // Using a simple hash-like transformation
+        let seed_rot = ((seed as f64) * std::f64::consts::FRAC_1_PI) % 1.0;
+        Self {
+            config: PrimeSqrtSlopesRotConfig::default(),
+            seed_rotation: seed_rot,
+        }
+    }
+
+    /// Compute the unit-cube coordinate for sample i, dimension d.
+    /// 
+    /// Uses: x_{i,d} = frac(i * sqrt(p_{d+prime_offset}) + frac(p_{d+rot_offset} * rot_alpha) + seed_rot)
+    fn unit_value(&self, i: usize, dim: usize, primes: &[usize]) -> f64 {
+        let slope_prime_idx = self.config.prime_offset + dim;
+        let rot_prime_idx = self.config.rot_offset + dim;
+
+        // Guard against index out of bounds (should not happen with proper prime generation)
+        let slope_prime = primes.get(slope_prime_idx).copied().unwrap_or(primes[primes.len() - 1]);
+        let rot_prime = primes.get(rot_prime_idx).copied().unwrap_or(primes[primes.len() - 1]);
+
+        // Irrational slope from sqrt(prime)
+        let slope = (slope_prime as f64).sqrt();
+        
+        // Prime-based rotation term
+        let rot = (rot_prime as f64 * self.config.rot_alpha) % 1.0;
+
+        // Final position: i * slope + rotation + seed_rotation (mod 1)
+        // Using i+1 to avoid origin degeneracy at i=0
+        let pos = ((i + 1) as f64 * slope + rot + self.seed_rotation) % 1.0;
+        
+        // Ensure non-negative (mod can be negative for negative inputs, but we're safe here)
+        if pos < 0.0 { pos + 1.0 } else { pos }
+    }
+}
+
+impl Probe for PrimeSqrtSlopesRotProbe {
+    fn sample(&self, config: &SolverConfig) -> Candidates {
+        let num_samples = (config.budget as f64 * config.probe_ratio).ceil() as usize;
+        
+        // Sort dimension keys for deterministic ordering
+        let mut keys: Vec<_> = config.bounds.keys().cloned().collect();
+        keys.sort();
+        let num_dims = keys.len();
+
+        // Generate enough primes for all dimensions
+        let primes_needed = self.config.rot_offset.max(self.config.prime_offset) + num_dims + 10;
+        let primes = PrimeIndexProbe::first_n_primes(primes_needed);
+
+        let mut candidates = Vec::with_capacity(num_samples);
+
+        for i in 0..num_samples {
+            let mut point = HashMap::new();
+
+            for (dim_idx, name) in keys.iter().enumerate() {
+                if let Some(domain) = config.bounds.get(name) {
+                    let unit_pos = self.unit_value(i, dim_idx, &primes);
+
+                    let val = match domain.scale {
+                        Scale::Linear => {
+                            domain.min + unit_pos * (domain.max - domain.min)
+                        }
+                        Scale::Log => {
+                            let min_log = domain.min.ln();
+                            let max_log = domain.max.ln();
+                            (min_log + unit_pos * (max_log - min_log)).exp()
+                        }
+                    };
+                    point.insert(name.clone(), val);
+                }
+            }
+            candidates.push(point);
+        }
+
+        candidates
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -273,4 +419,167 @@ mod tests {
         let coverage = (max_val - min_val) / 10.0; // 10.0 is the total range
         assert!(coverage > 0.5, "Prime samples should cover at least 50% of range");
     }
+
+    // ============================================================================
+    // NEW: PrimeSqrtSlopesRotProbe Tests (Validated Algorithm)
+    // ============================================================================
+
+    fn test_config_multi_dim() -> SolverConfig {
+        let mut bounds = HashMap::new();
+        bounds.insert("x".to_string(), Domain {
+            min: 0.0,
+            max: 1.0,
+            scale: Scale::Linear,
+        });
+        bounds.insert("y".to_string(), Domain {
+            min: 0.0,
+            max: 1.0,
+            scale: Scale::Linear,
+        });
+        
+        SolverConfig {
+            bounds,
+            budget: 256,
+            seed: 42,
+            probe_ratio: 1.0, // Use full budget for probe
+            strategy_params: None,
+        }
+    }
+
+    #[test]
+    fn test_prime_sqrt_slopes_rot_deterministic() {
+        let config = test_config();
+        let probe = PrimeSqrtSlopesRotProbe::new();
+        
+        let samples1 = probe.sample(&config);
+        let samples2 = probe.sample(&config);
+        
+        assert_eq!(samples1.len(), samples2.len());
+        
+        for (s1, s2) in samples1.iter().zip(samples2.iter()) {
+            let x1 = s1.get("x").unwrap();
+            let x2 = s2.get("x").unwrap();
+            assert!((x1 - x2).abs() < 1e-10, "Same config should produce identical samples");
+        }
+    }
+
+    #[test]
+    fn test_prime_sqrt_slopes_rot_respects_bounds() {
+        let config = test_config();
+        let probe = PrimeSqrtSlopesRotProbe::new();
+        
+        let samples = probe.sample(&config);
+        
+        for sample in samples {
+            let x = sample.get("x").unwrap();
+            assert!(*x >= -5.0 && *x <= 5.0, "Sample should be within bounds: got {}", x);
+        }
+    }
+
+    #[test]
+    fn test_prime_sqrt_slopes_rot_no_collisions() {
+        // At N=256, the new probe should have NO collisions (unlike legacy p/1000)
+        let config = test_config_multi_dim();
+        let probe = PrimeSqrtSlopesRotProbe::new();
+        
+        let samples = probe.sample(&config);
+        
+        // Extract normalized positions (already in [0,1] due to config)
+        let positions: Vec<(f64, f64)> = samples.iter()
+            .map(|s| (*s.get("x").unwrap(), *s.get("y").unwrap()))
+            .collect();
+        
+        // Check for near-duplicate positions (collision threshold: 0.001)
+        let thresh = 0.001;
+        let mut collision_count = 0;
+        for i in 0..positions.len() {
+            for j in (i+1)..positions.len() {
+                let dist_sq = (positions[i].0 - positions[j].0).powi(2) 
+                            + (positions[i].1 - positions[j].1).powi(2);
+                if dist_sq < thresh * thresh {
+                    collision_count += 1;
+                }
+            }
+        }
+        
+        // No collisions expected with irrational slopes
+        assert_eq!(collision_count, 0, 
+            "PrimeSqrtSlopesRotProbe should have no near-collisions, found {}", collision_count);
+    }
+
+    #[test]
+    fn test_prime_sqrt_slopes_rot_good_coverage() {
+        // Samples should be spread across the unit square
+        let config = test_config_multi_dim();
+        let probe = PrimeSqrtSlopesRotProbe::new();
+        
+        let samples = probe.sample(&config);
+        
+        // Check that all quadrants have samples
+        let mut quadrants = [0u32; 4];
+        for s in &samples {
+            let x = *s.get("x").unwrap();
+            let y = *s.get("y").unwrap();
+            let q = match (x < 0.5, y < 0.5) {
+                (true, true) => 0,
+                (false, true) => 1,
+                (true, false) => 2,
+                (false, false) => 3,
+            };
+            quadrants[q] += 1;
+        }
+        
+        // Each quadrant should have at least 10% of samples
+        let min_expected = (samples.len() / 10) as u32;
+        for (i, &count) in quadrants.iter().enumerate() {
+            assert!(count >= min_expected, 
+                "Quadrant {} has only {} samples (expected >= {})", i, count, min_expected);
+        }
+    }
+
+    #[test]
+    fn test_prime_sqrt_slopes_rot_seed_differentiation() {
+        let config = test_config();
+        
+        let probe1 = PrimeSqrtSlopesRotProbe::with_seed(42);
+        let probe2 = PrimeSqrtSlopesRotProbe::with_seed(123);
+        
+        let samples1 = probe1.sample(&config);
+        let samples2 = probe2.sample(&config);
+        
+        // Different seeds should produce different samples
+        let x1 = *samples1[0].get("x").unwrap();
+        let x2 = *samples2[0].get("x").unwrap();
+        
+        assert!((x1 - x2).abs() > 1e-6, 
+            "Different seeds should produce different samples");
+    }
+
+    #[test]
+    fn test_prime_sqrt_slopes_rot_log_scale() {
+        let mut bounds = HashMap::new();
+        bounds.insert("lr".to_string(), Domain {
+            min: 1e-5,
+            max: 1e-1,
+            scale: Scale::Log,
+        });
+        
+        let config = SolverConfig {
+            bounds,
+            budget: 100,
+            seed: 42,
+            probe_ratio: 0.5,
+            strategy_params: None,
+        };
+        
+        let probe = PrimeSqrtSlopesRotProbe::new();
+        let samples = probe.sample(&config);
+        
+        for sample in samples {
+            let lr = *sample.get("lr").unwrap();
+            assert!(lr >= 1e-5 && lr <= 1e-1, 
+                "Log-scale sample should be within bounds: got {}", lr);
+        }
+    }
 }
+
