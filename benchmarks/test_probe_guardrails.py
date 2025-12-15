@@ -110,6 +110,24 @@ def rastrigin(x: np.ndarray) -> float:
 
 
 # =============================================================================
+# Smooth-Shift Functions for Structured NM Benchmarks (No Torus Wrap)
+# =============================================================================
+# These keep the function continuous by shifting the optimum without modulo.
+# Use for local optimizer (NM) correctness testing.
+
+def sphere_smooth_shift(x: np.ndarray, u_opt: np.ndarray) -> float:
+    """Sphere with smooth shift (no torus wrap). Optimum at u_opt in unit space."""
+    real_x = ((x - u_opt + 0.5) * 2 - 1) * 5.0
+    return float(np.sum(real_x**2))
+
+
+def rosenbrock_smooth_shift(x: np.ndarray, u_opt: np.ndarray) -> float:
+    """Rosenbrock with smooth shift (no torus wrap). Optimum near u_opt in unit space."""
+    real_x = ((x - u_opt + 0.5) * 2 - 1) * 2.048
+    return float(np.sum(100 * (real_x[1:] - real_x[:-1]**2)**2 + (1 - real_x[:-1])**2))
+
+
+# =============================================================================
 # Refinement Implementations
 # =============================================================================
 
@@ -446,6 +464,95 @@ class TestGeometryRegression:
         
         cd = np.sqrt(abs((13.0/12.0)**d - 2 * term1 + term2))
         return cd
+
+
+# =============================================================================
+# Structured NM Correctness Tests (Smooth Shift - No Torus)
+# =============================================================================
+
+def run_arqon_solver(fn: Callable, dims: int, budget: int) -> float:
+    """Run Arqon solver on a function and return best value found."""
+    import json
+    import arqonhpo
+    
+    bounds = {f'x{i}': {'min': 0.0, 'max': 1.0, 'scale': 'Linear'} for i in range(dims)}
+    config = {
+        'seed': CI_SEED,
+        'budget': budget,
+        'bounds': bounds,
+        'probe_ratio': 0.2,
+    }
+    
+    solver = arqonhpo.ArqonSolver(json.dumps(config))
+    best_val = float('inf')
+    counter = 0
+    
+    while solver.get_history_len() < budget:
+        try:
+            candidates = solver.ask()
+            if not candidates:
+                break
+        except Exception:
+            break
+        
+        results = []
+        for params in candidates:
+            x = np.array([params[f'x{i}'] for i in range(dims)])
+            val = fn(x)
+            results.append({'eval_id': counter, 'params': params, 'value': val, 'cost': 0.0})
+            counter += 1
+            if val < best_val:
+                best_val = val
+        solver.tell(json.dumps(results))
+    
+    return best_val
+
+
+class TestStructuredNMCorrectness:
+    """Test NM convergence on smooth objectives (no torus discontinuities)."""
+    
+    def test_sphere_smooth_nm_converges(self):
+        """NM should converge close to optimum on smooth-shifted Sphere."""
+        dims = 5
+        n_shifts = 10
+        budget = 200
+        
+        np.random.seed(CI_SEED)
+        convergence_vals = []
+        
+        for _ in range(n_shifts):
+            u_opt = np.random.rand(dims) * 0.4 + 0.3  # Random optimum in [0.3, 0.7]
+            
+            def shifted_fn(x):
+                return sphere_smooth_shift(x, u_opt)
+            
+            best = run_arqon_solver(shifted_fn, dims, budget)
+            convergence_vals.append(best)
+        
+        median_val = np.median(convergence_vals)
+        # With smooth objective, NM should get within reasonable range
+        assert median_val < 5.0, f"NM should converge on smooth Sphere, got median={median_val:.2f}"
+    
+    def test_rosenbrock_smooth_nm_converges(self):
+        """NM should converge on smooth-shifted Rosenbrock."""
+        dims = 5
+        n_shifts = 10
+        budget = 200
+        
+        np.random.seed(CI_SEED)
+        convergence_vals = []
+        
+        for _ in range(n_shifts):
+            u_opt = np.random.rand(dims) * 0.4 + 0.3
+            
+            def shifted_fn(x):
+                return rosenbrock_smooth_shift(x, u_opt)
+            
+            best = run_arqon_solver(shifted_fn, dims, budget)
+            convergence_vals.append(best)
+        
+        median_val = np.median(convergence_vals)
+        assert median_val < 50.0, f"NM should converge on smooth Rosenbrock, got median={median_val:.2f}"
 
 
 # =============================================================================
