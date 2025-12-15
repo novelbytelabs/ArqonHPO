@@ -62,6 +62,11 @@ enum NMState {
         shrunk_points: Vec<Vec<f64>>,
         shrunk_idx: usize,
     },
+    /// Building initial simplex: waiting for vertex evaluations
+    SimplexBuild {
+        /// Number of vertices already evaluated (excluding anchor)
+        evals_received: usize,
+    },
     /// Converged
     Converged,
 }
@@ -254,54 +259,48 @@ impl Strategy for NelderMead {
 
                 self.simplex.clear();
                 
-                // Use farthest-point diversity selection instead of pure best-first
-                // 1. Take top M candidates by value (pool for diversity selection)
-                let pool_size = (5 * (n + 1)).min(sorted.len());
-                let pool: Vec<_> = sorted.iter().take(pool_size).collect();
+                // PHASE 3: Use regular axis-aligned simplex around best seed (not probe points)
+                // This avoids clustered/degenerate simplices from farthest-point selection
                 
-                // 2. Start with the best point as anchor
-                let best_trace = pool[0];
+                // 1. Get best point as anchor
+                let best_trace = &sorted[0];
                 let best_vec = self.dict_to_vec(&best_trace.params, &keys);
                 self.simplex.push((best_trace.value, best_vec.clone()));
                 
-                // 3. Select remaining N points by farthest-point sampling
-                let mut selected_vecs = vec![best_vec];
+                // 2. Build N additional vertices: anchor + scale * e_k (axis-aligned)
+                // Scale: 0.05 in unit space (given mapping real=(u*2-1)*5, this is ~0.5 in real space)
+                let scale = 0.05;
                 
-                for _ in 0..n {
-                    let mut best_idx = 1;
-                    let mut best_min_dist = -1.0_f64;
+                for dim_idx in 0..n {
+                    let mut vertex = best_vec.clone();
                     
-                    for (idx, trace) in pool.iter().enumerate().skip(1) {
-                        let vec = self.dict_to_vec(&trace.params, &keys);
-                        
-                        // Skip if already selected
-                        if selected_vecs.iter().any(|s| s == &vec) {
-                            continue;
-                        }
-                        
-                        // Find minimum distance to any selected point
-                        let min_dist = selected_vecs.iter()
-                            .map(|s| {
-                                s.iter().zip(vec.iter())
-                                    .map(|(a, b)| (a - b).powi(2))
-                                    .sum::<f64>()
-                                    .sqrt()
-                            })
-                            .fold(f64::INFINITY, f64::min);
-                        
-                        // Select point with maximum min-distance (farthest from selected set)
-                        if min_dist > best_min_dist {
-                            best_min_dist = min_dist;
-                            best_idx = idx;
-                        }
+                    // Perturb in positive direction, clamped to [0, 1]
+                    let new_val = (vertex[dim_idx] + scale).min(1.0);
+                    
+                    // If we hit upper bound, try negative direction
+                    if (new_val - vertex[dim_idx]).abs() < 1e-6 {
+                        vertex[dim_idx] = (vertex[dim_idx] - scale).max(0.0);
+                    } else {
+                        vertex[dim_idx] = new_val;
                     }
                     
-                    // Add the farthest point
-                    let chosen = pool[best_idx];
-                    let chosen_vec = self.dict_to_vec(&chosen.params, &keys);
-                    self.simplex.push((chosen.value, chosen_vec.clone()));
-                    selected_vecs.push(chosen_vec);
+                    // We need to evaluate this point - add placeholder value (will be updated)
+                    // Actually, we should request evaluation of these points first
+                    self.simplex.push((f64::INFINITY, vertex));
                 }
+                
+                // Request evaluation of the N new simplex vertices (not the anchor, it's from history)
+                let new_vertices: Vec<_> = self.simplex.iter()
+                    .skip(1) // Skip anchor (already evaluated in history)
+                    .map(|(_, v)| self.vec_to_dict(v, &keys))
+                    .collect();
+                
+                if !new_vertices.is_empty() {
+                    // Transition to SimplexBuild state to receive evaluations
+                    self.state = NMState::SimplexBuild { evals_received: 0 };
+                    return StrategyAction::Evaluate(new_vertices);
+                }
+                
                 self.sort_simplex();
 
                 // Check convergence before proceeding
@@ -464,6 +463,52 @@ impl Strategy for NelderMead {
                     self.state = NMState::Init;
                     self.step(config, history)
                 }
+            }
+
+            NMState::SimplexBuild { evals_received } => {
+                // Receive evaluations for the N new simplex vertices
+                // The evaluations come in order, matching the vertices we requested
+                let num_vertices_needed = n; // N vertices to evaluate (anchor already done)
+                
+                // Update simplex values from history (last N entries from this batch)
+                // Find the evaluation results in history that correspond to our vertices
+                let start_idx = history.len().saturating_sub(num_vertices_needed - *evals_received);
+                
+                for (i, eval) in history.iter().skip(start_idx).enumerate() {
+                    let simplex_idx = *evals_received + i + 1; // +1 to skip anchor
+                    if simplex_idx < self.simplex.len() {
+                        self.simplex[simplex_idx].0 = eval.value;
+                    }
+                }
+                
+                // All vertices evaluated, sort and proceed to reflection
+                self.sort_simplex();
+                
+                // Check convergence
+                if self.check_convergence() {
+                    self.state = NMState::Converged;
+                    return StrategyAction::Converged;
+                }
+                
+                // Compute first reflection
+                let centroid = self.compute_centroid();
+                let worst = &self.simplex[n].1;
+                let mut reflection = self.compute_reflection(&centroid, worst);
+                self.clamp_to_bounds(&mut reflection, config, &keys);
+                
+                let best = self.simplex[0].0;
+                let second_worst = self.simplex[n - 1].0;
+                let worst_val = self.simplex[n].0;
+                
+                self.state = NMState::Reflection {
+                    centroid,
+                    reflection: reflection.clone(),
+                    best,
+                    second_worst,
+                    worst: worst_val,
+                };
+                
+                StrategyAction::Evaluate(vec![self.vec_to_dict(&reflection, &keys)])
             }
 
             NMState::Converged => StrategyAction::Converged,
