@@ -73,8 +73,19 @@ nav:
       - "TDD Assessment": reports/TDD_ASSESSMENT_REPORT.md
   - Reports:
       - "Time-to-Quality (Phase 8)": reports/time_to_quality.md
+  - Strategic Planning:
+      - "Selling Perspectives": projects/a1_perspectives.md
+      - "ArqonNAS Positioning": projects/a2_ArqonNAS.md
+      - "Eureka Insights": projects/a3_Eureka00.md
+      - "New Primitive Framework": projects/a4_Eureka00_Explication.md
+      - "Runtime Nervous System": projects/a5_runtime_nervous_system.md
+      - "Emergent Observer Tech Note": projects/a6_emergent_observer_technote.md
+      - "Self-Evolving Runtime": projects/a7_self-evolving_runtime_proposal.md
+      - "Autonomy Engine": projects/a8_autonomy_engine.md
+      - "System Architecture": projects/a9_architecture.md
+      - "Production Architecture": projects/a10_architecture.md
   - Changelog: "changelog.md"
-  - Contributing: contributing.md
+  - Contributing: "contributing.md"
 
 plugins:
   - search
