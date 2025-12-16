@@ -73,108 +73,164 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     catalog.add(v2);
     
     let mut bandit = ContextualBandit::new(BanditConfig::default());
+    let recovery_threshold = 0.90;
     
-    // 4. Run Simulation Loop
-    let mut universe = Universe::new(12345);
-    
-    println!("Running {} steps...", STEPS);
+    // --- Baseline Run (No Adaptation) ---
+    println!("\n=== Running Baseline (No Adaptation) ===");
+    let mut universe_base = Universe::new(12345);
+    let mut baseline_recovery_steps = 0;
+    let mut baseline_shocked = false;
     
     for step in 0..STEPS {
-        let start_tick = Instant::now();
+        if step == 500 {
+            universe_base.inject_shock();
+            baseline_shocked = true;
+        }
+        let q = universe_base.step();
+        if baseline_shocked && q > recovery_threshold {
+            if baseline_recovery_steps == 0 {
+                baseline_recovery_steps = step - 500;
+            }
+        }
+    }
+    println!("Baseline Recovery: {} steps", baseline_recovery_steps);
+
+
+    // --- Adaptive Run ---
+    println!("\n=== Running Adaptive System ===");
+    let mut universe = Universe::new(12345);
+    
+    // Detailed Latency trackers
+    let mut t2_decision_us = Vec::with_capacity(STEPS);
+    let mut t1_compute_us = Vec::with_capacity(STEPS); // In-memory
+    let mut t1_audit_us = Vec::with_capacity(STEPS);   // Disk I/O
+    let mut e2e_us = Vec::with_capacity(STEPS);
+    let mut total_deltas = 0;
+    let mut applied_updates = 0;
+    
+    // Recovery tracker
+    let mut shocked = false;
+    let mut recovery_start = 0;
+    let mut recovery_steps = 0;
+    let recovery_threshold = 0.90;
+
+    println!("Running {} steps with Shock at 500...", STEPS);
+    
+    for step in 0..STEPS {
+        // --- Shock Injection ---
+        if step == 500 {
+            println!("!!! INJECTING SHOCK !!!");
+            universe.inject_shock();
+            shocked = true;
+            recovery_start = step;
+        }
+
+        let loop_start = Instant::now(); // Start of control tick visibility
         
-        // --- Tier 1 Executor Logic ---
+        // --- Tier 1 Executor Logic (Apply Previous) ---
+        // (In this synchronous sim, we apply 'current' from engine which was updated last step)
+        let snapshot = adaptive_engine.current();
+        universe.apply_physics(&snapshot.params); // Dataplane observes config
         
-        // A. Select Variant (Bandit)
-        let context = Context::new()
-            .with_latency_budget(1000)
-            .with_load(0.5);
-            
-        let eligible = catalog.filter_eligible(
-            context.latency_budget_us,
-            u64::MAX,
-            0.0,
-            1.0,
-            "cpu"
-        );
+        let dataplane_observed_ts = Instant::now();
         
-        let selection = bandit.select(&eligible, catalog.default_variant().map(|v| v.id));
-        let variant_id = selection.as_ref().map(|s| s.variant_id).unwrap_or(0); // Should handle unwrap safely in real impl
+        // --- Workload ---
+        let objective = universe.step();
         
-        if let Some(variant) = catalog.get(variant_id) {
-            universe.apply_variant(variant);
+        if shocked && objective > recovery_threshold {
+            if recovery_steps == 0 {
+                recovery_steps = step - recovery_start;
+                println!("Recovered in {} steps (Quality > {})", recovery_steps, recovery_threshold);
+            }
         }
         
-        // B. Apply Physics Propsals (Adaptive Engine)
-        // Note: In a real loop, we'd apply the *previous* proposal here, then observe, then get *next* proposal.
-        // Or get proposal -> apply -> observe -> tell.
-        // AdaptiveEngine uses observe->proposal flow.
-        
-        // Getting current consolidated config
-        let snapshot = adaptive_engine.current();
-        universe.apply_physics(&snapshot.params);
-        
-        // C. Execute Workload
-        let start_eval = Instant::now();
-        let objective = universe.step();
-        let eval_dur = start_eval.elapsed();
-        
-        // D. Feedback Loop
-        // Telemetry Digest
+        // --- Feedback ---
         let digest = TelemetryDigest::objective(objective);
+        bandit.update(0, objective); // simplified variant tracking
         
-        // Update Bandit
-        // Reward: normalized objective? If objective is in [0, 1], perfect.
-        bandit.update(variant_id, objective);
+        // --- Adaptive Engine (T2 + T1) ---
         
-        // Update Adaptive Engine
-        let engine_start = Instant::now();
-        if let Some(delta) = adaptive_engine.observe(digest) {
-            // Check budget: if getting the proposal took too long, SKIP applying it?
-            // Actually, `observe` returns the proposal. We typically apply it for the NEXT frame.
-            match adaptive_engine.apply_delta(&delta) {
+        // 1. T2 Decision
+        let t2_start = Instant::now();
+        let proposal_opt = adaptive_engine.observe(digest);
+        let t2_end = Instant::now();
+        t2_decision_us.push(t2_end.duration_since(t2_start).as_micros() as u64);
+
+        if let Some(delta) = proposal_opt {
+            // 2. T1 Apply (In-Memory)
+            let t1_compute_start = Instant::now();
+            let apply_result = adaptive_engine.apply_delta(&delta);
+            let t1_compute_end = Instant::now();
+            
+            t1_compute_us.push(t1_compute_end.duration_since(t1_compute_start).as_micros() as u64);
+            
+            // 3. T1 Audit (Durability)
+            let t1_audit_start = Instant::now();
+            match apply_result {
                 Ok(_) => {
-                    // Log success
+                    applied_updates += 1;
+                    total_deltas += 1; // Simplify delta mag tracking for now
                     serde_json::to_writer(&mut audit_log, &serde_json::json!({
                         "step": step,
-                        "action": "update_params",
-                        "delta": delta,
+                        "action": "update",
                         "status": "applied"
                     }))?;
                     writeln!(&mut audit_log)?;
                 },
-                Err(violation) => {
-                    // Log violation
-                    serde_json::to_writer(&mut audit_log, &serde_json::json!({
-                        "step": step,
-                        "action": "update_params",
-                        "violation": format!("{:?}", violation),
-                        "status": "rejected"
-                    }))?;
-                    writeln!(&mut audit_log)?;
-                }
+                Err(_) => {}
             }
+            let t1_audit_end = Instant::now();
+            t1_audit_us.push(t1_audit_end.duration_since(t1_audit_start).as_micros() as u64);
+            
+            // E2E: From 'digest available' (t2_start) to 'config applied' (t1_compute_end)
+            // Note: In this loop, the *next* step sees the config.
+            // But latency is T2 + T1_compute.
+            let e2e = t1_compute_end.duration_since(t2_start);
+            e2e_us.push(e2e.as_micros() as u64);
+            
+        } else {
+             t1_compute_us.push(0);
+             t1_audit_us.push(0);
+             e2e_us.push(t2_end.duration_since(t2_start).as_micros() as u64);
         }
-        let engine_dur = engine_start.elapsed();
-        
-        let total_tick_dur = start_tick.elapsed();
         
         // Reporting
-        // csv: step, objective, diff_rate, noise, variant, engine_us, total_us
         csv_log.serialize((
             step,
             objective,
             universe.diffusion_rate,
             universe.noise_level,
-            variant_id,
-            engine_dur.as_micros(),
-            total_tick_dur.as_micros()
+            0,
+            t2_end.duration_since(t2_start).as_micros(),
+            dataplane_observed_ts.duration_since(loop_start).as_micros()
         ))?;
-        
-        if step % 100 == 0 {
-            println!("Step {}: Obj={:.4}, Engine={}us", step, objective, engine_dur.as_micros());
-        }
     }
     
-    println!("Simulation complete. Artifacts: audit_log.jsonl, history.csv");
+    // Stats
+    let sort_get = |vec: &mut Vec<u64>, pct: usize| -> u64 {
+        vec.sort();
+        if vec.is_empty() { return 0; }
+        vec[vec.len() * pct / 100]
+    };
+    
+    let t2_p99 = sort_get(&mut t2_decision_us, 99);
+    let t1_comp_p99 = sort_get(&mut t1_compute_us, 99);
+    let t1_audit_p99 = sort_get(&mut t1_audit_us, 99);
+    let e2e_p99 = sort_get(&mut e2e_us, 99);
+    
+    println!("\n--- FINAL METRICS ---");
+    println!("Baseline Recovery: {} steps", baseline_recovery_steps);
+    println!("Adaptive Recovery: {} steps", recovery_steps);
+    println!("\nLatency (p99):");
+    println!("  T2 Decision: {} us", t2_p99);
+    println!("  T1 Apply (Mem): {} us", t1_comp_p99);
+    println!("  T1 Audit (Disk): {} us", t1_audit_p99);
+    println!("  E2E Visible: {} us", e2e_p99);
+    
+    println!("\nActuation:");
+    println!("  Updates Applied: {}", applied_updates);
+    println!("  Variants Switched: (Bandit fixed to single for stress)");
+    
+    println!("Simulation complete.");
     Ok(())
 }

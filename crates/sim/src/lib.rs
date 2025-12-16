@@ -114,4 +114,13 @@ impl Universe {
         let mean_delta = total_delta / (ROWS * COLS) as f64;
         (1.0 - mean_delta).max(0.0)
     }
+
+    /// Inject a massive disturbance (random noise) to test recovery
+    pub fn inject_shock(&mut self) {
+        for r in 0..ROWS {
+            for c in 0..COLS {
+                self.grid[r][c] = self.rng.random(); // Full randomization
+            }
+        }
+    }
 }
