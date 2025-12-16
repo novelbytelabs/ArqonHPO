@@ -1,17 +1,20 @@
-# Welcome to MkDocs
+# ArqonHPO
 
-For full documentation visit [mkdocs.org](https://www.mkdocs.org).
+**HPO for the AI Era.**
 
-## Commands
+> Modern HPO/NAS tools assume human-time feedback loops: run an experiment, wait, analyze, repeat. But production AI systems live in non-stationary environments—traffic shifts, drift happens, hardware throttles, and constraints change. This work shows that if the optimization loop is fast enough to run at microsecond latency, tuning becomes a control primitive: safe, bounded, auditable adaptation that runs continuously in the runtime, while offline discovery expands the approved search space.
 
-* `mkdocs new [dir-name]` - Create a new project.
-* `mkdocs serve` - Start the live-reloading docs server.
-* `mkdocs build` - Build the documentation site.
-* `mkdocs -h` - Print help message and exit.
+## Documentation
 
-## Project layout
+- [Quickstart](docs/quickstart/)
+- [Cookbook](docs/cookbook/)
+- [API Reference](docs/reference/python/)
+- [Architecture POC Walkthrough](https://github.com/novelbytelabs/ArqonHPO/blob/main/docs/poc/)
 
-    mkdocs.yml    # The configuration file.
-    docs/
-        index.md  # The documentation homepage.
-        ...       # Other markdown pages, images and other files.
+## Getting Started
+
+```bash
+pip install arqonhpo
+```
+
+See [README.md](../README.md) for full installation and usage instructions.

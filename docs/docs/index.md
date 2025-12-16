@@ -10,6 +10,8 @@ ArqonHPO is the first hyperparameter optimizer designed for **Machine-Speed** de
 - **Systems & Infrastructure**: Tune database knobs, compiler flags, and connection pools in real-time.
 - **PCR Auto-Pilot**: Automatically switches between Nelder-Mead (smooth physics) and TPE (noisy ML).
 
+> Modern HPO/NAS tools assume human-time feedback loops: run an experiment, wait, analyze, repeat. But production AI systems live in non-stationary environments—traffic shifts, drift happens, hardware throttles, and constraints change. This work shows that if the optimization loop is fast enough to run at microsecond latency, tuning becomes a control primitive: safe, bounded, auditable adaptation that runs continuously in the runtime, while offline discovery expands the approved search space.
+
 ## Features
 
 - 🚀 **300x Faster**: Run 30,000 trials in the time Python solvers run 100.
