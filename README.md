@@ -4,12 +4,13 @@
 [![Docs](https://img.shields.io/badge/docs-mkdocs-blue)](https://novelbytelabs.github.io/ArqonHPO/)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
-**Adaptive Hyperparameter Optimization** with automatic strategy selection.
+**HPO for the AI Era.**
+"Optuna optimizes your models. ArqonHPO optimizes your infrastructure."
 
-ArqonHPO automatically detects your objective function's landscape and selects the optimal optimization strategy:
-
-- **Smooth, expensive simulations?** → Nelder-Mead (minimizes evaluations)
-- **Noisy, cheap ML training?** → TPE (handles variance)
+ArqonHPO is the first hyperparameter optimizer designed for **Machine-Speed** decision making.
+- **Don't put a 300ms brain in a 1ms robot**: ArqonHPO thinks in **1.7ms**.
+- **Real-Time Control**: Tune standard library parameters, connection pools, and MAS agents on the fly.
+- **Auto-Pilot**: Automatically selects Nelder-Mead (smooth) or TPE (noisy) based on landscape.
 
 ## Features
 
@@ -19,23 +20,30 @@ ArqonHPO automatically detects your objective function's landscape and selects t
 - 🐍 **Python Ready** - Simple `pip install arqonhpo`
 - 🔁 **Reproducible** - Seed-controlled, artifact-auditable runs
 
-## 🚀 Performance
+## 🚀 Performance: The 1ms Barrier
 
 **ArqonHPO is built for one thing: Speed.**
 
-In high-throughput optimization—like real-time control, high-frequency trading, or massive-scale simulations—time is your most precious resource. Traditional Python-based optimizers waste 99% of your time on overhead. ArqonHPO flips the script.
+In high-throughput optimization—like real-time control, high-frequency trading, or systems tuning—time is your most precious resource. Traditional Python-based optimizers (like Optuna) block your event loop for 300ms+ just to decide the next parameter. ArqonHPO decides in **1.7ms**.
+
+### Tuning Faster Than The Request
+
+Because ArqonHPO's overhead is negligible (~40µs), you can embed optimization directly into **live traffic** logic. Tune your DB connection pool *during* the request handling.
 
 | Metric | ArqonHPO | Optuna (TPE) | Advantage |
 |--------|----------|--------------|-----------|
-| **100 Trials (2D)** | 1.1 ms | 344 ms | **313x faster** |
-| **Throughput** | ~33,000/sec | ~300/sec | **100x volume** |
+| **Latency (cheap)** | **1.77 ms** | 330.5 ms | **180x speedup** |
+| **Rugged Hit Rate** | **93%** | 70% | **Robust Geometry** |
+| **Worker Collisions** | **0** | N/A (Requires DB) | **Stateless Sharding** |
 
-> **"Speed is King"** - When evaluations are cheap (<10ms), ArqonHPO allows you to brute-force the problem with massive volume, beating smarter but slower algorithms.
+![Rastrigin Performance](docs/docs/reports/phase8/rastrigin_torus__cheap__best_vs_time.png)
+
+> **"Speed is Quality"** - By running 100x more trials in the same time window, ArqonHPO brute-forces complex landscapes that smarter-but-slower algorithms miss.
 
 ### ⚡ Ideal for Multi-Agent Systems
 If you are building a **MAS** with <1ms deadlines, ArqonHPO is the *only* viable choice.
-- **Optuna (846ms)**: Blocks your event loop, causing massive lag.
-- **ArqonHPO (2.9ms)**: Fits comfortably inside a single message handler.
+- **Optuna (330ms+)**: Blocks your event loop, causing massive lag.
+- **ArqonHPO (1.7ms)**: Fits comfortably inside a single message handler.
 
 ## Installation
 

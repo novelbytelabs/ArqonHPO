@@ -1,8 +1,14 @@
 # ArqonHPO
 
-**Adaptive Hyperparameter Optimization for Simulations- **Smart**: The **PCR (Probe-Classify-Refine)** engine automatically switches between Nelder-Mead (for smooth physics) and TPE (for noisy ML) based on landscape analysis.
-- **Probe-Gated**: Uses prime-index sampling to "scan" the terrain before committing to a strategy.
-- **Zero-Config**: No need to choose a sampler. Just define bounds and budget.
+**HPO for the AI Era.**
+
+"Optuna optimizes your models. ArqonHPO optimizes your infrastructure."
+
+ArqonHPO is the first hyperparameter optimizer designed for **Machine-Speed** decision making. While traditional tools are built for human timescales (monitoring a training run), ArqonHPO is built for microseconds.
+
+- **Don't put a 300ms brain in a 1ms robot**: If your control loop runs in 10ms, you can't use a Python optimizer that takes 300ms to think. ArqonHPO thinks in **1.7ms**.
+- **Systems & Infrastructure**: Tune database knobs, compiler flags, and connection pools in real-time.
+- **PCR Auto-Pilot**: Automatically switches between Nelder-Mead (smooth physics) and TPE (noisy ML).
 
 ## Features
 
@@ -12,6 +18,27 @@
 - 🐍 **Python Ready**: `pip install arqonhpo`.
 - 🔁 **Reproducible**: Seed-controlled, artifact-auditable runs.
 - 📐 **Scott's Rule TPE**: Adaptive kernel bandwidth for optimal density estimation.
+
+
+## 🚀 Performance: The 1ms Barrier
+
+**ArqonHPO is built for one thing: Speed.**
+
+In high-throughput optimization—like real-time control, high-frequency trading, or systems tuning—time is your most precious resource. Traditional Python-based optimizers (like Optuna) block your event loop for 300ms+ just to decide the next parameter. ArqonHPO decides in **1.7ms**.
+
+### Tuning Faster Than The Request
+
+Because ArqonHPO's overhead is negligible (~40µs), you can embed optimization directly into **live traffic** logic. Tune your DB connection pool *during* the request handling.
+
+| Metric | ArqonHPO | Optuna (TPE) | Advantage |
+|--------|----------|--------------|-----------|
+| **Latency (cheap)** | **1.77 ms** | 330.5 ms | **180x speedup** |
+| **Rugged Hit Rate** | **93%** | 70% | **Robust Geometry** |
+| **Worker Collisions** | **0** | N/A (Requires DB) | **Stateless Sharding** |
+
+![Rastrigin Performance](reports/phase8/rastrigin_torus__cheap__best_vs_time.png)
+
+> **"Speed is Quality"** - By running 100x more trials in the same time window, ArqonHPO brute-forces complex landscapes that smarter-but-slower algorithms miss.
 
 ## ⚡ Multi-Agent Ready
 Perfect for **MAS** and **Actor Models** (Rust, Elixir, Go).
