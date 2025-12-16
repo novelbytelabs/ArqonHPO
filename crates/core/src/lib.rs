@@ -6,6 +6,7 @@ pub mod machine;
 pub mod probe;
 pub mod rng;
 pub mod strategies;
+pub mod variant_catalog;
 
 #[cfg(test)]
 mod tests;
