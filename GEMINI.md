@@ -3,6 +3,7 @@
 Auto-generated from all feature plans. Last updated: 2025-12-14
 
 ## Active Technologies
+- N/A (in-memory, artifacts to disk) (004-probe-upgrade)
 
 - Rust 1.75+, Python 3.10+ (bindings) + `rand_chacha` (RNG), `serde` (serialization), `pyo3` (Python bindings) (002-two-use-cases)
 
@@ -22,6 +23,7 @@ cd src [ONLY COMMANDS FOR ACTIVE TECHNOLOGIES][ONLY COMMANDS FOR ACTIVE TECHNOLO
 Rust 1.75+, Python 3.10+ (bindings): Follow standard conventions
 
 ## Recent Changes
+- 004-probe-upgrade: Added Rust 1.75+, Python 3.10+ (bindings) + `rand_chacha` (RNG), `serde` (serialization), `pyo3` (Python bindings)
 
 - 002-two-use-cases: Added Rust 1.75+, Python 3.10+ (bindings) + `rand_chacha` (RNG), `serde` (serialization), `pyo3` (Python bindings)
 
