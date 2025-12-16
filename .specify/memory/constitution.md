@@ -1,14 +1,38 @@
 <!--
 Sync Impact Report:
 
-- ArqonHPO Constitution v1.0.0 (2025-12-13)
+- ArqonHPO Constitution v1.0.0 → v1.1.0 (2025-12-16)
+
+## Added Sections (MINOR bump)
+- II.12: Probe Algorithm Specification (Kronecker/Weyl, banned p/1000, CP shifts)
+- II.13: Dimension Type Contract (Linear, Log, Periodic with circular arithmetic)
+- II.14: Multi-Start Strategy Contract (K-parallel, diversity seeding, triage budget)
+- II.15: Parallel Sharding Contract (Stateless, collision-free, SDK parity)
+- IV.5: Probe Guardrail Tests (6 mandatory test classes)
+- VIII.3: Time-to-Target Metrics (Evals-to-Threshold, Hit-by-N, Median-Best)
+- XI.3: Benchmark Schema Contract (Objective suite, cost regimes, output schema)
+- XI.4: SDK Binding Compliance (Determinism parity, sharding verification)
+- XI.5: Strategy Parameter Governance (K, triage, stall, spice defaults)
+
+## Modified Sections
+- Tier Ω Scope reference: 12-21 → 16-25 (renumbering for new sections)
+
+## Templates Requiring Updates
+- ⚠ .specify/templates/plan-template.md: Review for probe algorithm references
+- ⚠ .specify/templates/spec-template.md: Review for dimension type constraint language
+- ⚠ .specify/templates/tasks-template.md: Add Probe Guardrail Tests to test phase
+
+## Reference Evidence
+- Branch: experiment/probe-upgrade
+- Tests: benchmarks/test_probe_guardrails.py
+- Technote: docs/TECHNOTE_PROBE_UPGRADE.md
 -->
 
 # ArqonHPO Constitution
 
-**Version**: 1.0.0  
+**Version**: 1.1.0  
 **Ratification Date**: 2025-12-13  
-**Last Amended**: 2025-12-13  
+**Last Amended**: 2025-12-16  
 
 This document defines the **non-negotiable principles** that govern how ArqonHPO is designed, evolved, and maintained.
 
@@ -382,9 +406,51 @@ Benchmarks are declarative.
 * **Bench Suites are Circuits:** Benchmark suites define objectives, budgets, targets, and seed suites as configuration.
 * **Decoupled Objectives:** Objectives remain oblivious to optimizer internals.
 
+### 12. Probe Algorithm Specification
+
+Production probes MUST use mathematically validated low-discrepancy sequences.
+
+* **Default Algorithm:** Kronecker/Weyl sequences with irrational slopes derived from prime square roots (e.g., `PrimeSqrtSlopesRotProbe`).
+* **Banned Patterns:** The `p/1000` heuristic and rational-slope sequences are forbidden due to collision and striping artifacts.
+* **Anytime Property:** Probe quality of first K samples MUST NOT depend on total N.
+* **Randomization:** Cranley-Patterson (CP) shifts are the approved QMC randomization mechanism. Global RNG injection into base sequences is forbidden.
+* **Robustness Hedge:** A configurable `random_spice_ratio` (default 10%) of uniform random points hedges against multimodal fragility.
+
+### 13. Dimension Type Contract
+
+Optimization geometry must respect dimension semantics.
+
+| Scale | Arithmetic | Contract |
+|:---|:---|:---|
+| **Linear** | Euclidean | Standard distance, mean |
+| **Log** | Log-space Euclidean | Transform → operate → inverse |
+| **Periodic** | Circular/Toroidal | `wrap01`, `diff01`, `circular_mean01` |
+
+* **NM on Periodic:** Reflection, expansion, and contraction operations MUST use circular arithmetic (wrap at bounds).
+* **Probe on Periodic:** Samples MUST respect toroidal topology (no edge bias).
+* **Canonical Helpers:** `wrap01(x)`, `diff01(a,b)`, `circular_mean01(values)` are the canonical implementations.
+
+### 14. Multi-Start Strategy Contract
+
+Refinement strategies may use parallel starts for diversity.
+
+* **K-Parallel Starts:** Multi-start strategies run K independent NM instances from diverse seed points.
+* **Diversity Seeding:** Farthest-point selection from top-K×(dim+1) pool. Clustered seeding is forbidden.
+* **Triage Budget:** Each start gets a bounded triage budget before commitment decisions.
+* **Stall Detection:** Stall threshold triggers start rotation; unbounded stalling is forbidden.
+
+### 15. Parallel Sharding Contract
+
+Probes must support stateless parallel execution.
+
+* **Stateless Sharding:** A probe MUST produce identical samples for (seed, index) regardless of worker count.
+* **Collision-Free:** Disjoint index ranges MUST produce disjoint samples.
+* **SDK Parity:** `ArqonProbe` (Python) MUST expose identical behavior to Rust core.
+* **Verification:** Bitwise hash of sorted sample coordinates MUST match single-worker vs multi-worker configurations.
+
 ---
 
-### Tier Ω Scope (Applies to Sections 12–21)
+### Tier Ω Scope (Applies to Sections 16–25)
 
 Sections **12–21** govern **Tier Ω (Experimental)** features only.
 
@@ -591,6 +657,21 @@ A PR **may not be merged** if any of the following are true:
 * **Spec Gate:** behavior implemented without a Spec, or Spec not updated to match Code.
 * **Technical Debt Gate:** new `TODO`s without `TD-###` and TTL.
 
+### 5. Probe Guardrail Tests
+
+Probe changes require passing the following mandatory test classes:
+
+| Test Class | Requirement |
+|:---|:---|
+| `TestProbeOnlyQuality` | New probe beats legacy on shifted instances. |
+| `TestStructuredRouting` | NM wins on structured landscapes (mode selection). |
+| `TestMultimodalGuardrail` | Probe is robust on Rastrigin-class objectives. |
+| `TestGeometryRegression` | Probe geometry is deterministic and reproducible. |
+| `TestStructuredNMCorrectness` | NM periodic arithmetic is correct. |
+| `TestTimeToQuality` | Time-to-target metrics are computed and reported. |
+
+Reference implementation: `benchmarks/test_probe_guardrails.py`
+
 ---
 
 # V. Lifecycle & Automation
@@ -669,6 +750,16 @@ Unbounded anything is a denial-of-service vector.
 * **O(1) or Amortized O(1):** Per-eval policy decisions must be O(1) or amortized O(1).
 * **No Hidden I/O:** Do not write artifacts inside the inner loop unless explicitly buffered.
 
+### 3. Time-to-Target Metrics
+
+The canonical quality-time tradeoff measurements are:
+
+* **Evals-to-Threshold:** Number of evaluations to first reach a target quality threshold.
+* **Hit-by-N:** Binary success metric—did the run reach threshold within N evals?
+* **Median-Best-at-Horizon:** Median of best-seen value at a fixed eval count across seeds.
+
+These metrics MUST be reported per-objective in benchmark artifacts.
+
 ---
 
 # IX. Observability & Telemetry Contracts
@@ -708,6 +799,34 @@ The internal structure must remain understandable, evolvable, and safe.
 ### 2. Complexity Budget & Escalation
 
 * Introducing a new core dependency or major execution mode requires a design review document and ADR.
+
+### 3. Benchmark Schema Contract
+
+Benchmark artifacts MUST follow a declarative schema:
+
+* **Objective Suite (minimum):** sphere_smooth_shift, rosenbrock_smooth_shift, rastrigin_torus.
+* **Cost Regimes:** cheap (1ms), expensive (20ms+).
+* **Output Schema:** CSV with columns [run_id, eval_id, best_so_far, elapsed_ms, params].
+* **Plots:** best_vs_time.png, cdf_time_to_threshold.png per objective.
+
+### 4. SDK Binding Compliance
+
+Python bindings MUST maintain parity with Rust core:
+
+* **Determinism Parity:** `ArqonProbe` and `ArqonSolver` (Python) MUST produce identical results to Rust core for same (seed, config).
+* **Sharding Verification:** Bitwise hash of sorted samples MUST match single-worker vs multi-worker configurations.
+* **Binding Changes:** Require parity tests in CI before merge.
+
+### 5. Strategy Parameter Governance
+
+Strategy parameters require explicit governance:
+
+* **K (parallel starts):** MUST have documented default and rationale.
+* **Triage Budget:** MUST be bounded; unbounded triage is forbidden.
+* **Stall Threshold:** MUST trigger rotation; silent stalling is forbidden.
+* **Spice Ratio:** MUST be configurable with documented default (10%).
+
+Changes to defaults require an ADR with benchmark evidence.
 
 ---
 
