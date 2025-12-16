@@ -1,3 +1,4 @@
+pub mod adaptive_engine;
 pub mod artifact;
 pub mod classify;
 pub mod config;
