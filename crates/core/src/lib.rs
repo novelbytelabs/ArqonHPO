@@ -10,6 +10,7 @@ pub mod classify;
 pub mod config;
 pub mod governance;
 pub mod machine;
+pub mod omega;
 pub mod probe;
 pub mod rng;
 pub mod strategies;

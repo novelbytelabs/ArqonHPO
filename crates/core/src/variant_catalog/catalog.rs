@@ -2,13 +2,14 @@
 //!
 //! Defines the schema for approved variants and the catalog that holds them.
 
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 /// Unique identifier for a variant
 pub type VariantId = u32;
 
 /// Constraints that a variant must satisfy
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct VariantConstraints {
     /// Maximum latency p99 in microseconds (None = no limit)
     pub max_latency_p99_us: Option<u64>,
@@ -62,7 +63,7 @@ impl VariantConstraints {
 }
 
 /// A single approved variant
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Variant {
     /// Unique identifier
     pub id: VariantId,
@@ -83,7 +84,7 @@ pub struct Variant {
 }
 
 /// Types of variants supported
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum VariantType {
     /// Quantization profile (fp16, int8, int4)
     Quantization,
