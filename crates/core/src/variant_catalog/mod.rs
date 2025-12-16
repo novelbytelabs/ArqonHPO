@@ -21,7 +21,7 @@ mod catalog;
 mod bandit;
 mod context;
 
-pub use catalog::{VariantCatalog, Variant, VariantId, VariantConstraints};
+pub use catalog::{VariantCatalog, Variant, VariantId, VariantConstraints, VariantType};
 pub use bandit::{ContextualBandit, BanditConfig, ArmStats};
 pub use context::{Context, ContextFeature};
 

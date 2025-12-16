@@ -1,6 +1,8 @@
 use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
 
+pub type Prng = ChaCha8Rng;
+
 /// Returns a deterministic RNG seeded from the given u64.
 ///
 /// We use ChaCha8 as our standard CSPRNG for reproducibility across platforms.
