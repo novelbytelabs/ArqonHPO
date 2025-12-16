@@ -1,4 +1,7 @@
-use arqonhpo_core::omega::{DiscoveryLoop, Evaluator, Candidate, DiscoverySource, EvaluationResult};
+use arqonhpo_core::omega::{
+    DiscoveryLoop, Evaluator, Candidate, DiscoverySource, EvaluationResult,
+    MockLlmObserver, Observer, ObserverContext
+};
 use arqonhpo_core::variant_catalog::{Variant, VariantType, VariantConstraints};
 use arqon_sim::Universe;
 use std::collections::HashMap;
@@ -43,18 +46,37 @@ impl Evaluator for UniverseEvaluator {
 }
 
 fn main() {
-    println!("Starting Offline Discovery Loop (POC 4)...");
+    println!("Starting Offline Discovery Loop (POC 4+5)...");
     
     let evaluator = UniverseEvaluator;
     let mut loop_runner = DiscoveryLoop::new(evaluator);
     
-    // 1. Generate Candidates
+    // 1. POC 5: Consult Emergent Observer for a Candidate
+    println!("Consulting Observer (Mock LLM)...");
+    let observer = MockLlmObserver::new("gpt-4-simulation");
     
-    // Candidate A: Small kernel (stable)
-    let good_variant = Variant {
+    let context = ObserverContext {
+        recent_telemetry: vec![
+            "Step 90: instability detected".to_string(),
+            "Step 95: instability high".to_string(),
+        ],
+        current_config: r#"{ "kernel_radius": "1" }"#.to_string(),
+        goal_description: "Propose a kernel that balances smoothing with edge retention.".to_string(),
+    };
+    
+    if let Some(candidate) = observer.propose(&context) {
+        println!("Observer proposed: {} (Source: {:?})", candidate.variant.name, candidate.source);
+        println!("Hypothesis: {}", candidate.hypothesis);
+        loop_runner.add_candidate(candidate);
+    } else {
+        println!("Observer remained silent.");
+    }
+
+    // 2. Add a baseline candidate manually for comparison
+    let baseline_variant = Variant {
         id: 0,
-        name: "kernel_3x3_stable".to_string(),
-        version: "2.0".to_string(),
+        name: "baseline_kernel_3x3".to_string(),
+        version: "1.0".to_string(),
         variant_type: VariantType::Kernel,
         constraints: VariantConstraints::default(),
         expected_latency_us: 150,
@@ -63,43 +85,17 @@ fn main() {
     };
     
     loop_runner.add_candidate(Candidate {
-        id: "cand_stable".to_string(),
-        source: DiscoverySource::Heuristic,
-        variant: good_variant,
-        hypothesis: "Small kernel (radius 1) improves local stability".to_string(),
+        id: "cand_baseline".to_string(),
+        source: DiscoverySource::Manual,
+        variant: baseline_variant,
+        hypothesis: "Baseline check".to_string(),
     });
     
-    // Candidate B: Large kernel (unstable/chaotic?)
-    // In our simplified physics large kernel might actually be MORE stable?
-    // Let's test it. If it passes, it passes.
-    // We add a 'noise_level' override in metadata to force instability for testing 'bad' candidate.
-    // But Universe doesn't read noise_level from Variant metadata yet, only 'kernel_radius'.
-    // See Universe::apply_variant(..).
-    // I won't change Universe logic now, let's just see what happens.
-    
-    let big_variant = Variant {
-        id: 0,
-        name: "kernel_11x11_huge".to_string(),
-        version: "0.1".to_string(),
-        variant_type: VariantType::Kernel,
-        constraints: VariantConstraints::default(),
-        expected_latency_us: 2000,
-        is_default: false,
-        metadata: HashMap::from([("kernel_radius".to_string(), "5".to_string())]),
-    };
-    
-     loop_runner.add_candidate(Candidate {
-        id: "cand_huge".to_string(),
-        source: DiscoverySource::LlmObserver,
-        variant: big_variant,
-        hypothesis: "Large kernel captures long-range interactions".to_string(),
-    });
-    
-    // 2. Run Loop
+    // 3. Run Loop
     println!("Evaluating candidates...");
     let promotions = loop_runner.step();
     
-    // 3. Report
+    // 4. Report
     println!("Discovery Step Complete.");
     println!("Promoted {} variants:", promotions.len());
     for p in promotions {
