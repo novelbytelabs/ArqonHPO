@@ -80,14 +80,18 @@ impl ContextualBandit {
             last_selected: None,
         }
     }
-    
+
     /// Select a variant from eligible candidates using Thompson Sampling
     ///
     /// # Algorithm
     /// 1. For each eligible arm, sample from Beta(alpha, beta)
     /// 2. Select the arm with the highest sample
     /// 3. With probability `exploration_prob`, select randomly instead
-    pub fn select(&mut self, eligible: &[VariantId], default_id: Option<VariantId>) -> Option<Selection> {
+    pub fn select(
+        &mut self,
+        eligible: &[VariantId],
+        default_id: Option<VariantId>,
+    ) -> Option<Selection> {
         if eligible.is_empty() {
             // Fallback to default if no eligible variants
             return default_id.map(|id| Selection {
@@ -96,7 +100,7 @@ impl ContextualBandit {
                 exploration_prob: self.config.exploration_prob,
             });
         }
-        
+
         if eligible.len() == 1 {
             let id = eligible[0];
             self.last_selected = Some(id);
@@ -106,7 +110,7 @@ impl ContextualBandit {
                 exploration_prob: self.config.exploration_prob,
             });
         }
-        
+
         // Epsilon-greedy exploration
         let explore: f64 = rand::Rng::random(&mut self.rng);
         if explore < self.config.exploration_prob {
@@ -119,17 +123,17 @@ impl ContextualBandit {
                 exploration_prob: self.config.exploration_prob,
             });
         }
-        
+
         // Thompson Sampling: sample from posterior for each arm
         let mut best_id = eligible[0];
         let mut best_sample = f64::NEG_INFINITY;
-        
+
         for &id in eligible {
             let stats = self.arms.get(&id).cloned().unwrap_or_default();
-            
+
             let alpha = self.config.prior_alpha + stats.successes;
             let beta = self.config.prior_beta + stats.failures;
-            
+
             // Sample from Beta(alpha, beta)
             let sample = if let Ok(dist) = Beta::new(alpha, beta) {
                 dist.sample(&mut self.rng)
@@ -137,13 +141,13 @@ impl ContextualBandit {
                 // Fallback if Beta params invalid
                 0.5
             };
-            
+
             if sample > best_sample {
                 best_sample = sample;
                 best_id = id;
             }
         }
-        
+
         self.last_selected = Some(best_id);
         Some(Selection {
             variant_id: best_id,
@@ -151,7 +155,7 @@ impl ContextualBandit {
             exploration_prob: self.config.exploration_prob,
         })
     }
-    
+
     /// Update the bandit with a reward signal
     ///
     /// Call this after observing the outcome of using the selected variant.
@@ -159,26 +163,26 @@ impl ContextualBandit {
     pub fn update(&mut self, variant_id: VariantId, reward: f64) {
         let stats = self.arms.entry(variant_id).or_default();
         stats.pulls += 1;
-        
+
         // Update running mean
         stats.mean_reward = stats.mean_reward + (reward - stats.mean_reward) / stats.pulls as f64;
-        
+
         // Update Beta distribution parameters
         // Treat reward as Bernoulli success probability
         stats.successes += reward;
         stats.failures += 1.0 - reward;
     }
-    
+
     /// Get statistics for a variant
     pub fn stats(&self, variant_id: VariantId) -> Option<&ArmStats> {
         self.arms.get(&variant_id)
     }
-    
+
     /// Get the last selected variant
     pub fn last_selected(&self) -> Option<VariantId> {
         self.last_selected
     }
-    
+
     /// Reset all arm statistics
     pub fn reset(&mut self) {
         self.arms.clear();
@@ -189,17 +193,17 @@ impl ContextualBandit {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_bandit_select_single() {
         let mut bandit = ContextualBandit::new(BanditConfig::default());
         let eligible = vec![1];
-        
+
         let selection = bandit.select(&eligible, None).unwrap();
         assert_eq!(selection.variant_id, 1);
         assert_eq!(selection.reason, SelectionReason::OnlyEligible);
     }
-    
+
     #[test]
     fn test_bandit_select_multiple() {
         let mut bandit = ContextualBandit::new(BanditConfig {
@@ -207,15 +211,15 @@ mod tests {
             exploration_prob: 0.0, // Disable exploration for determinism
             ..Default::default()
         });
-        
+
         let eligible = vec![1, 2, 3];
-        
+
         // First selection should be from Thompson sampling
         let selection = bandit.select(&eligible, None).unwrap();
         assert_eq!(selection.reason, SelectionReason::ThompsonSampling);
         assert!(eligible.contains(&selection.variant_id));
     }
-    
+
     #[test]
     fn test_bandit_update_and_learn() {
         let mut bandit = ContextualBandit::new(BanditConfig {
@@ -223,9 +227,9 @@ mod tests {
             exploration_prob: 0.0,
             ..Default::default()
         });
-        
+
         let eligible = vec![1, 2];
-        
+
         // Reward variant 1 heavily
         for _ in 0..100 {
             bandit.update(1, 1.0);
@@ -234,7 +238,7 @@ mod tests {
         for _ in 0..100 {
             bandit.update(2, 0.0);
         }
-        
+
         // Now selection should strongly prefer variant 1
         let mut count_1 = 0;
         for _ in 0..100 {
@@ -243,21 +247,25 @@ mod tests {
                 count_1 += 1;
             }
         }
-        
+
         // Should select variant 1 almost always
-        assert!(count_1 > 90, "Expected variant 1 to be selected >90 times, got {}", count_1);
+        assert!(
+            count_1 > 90,
+            "Expected variant 1 to be selected >90 times, got {}",
+            count_1
+        );
     }
-    
+
     #[test]
     fn test_bandit_fallback() {
         let mut bandit = ContextualBandit::new(BanditConfig::default());
         let eligible: Vec<VariantId> = vec![];
-        
+
         let selection = bandit.select(&eligible, Some(99)).unwrap();
         assert_eq!(selection.variant_id, 99);
         assert_eq!(selection.reason, SelectionReason::Fallback);
     }
-    
+
     #[test]
     fn test_bandit_deterministic() {
         let config = BanditConfig {
@@ -265,12 +273,12 @@ mod tests {
             exploration_prob: 0.5,
             ..Default::default()
         };
-        
+
         let mut bandit1 = ContextualBandit::new(config.clone());
         let mut bandit2 = ContextualBandit::new(config);
-        
+
         let eligible = vec![1, 2, 3, 4, 5];
-        
+
         // Same seed should give same selections
         for _ in 0..10 {
             let s1 = bandit1.select(&eligible, None).unwrap();

@@ -8,6 +8,7 @@
 pub mod artifact;
 pub mod classify;
 pub mod config;
+pub mod governance;
 pub mod machine;
 pub mod probe;
 pub mod rng;

@@ -17,12 +17,12 @@
 //! - [`ContextualBandit`]: Thompson Sampling selector with constraint gating
 //! - [`Context`]: Request/system context for bandit selection
 
-mod catalog;
 mod bandit;
+mod catalog;
 mod context;
 
-pub use catalog::{VariantCatalog, Variant, VariantId, VariantConstraints};
-pub use bandit::{ContextualBandit, BanditConfig, ArmStats};
+pub use bandit::{ArmStats, BanditConfig, ContextualBandit};
+pub use catalog::{Variant, VariantCatalog, VariantConstraints, VariantId, VariantType};
 pub use context::{Context, ContextFeature};
 
 /// Result of variant selection
@@ -52,7 +52,7 @@ pub enum SelectionReason {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_selection_reason_debug() {
         let reason = SelectionReason::ThompsonSampling;
