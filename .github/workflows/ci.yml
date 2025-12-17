@@ -31,6 +31,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # PyO3 0.24.2 requires Python <= 3.13. macOS runners have 3.14.
+      - name: Setup Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
       - name: Setup Rust ${{ matrix.rust }}
         uses: dtolnay/rust-toolchain@master
         with:
