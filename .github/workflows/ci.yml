@@ -94,7 +94,7 @@ jobs:
         run: cargo install cargo-tarpaulin
 
       - name: Generate Coverage
-        run: cargo tarpaulin --workspace --exclude arqon-python --out xml --skip-clean
+        run: cargo tarpaulin --workspace --exclude arqonhpo --out xml --skip-clean
         env:
           PYO3_PYTHON: python3.12
 
