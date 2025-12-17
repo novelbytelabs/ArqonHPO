@@ -6,7 +6,7 @@ use crate::adaptive_engine::{
     config_atomic::{ParamId, ParamVec, ConfigSnapshot, AtomicConfig},
     proposer::Proposal,
     control_safety::ControlSafety,
-    audit::{AuditQueue, AuditEvent, EventType},
+
 };
 use std::sync::Arc;
 use std::time::Instant;

@@ -494,7 +494,7 @@ impl Probe for PrimeSqrtSlopesRotProbe {
             let mut point = HashMap::new();
             for name in keys.iter() {
                 if let Some(domain) = config.bounds.get(name) {
-                    let unit_pos: f64 = rng.gen();
+                    let unit_pos: f64 = rng.random();
                     let val = match domain.scale {
                         Scale::Linear | Scale::Periodic => {
                             domain.min + unit_pos * (domain.max - domain.min)

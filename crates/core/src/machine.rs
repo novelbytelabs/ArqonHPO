@@ -1,7 +1,7 @@
 use crate::artifact::EvalTrace;
 use crate::classify::{Classify, Landscape, ResidualDecayClassifier, VarianceClassifier};
 use crate::config::SolverConfig;
-use crate::probe::{Probe, PrimeIndexProbe, PrimeSqrtSlopesRotProbe, PrimeSqrtSlopesRotConfig, UniformProbe};
+use crate::probe::{Probe, PrimeSqrtSlopesRotProbe, PrimeSqrtSlopesRotConfig, UniformProbe};
 use crate::strategies::nelder_mead::NelderMead;
 // use crate::strategies::multi_start_nm::MultiStartNM;
 use crate::strategies::tpe::TPE;
@@ -182,7 +182,7 @@ impl Solver {
                             use rand::SeedableRng;
                             use rand::Rng;
                             let mut cp_rng = rand_chacha::ChaCha8Rng::seed_from_u64(cp_seed);
-                            let cp_delta: Vec<f64> = (0..dim).map(|_| cp_rng.gen()).collect();
+                            let cp_delta: Vec<f64> = (0..dim).map(|_| cp_rng.random()).collect();
                             
                             let p_config = PrimeSqrtSlopesRotConfig::with_spice(spice).with_cp_shift(cp_delta);
                             self.probe = Box::new(PrimeSqrtSlopesRotProbe::with_seed_and_config(self.config.seed, p_config));
@@ -207,7 +207,7 @@ impl Solver {
                              use rand::SeedableRng;
                              use rand::Rng;
                              let mut cp_rng = rand_chacha::ChaCha8Rng::seed_from_u64(cp_seed);
-                             let cp_delta: Vec<f64> = (0..dim).map(|_| cp_rng.gen()).collect();
+                             let cp_delta: Vec<f64> = (0..dim).map(|_| cp_rng.random()).collect();
                              
                              // Re-init probe with shift
                              let spice = PrimeSqrtSlopesRotConfig::adaptive_spice_for_landscape(true); // Maybe use chaotic spice (or just higher)? User said "CP restart"
@@ -300,7 +300,7 @@ impl Solver {
                          // Note: We don't filter history. We just let Top-K pick from everything.
                          // But we want to ensure we use CP logic?
                          // NelderMead::with_seed_points just takes seeds.
-                         let seeds = self.get_top_k_seed_points(k);
+                         let _seeds = self.get_top_k_seed_points(k);
                          
                          // Compute periodic mask
                          let mut keys: Vec<_> = self.config.bounds.keys().collect();

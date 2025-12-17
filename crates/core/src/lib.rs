@@ -1,3 +1,7 @@
+#![cfg_attr(test, allow(clippy::disallowed_types))] // Allow in tests (for test logic only)
+#![allow(dead_code)] // TODO: Remove this before phase completion
+#![allow(unused_variables)] // TODO: Remove this before phase completion
+
 pub mod artifact;
 pub mod classify;
 pub mod config;

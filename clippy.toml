@@ -1,0 +1,7 @@
+# Constitution VIII.3 Enforcement
+# This configuration bans forbidden types in hot-path code (Tier 1/2).
+
+disallowed-types = [
+    { path = "std::collections::HashMap", reason = "FORBIDDEN in Hot Path (Tier-1/2) per Constitution VIII.3. Use ParamVec/SmallVec for O(1) dense storage." },
+    { path = "hashbrown::HashMap", reason = "FORBIDDEN in Hot Path (Tier-1/2) per Constitution VIII.3. Use ParamVec/SmallVec for O(1) dense storage." },
+]

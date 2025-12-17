@@ -7,7 +7,7 @@ use crate::adaptive_engine::config_atomic::ParamVec;
 use rand::SeedableRng;
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
-use smallvec::SmallVec;
+
 
 /// SPSA state machine states.
 #[derive(Clone, Debug, PartialEq)]
@@ -122,7 +122,7 @@ impl Spsa {
         let mut delta = ParamVec::with_capacity(self.num_params);
         
         for _ in 0..self.num_params {
-            let sign = if self.rng.gen::<bool>() { 1.0 } else { -1.0 };
+            let sign = if self.rng.random::<bool>() { 1.0 } else { -1.0 };
             delta.push(sign * c_k);
         }
         
@@ -203,7 +203,7 @@ impl Spsa {
                 let y_plus = Self::aggregate_objectives(&accumulated, 0.1);
                 
                 // Transition to minus phase
-                let minus_delta: ParamVec = delta.iter().map(|&d| -d).collect();
+                let _minus_delta: ParamVec = delta.iter().map(|&d| -d).collect();
                 self.perturbation_counter += 1;
                 self.state = SpsaState::WaitingMinus {
                     perturbation_id: self.perturbation_counter,

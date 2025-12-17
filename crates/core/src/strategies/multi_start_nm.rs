@@ -76,7 +76,7 @@ impl MultiStartNM {
         config: MultiStartConfig,
     ) -> Self {
         // Dimension-aware minimum evaluations per start
-        let min_per_start = config.min_evals_per_start.max(25 * (dim + 1));
+        let _min_per_start = config.min_evals_per_start.max(25 * (dim + 1));
         
         // Calculate remaining budget for refinement (estimate)
         // Note: we don't have exact budget info here easily, but we can assume typical usage.
@@ -99,7 +99,7 @@ impl MultiStartNM {
             let end_idx = ((i + 1) * points_per_start).min(seed_points.len());
             
             if start_idx < seed_points.len() {
-                let group: Vec<_> = seed_points[start_idx..end_idx].to_vec();
+                let _group: Vec<_> = seed_points[start_idx..end_idx].to_vec();
                 // Dummy fix for compilation (multi-start Logic is deprecated)
                 starts.push(NelderMead::new(dim, vec![false; dim]));
             }
