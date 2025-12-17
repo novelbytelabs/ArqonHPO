@@ -10,10 +10,11 @@ use std::sync::atomic::{AtomicU64, Ordering};
 /// Audit policy defining how events are recorded.
 ///
 /// Constitution: Audit MUST be explicit, never bypassed silently.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum AuditPolicy {
     /// In-memory ring buffer only (always on, never blocks).
     /// Default for all tiers.
+    #[default]
     InMemoryRequired,
     
     /// In-memory + async background flush to disk.
@@ -27,12 +28,6 @@ pub enum AuditPolicy {
     /// Audit disabled. **FORBIDDEN in Tier 1/2.**
     /// Only allowed in Tier Ω sandbox.
     Disable,
-}
-
-impl Default for AuditPolicy {
-    fn default() -> Self {
-        Self::InMemoryRequired
-    }
 }
 
 /// Tier classification for enforcement rules.
