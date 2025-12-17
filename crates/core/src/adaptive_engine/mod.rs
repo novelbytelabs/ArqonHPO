@@ -40,7 +40,7 @@ mod audit;
 mod homeostasis;
 
 // Re-exports
-pub use config_atomic::{ParamId, ParamVec, ParamRegistry, ConfigSnapshot, AtomicConfig};
+pub use config_atomic::{ParamId, ParamVec, ParamRegistry, ConfigSnapshot, AtomicConfig, param_vec};
 pub use telemetry::{TelemetryDigest, TelemetryRingBuffer, DigestValidity};
 pub use spsa::{Spsa, SpsaConfig, SpsaState};
 pub use proposer::{AdaptiveProposer, Proposal, ProposalResult, NoChangeReason};

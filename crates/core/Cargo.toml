@@ -14,3 +14,10 @@ thiserror = { workspace = true }
 miette = { workspace = true }
 tracing = { workspace = true }
 static_assertions = { workspace = true }
+
+[dev-dependencies]
+criterion = "0.5"
+
+[[bench]]
+name = "adaptive_engine_latency"
+harness = false
