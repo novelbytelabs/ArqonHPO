@@ -1,0 +1,1300 @@
+<!--
+Sync Impact Report:
+
+- ArqonHPO Constitution v1.4.0 → v1.4.1 (2025-12-17)
+
+## Amendment Summary (v1.4.1)
+This amendment strengthens the integrity of VIII.3 with specific normative definitions for the
+Hot Path scope, forbidden types, and enforcement mechanisms. It is a strict tightening of v1.4.0
+adding explicit technical mandates for merge blocking.
+
+## Added Normative Specifics (PATCH bump - Enforcement Tightening)
+- **Hot Path Definition**: Defined as code within T2_decision / T1_apply timing windows.
+- **Forbidden Types**: Explicitly bans `std::collections::HashMap` and `hashbrown::HashMap`.
+- **ParamVec/DeltaVec**: Defined as dense ordered numeric vectors (SmallVec/Vec).
+- **No Escape Hatches**: Explicit ban on `#[allow(clippy::disallowed_types)]`.
+- **Enforcement**: Mandates `clippy.toml` config and CI `-D warnings`.
+- **Artifact Contract**: Pins exact field names (`seed`, `registry_hash64`, `registry_names`, `param_len`, `params_vec`).
+- **Constructor Rule**: Public APIs must strictly enforce dense types (no named-param backdoors).
+
+## Prior Amendments
+- v1.4.0 (2025-12-17): Hot-Path Parameter Representation (v1.4.0)
+- v1.3.0 (2025-12-16): Tier 1/2/Ω architecture, Variant Catalog, timing contracts
+- v1.2.0: SPSA, Safety Executor, Atomic Config, Telemetry Digest (Adaptive Engine)
+
+## Templates Requiring Updates
+- ✅ all templates aligned with v1.4.0 (no template changes needed for this enforcement detail)
+
+## Reference Evidence
+- Branch: 005-adaptive-engine
+- Benchmark proof: T2_decision=210ns, T1_apply=107ns
+-->
+
+# ArqonHPO Constitution
+
+**Version**: 1.4.1  
+**Ratification Date**: 2025-12-13  
+**Last Amended**: 2025-12-17  
+
+This document defines the **non-negotiable principles** that govern how ArqonHPO is designed, evolved, and maintained.
+
+It exists to protect ArqonHPO from accidental bloat, regression, silent breakage, and “clever” shortcuts that erode trust.
+
+If a decision conflicts with this constitution, **the decision is wrong**.
+
+> **Spec Kit Note:** This constitution is the hard sandbox for all `/speckit.*` commands.  
+> Specs, plans, and tasks **must not** violate the constraints in Sections II–XI.
+
+---
+
+# ULTIMATE INTEGRITY COVENANT
+
+This constitution is a **hard constraint** on all engineering work. It exists to prevent the failure modes that destroy real systems:
+
+- “Happy path” engineering that collapses under real inputs
+- Pseudocode / placeholders / stubs presented as completion
+- Tests that “check boxes” but don’t model production reality
+- Fake evidence (invented logs, benchmarks, screenshots, coverage, results)
+- Unnamed technical debt that silently becomes permanent
+- Silent failure handling and silent security degradation
+- Undocumented complexity and unreadable “clever” code
+- Non-reproducible builds, non-deterministic behavior, and flaky verification
+- Work products that are narrative-only, vague, or unverifiable
+
+If a decision conflicts with this covenant, **the decision is wrong**.
+
+---
+
+### A. The Only Acceptable Meaning of “DONE” (The 8-Pillar Standard)
+
+A change is **NOT DONE** until all eight pillars are true:
+
+1. Implementation  
+   - Real code exists (not pseudocode). It compiles, runs, and handles edge cases.  
+   - Invalid states are rejected; invariants are enforced.  
+   - Failure behavior is explicit: timeouts, retries, backpressure, cancellation, and partial failures are defined.
+
+2. Verification  
+   - Automated tests cover normal + failure + adversarial + concurrency/ordering behavior.  
+   - Tests model production complexity, not toy inputs.  
+   - Where appropriate: property-based tests, fuzzing, chaos/fault injection, and regression tests exist.
+
+3. Documentation  
+   - In-repo docs explain: architecture, usage, invariants, data contracts, and “what can go wrong.”  
+   - Operational caveats are explicit: limits, failure modes, rollback strategy, and safety constraints.  
+   - Every public behavior change updates docs and/or changelog.
+
+4. Evidence  
+   - Reproducible proof exists (CI artifacts, logs, traces, coverage reports, benchmarks).  
+   - Evidence is not implied; it is attached or linkable to a specific commit/run.  
+   - If there is no evidence, the claim is false.
+
+5. Traceability  
+   - Each requirement / acceptance criterion maps to:
+     - code locations,
+     - test locations,
+     - documentation locations,
+     - evidence artifacts.
+   - No orphan requirements. No orphan code. No untested requirements.
+
+6. Operational Readiness  
+   - Safe defaults, explicit configuration validation, and clear failure signals exist.  
+   - Observability exists: structured logs + metrics + tracing (or an equivalent breadcrumb system).  
+   - Rollout/rollback exists where relevant; migrations are reversible or explicitly irreversible.
+
+7. Security & Safety Readiness  
+   - Threat assumptions are stated. Privilege boundaries are validated.  
+   - Secrets are not logged; sensitive data is redacted.  
+   - Fail-closed behavior is defined for safety/security modules (no silent “allow”).
+
+8. Task Completeness  
+   - Work is decomposed into a concrete task list (not vague bullets).  
+   - Each task includes acceptance criteria, a test hook, and an evidence hook.  
+   - If a task is not done, the work is not done.
+
+Rule: Declaring “done” without satisfying every pillar is deception.
+
+---
+
+### B. The Anti-Half-Ass Rules (Merge-Blocking by Definition)
+
+#### B1. No Pseudocode-as-Deliverable
+- Pseudocode may exist only as clearly labeled design notes.  
+- Pseudocode cannot be the “solution,” cannot substitute for tests, and cannot be used to claim completion.
+
+#### B2. No Placeholders / No Stubs / No “Later”
+Forbidden in production paths:
+- `TODO`, `FIXME`, `pass`, `todo!()`, empty handlers, commented-out behavior, “mock later,” “hardening later,” “edge cases later.”
+If incomplete behavior must exist temporarily, it must:
+- be feature-flagged OFF by default,
+- be isolated so it cannot affect production behavior,
+- have a `TD-###` record with TTL (see Debt Policy).
+
+#### B3. No Fake Data, No Toy Inputs, No Lazy Synthetics
+- Tests and examples must use production-like complexity: realistic IDs, nested payloads, boundary sizes, malformed variants, weird unicode/whitespace, and adversarial inputs.
+- Ban list (unless the test is explicitly about these literals): `foo`, `bar`, `user_1`, `test123`, “hello world.”
+
+#### B4. No Happy Path Testing
+For any externally coupled feature (filesystem, subprocesses, network, storage, package backends), tests must cover:
+- timeouts, retries, partial failures, malformed responses, permission failures, cancellation, overload/backpressure, and out-of-order/duplicate events where relevant.
+
+#### B5. No Silent Failures
+- Swallowing errors is forbidden. Every error must be handled, logged with context, or propagated.
+- “Fallback to success” behavior without explicit documentation and tests is forbidden.
+
+#### B6. Warnings Are Errors
+- Compiler, linter, formatter, typechecker warnings block merge. “It builds on my machine” is irrelevant.
+
+#### B7. No Unbounded Risk
+- Unbounded queues, unbounded memory growth, unbounded metric cardinality, unbounded retries, and unbounded timeouts are forbidden.
+- If something can grow, it must have a cap. If it can retry, it must have a budget. If it can wait, it must have a timeout.
+
+---
+
+### C. Technical Debt Policy (Zero Debt Unless Named + Owned + Expiring)
+
+Technical debt is **forbidden by default**. If debt must exist, it must be explicit, bounded, and temporary.
+
+Debt is valid only if it is recorded as `TD-###` and includes:
+- owner,
+- scope and blast radius,
+- why it exists,
+- the exact exit criteria (“debt is removed when…”),
+- remediation plan,
+- hard TTL date,
+- tests guarding the boundary so the debt cannot silently expand.
+
+Rules:
+- Debt without TTL is invalid.
+- Debt past TTL blocks merge/release.
+- “We’ll fix later” is not a plan.
+- “Temporary” code paths must have an explicit sunset mechanism.
+
+---
+
+### D. SDD + TDD Contract (Professional Standard)
+
+#### D1. Specification-Driven Design Requirements (for non-trivial changes)
+A valid spec includes:
+- intent and non-goals,
+- acceptance criteria (falsifiable),
+- invariants (must-always-be-true),
+- failure modes and expected behavior under each,
+- compatibility rules (protocol/API/schema expectations),
+- performance envelope and resource bounds (when relevant),
+- security/privacy assumptions and constraints,
+- operational concerns (observability, rollout/rollback, migration notes).
+
+If the spec is ambiguous, the first task is to remove ambiguity by producing falsifiable criteria.
+
+#### D2. Test-Driven Development Requirements
+- Tests define behavior before/with implementation (TDD by default).
+- Refactors require existing tests protecting behavior.
+- Every bug fix includes a regression test that fails pre-fix and passes post-fix.
+- Flaky tests are critical bugs; they must be fixed, not ignored.
+
+---
+
+### E. Verification Constitution (Realism + Adversarial + Failure-First)
+
+Required test categories (as applicable):
+- unit tests for pure logic (fast, no external deps),
+- integration tests for boundaries and real dependency interactions,
+- property-based tests for parsers/validators/protocol/config boundaries,
+- fuzz tests for user-controlled input surfaces,
+- concurrency/ordering tests for races, duplicates, replays, idempotency,
+- chaos/fault injection for externally coupled behaviors,
+- performance regression checks for hot paths or stated latency budgets.
+
+Verification must explicitly test:
+- malformed inputs,
+- partial reads/writes,
+- timeout handling,
+- retry policy and idempotency guarantees,
+- permission boundaries,
+- overload/backpressure behavior,
+- deterministic ordering assumptions (or explicit non-guarantees).
+
+---
+
+### F. The Claim Ledger (Mandatory Honesty)
+
+Any claim like “works,” “done,” “fixed,” “secure,” “fast,” “compatible,” “production-ready” must be labeled:
+
+- Observed: executed + evidence attached
+- Derived: reasoned + assumptions listed + risks stated
+- Unverified: not tested + the exact minimal experiment provided
+
+Presenting Derived/Unverified claims as Observed is lying.
+
+---
+
+### G. Minimum Acceptable Deliverable (Non-Negotiable Output Shape)
+
+Any non-trivial work product must include all of:
+- a concrete task list with acceptance criteria per task,
+- a file-level plan (what files change/add/remove),
+- implementation code,
+- tests (including failure/adversarial coverage where relevant),
+- documentation updates,
+- an Evidence Pack (defined in the footer).
+
+If any part is incomplete, it must be explicitly labeled Unverified and paired with the shortest experiment that would verify it.
+
+### H. Default Principles
+
+If a situation, decision, or design choice is not explicitly covered by this Constitution, the default principle is to:
+- **Adopt the most stringent, resilient, and transparent posture.**
+- **Enforce the primacy of operational integrity, unambiguous intent, and disciplined scaling.**
+- **Treat unresolved ambiguity as a Constitutional void, demanding immediate and formal amendment.**
+
+# I. Vision and Scope
+
+## 1. The Vision
+
+**ArqonHPO is a probe-gated optimization engine for time-to-target—and a runtime control primitive for microsecond-latency adaptation.**
+
+It is built to be clearly competitive for two product-aligned use cases:
+
+1. **Fast simulation tuning:** expensive evaluations (milliseconds to seconds) where reaching a useful threshold quickly matters.
+2. **Sklearn-style model tuning:** moderate-cost evaluations where optimizer overhead is material and "good-enough quickly" often wins.
+
+**Control Primitive Posture:** Once the decision loop operates at microseconds, optimization is treated as a feedback control primitive. The system's job is to steer toward homeostasis under changing conditions (drift, load, hardware throttling) using bounded changes. This is achieved through:
+
+* **Discovery Offline, Adaptation Online:** Offline discovery (Tier Ω) generates and evaluates candidates; online adaptation (Tier 2) selects among approved variants and proposes bounded deltas.
+* **Law Control:** Online tuning of "physics knobs" (diffusion, noise, decay, damping, constraint weights) within allowlisted parameters and strict safety envelopes.
+* **Microsecond Latency:** ArqonHPO is designed for 1–10ms decision latency, enabling embedding in live control loops without blocking the dataplane.
+
+## 2. The Scope
+
+To achieve this vision, we must be ruthless about what ArqonHPO **is** and what it **is not**.
+
+### 2.1 In Scope (The Core Product)
+
+ArqonHPO is **probe-gated optimization** and **runtime adaptation**. It is responsible for:
+
+* **The Probe Phase:** Deterministic sampling to gather an initial signal and candidates.
+* **The Classification Phase:** A fixed-size test that labels the landscape (e.g., structured vs chaotic) and produces a score.
+* **The Mode Selection Phase:** Selecting a refinement strategy based on the classification result.
+* **The Refinement Phase:** Executing the chosen optimizer within the remaining budget.
+* **Audit Artifacts:** Schema-versioned run artifacts sufficient for replay and accountability.
+* **Systems/Infrastructure Knobs:** Tuning database parameters, connection pools, cache sizes, and runtime configurations in bounded, safe, auditable ways.
+* **Runtime Law Tuning:** Adjusting simulation/physics parameters (e.g., diffusion rates, constraint weights) within safety envelopes during online operation.
+
+### 2.2 Out of Scope (The Boundaries)
+
+ArqonHPO is **not**:
+
+* **A general-purpose ML training framework.** It tunes; it does not train end-to-end pipelines.
+* **A distributed execution platform.** It may integrate with external evaluators, but it does not provide a cluster runtime.
+* **A “guaranteed best on all objectives” optimizer.** Claims must be scoped to the benchmark suite and use cases.
+
+## 3. The Strategic Horizon
+
+We define evolution in three distinct epochs. Engineering decisions must align with the current epoch while reserving capacity for the next.
+
+* **Epoch 1: The Foundation (Deterministic probe-gated core).**
+    * *Focus:* determinism, bounded overhead, artifact auditability, and time-to-target benchmarking.
+    * *Goal:* be measurably competitive on the two target use cases.
+* **Epoch 2: The Platform (Composable strategies).**
+    * *Focus:* pluggable backends, richer classification signals, replay tooling.
+    * *Goal:* support multiple strategies without breaking contracts.
+* **Epoch 3: The Research Frontier (Optional).**
+    * *Focus:* experimental samplers, meta-controllers, and novel structural probes.
+    * *Goal:* enable experimentation without contaminating production defaults.
+
+---
+
+# II. Core Principles
+
+This section defines the engineering laws that govern ArqonHPO. These are not guidelines; they are constraints. Code that violates these principles will be rejected during Review.
+
+### 1. Architectural Invariance (The Gate Pattern)
+
+The system is composed of four non-negotiable phases. **Strict adherence** to the **probe-gated pipeline** is required to prevent coupling and ensure reproducibility.
+
+**The Phases:**
+
+* **Probe:** deterministic sampling; gathers initial candidates and signal.
+* **Classify:** fixed-size classification; emits score + label.
+* **Select:** chooses refinement mode based on classification.
+* **Refine:** executes the chosen optimizer within the remaining budget.
+
+**The Bypass Ban:**
+
+No phase may be skipped because it is “convenient.”
+
+* **Forbidden:** Selecting a refinement mode without running classification.
+* **Forbidden:** Adding hidden objective calls that do not count against budget.
+* **Forbidden:** Silent fallbacks that change mode/behavior without artifacts and tests.
+
+### 2. Statelessness & State Explicit-ness
+
+To ensure runs can be reproduced and audited, we adhere to a **Stateless Where Possible** philosophy.
+
+* **Run Ephemerality:** Any process must be able to crash and restart without corrupting an ongoing run artifact.
+* **State Explicitness:** All non-trivial solver state must be explicit, serializable, and captured in artifacts if it affects decisions.
+* **Seed Sovereignty:** All randomness must come from explicit seeds; hidden global RNG use is forbidden.
+
+### 3. Contract Sovereignty (Typed Inputs, Versioned Artifacts)
+
+We enforce a strict separation between machine-stable contracts and human-readable debugging.
+
+**Typed Contracts:**
+
+Configuration and run inputs must be expressed in typed structures. The config contract is the single source of truth for defaults and validation.
+
+**Artifact Reservations:**
+
+Artifacts are schema-versioned and must be stable and replayable. Logs are diagnostics and must not be required for replay.
+
+### 4. Future-Proofing Hooks (The Moonshot Mandate)
+
+To enable future experimentation without requiring a rewrite, v1.0 must reserve capacity for:
+
+* **Backend Hook:** Ability to select a refinement backend via a stable interface.
+* **Classifier Hook:** Ability to extend classification signals while preserving the fixed-size gating contract.
+* **Objective Guard Hook:** Ability to wrap objectives for timeouts/redaction without changing the solver core.
+* **Replay Hook:** Ability to replay decisions from artifacts.
+
+### 5. Semantic Versioning & Compatibility
+
+We adhere to strict Semantic Versioning regarding the **Public API** and **Artifact Schemas**.
+
+**Versioning Rules:**
+
+* **MAJOR:** Breaking changes to solver public API, artifact schema, or core behavior.
+* **MINOR:** New modes, additive fields (optional), new telemetry, or non-breaking enhancements.
+* **PATCH:** Bug fixes, performance improvements, and clarifications.
+
+**Stealth Ban:**
+
+There shall be no "stealth" breaking changes in MINOR or PATCH versions. Ever.
+
+### 6. Data Isolation & Privacy (The Bulkhead)
+
+Optimization objectives may embed sensitive information.
+
+* **Isolation:** Objective payloads are treated as sensitive by default.
+* **Redaction:** Logs/artifacts must not leak secrets or tenant data.
+* **Sharing Safety:** Artifacts intended for sharing must support redaction without breaking replayability guarantees.
+
+### 7. Security by Design
+
+Security is a baseline constraint, not a feature.
+
+* **Zero Trust:** The solver does not trust the objective; it validates inputs and guards execution.
+* **Fail Closed:** If a safety/guard module fails, times out, or crashes, the run is failed explicitly. It is never "allowed by default."
+* **Secure Defaults:** Unsafe execution modes must be opt-in and auditable.
+
+### 8. Programmable Safety (Guards)
+
+We reject hardcoded, silent safety logic. Safety requirements vary by environment.
+
+* **Guard Middleware:** Objective guards (timeouts, resource caps, redaction) must be composable.
+* **Fail Closed Mandate:** If a guard times out, crashes, or returns an error, execution is blocked and surfaced.
+* **Bounded Execution:** All guards must have strict, non-negotiable limits.
+
+### 9. Run-as-Artifact (The Capsule Principle)
+
+Runs are not just ephemeral computations. They must produce replayable artifacts.
+
+* **Digital DNA:** The system is optimized to transport the *potential* (seed + config + bounds + decisions), not just the result.
+* **Replayability:** A run can be reconstructed from the artifact plus the objective.
+
+### 10. Delta-First Evidence
+
+Computation cost and audit burden scale with **change ($\Delta$)**.
+
+* **Diff over Snapshot:** Prefer per-eval traces and incremental evidence over opaque summaries.
+* **Causal Integrity:** Decisions and their inputs must be recorded in order.
+
+### 11. Circuit-First Benchmarking
+
+Benchmarks are declarative.
+
+* **Bench Suites are Circuits:** Benchmark suites define objectives, budgets, targets, and seed suites as configuration.
+* **Decoupled Objectives:** Objectives remain oblivious to optimizer internals.
+
+### 12. Probe Algorithm Specification
+
+Production probes MUST use mathematically validated low-discrepancy sequences.
+
+* **Default Algorithm:** Kronecker/Weyl sequences with irrational slopes derived from prime square roots (e.g., `PrimeSqrtSlopesRotProbe`).
+* **Banned Patterns:** The `p/1000` heuristic and rational-slope sequences are forbidden due to collision and striping artifacts.
+* **Anytime Property:** Probe quality of first K samples MUST NOT depend on total N.
+* **Randomization:** Cranley-Patterson (CP) shifts are the approved QMC randomization mechanism. Global RNG injection into base sequences is forbidden.
+* **Robustness Hedge:** A configurable `random_spice_ratio` (default 10%) of uniform random points hedges against multimodal fragility.
+
+### 13. Dimension Type Contract
+
+Optimization geometry must respect dimension semantics.
+
+| Scale | Arithmetic | Contract |
+|:---|:---|:---|
+| **Linear** | Euclidean | Standard distance, mean |
+| **Log** | Log-space Euclidean | Transform → operate → inverse |
+| **Periodic** | Circular/Toroidal | `wrap01`, `diff01`, `circular_mean01` |
+
+* **NM on Periodic:** Reflection, expansion, and contraction operations MUST use circular arithmetic (wrap at bounds).
+* **Probe on Periodic:** Samples MUST respect toroidal topology (no edge bias).
+* **Canonical Helpers:** `wrap01(x)`, `diff01(a,b)`, `circular_mean01(values)` are the canonical implementations.
+
+### 14. Multi-Start Strategy Contract
+
+Refinement strategies may use parallel starts for diversity.
+
+* **K-Parallel Starts:** Multi-start strategies run K independent NM instances from diverse seed points.
+* **Diversity Seeding:** Farthest-point selection from top-K×(dim+1) pool. Clustered seeding is forbidden.
+* **Triage Budget:** Each start gets a bounded triage budget before commitment decisions.
+* **Stall Detection:** Stall threshold triggers start rotation; unbounded stalling is forbidden.
+
+### 15. Parallel Sharding Contract
+
+Probes must support stateless parallel execution.
+
+* **Stateless Sharding:** A probe MUST produce identical samples for (seed, index) regardless of worker count.
+* **Collision-Free:** Disjoint index ranges MUST produce disjoint samples.
+* **SDK Parity:** `ArqonProbe` (Python) MUST expose identical behavior to Rust core.
+* **Verification:** Bitwise hash of sorted sample coordinates MUST match single-worker vs multi-worker configurations.
+
+### 16. Adaptive Engine Specification
+
+Online parameter adaptation MUST use validated optimization algorithms with mandatory safety layers.
+
+| Aspect | Requirement |
+|:---|:---|
+| **Default Algorithm** | SPSA (Simultaneous Perturbation Stochastic Approximation) — 2 evaluations per gradient estimate, regardless of dimension |
+| **Banned Patterns** | Finite-difference gradients (O(n) evals), unbounded learning rates, global step sizes without decay |
+| **Decay Schedule** | `a_k = a₀/(k+1+A)^α` and `c_k = c₀/(k+1)^γ` with standard exponents (α=0.602, γ=0.101) |
+| **Perturbation** | ±1 Bernoulli (symmetric) ONLY; Gaussian perturbations are forbidden due to heavy tails |
+| **Determinism** | Same (seed, iteration) MUST produce identical perturbation vectors |
+| **State Machine** | Ready → WaitingPlus → WaitingMinus → Ready (strict 2-eval cycle) |
+
+* **Canonical Implementation:** `Spsa` struct with `ChaCha8Rng` for deterministic perturbations.
+* **Budget Enforcement:** Each adaptation cycle MUST complete within `budget_us` microseconds.
+
+### 17. Safety Executor Contract
+
+All configuration updates MUST pass through `SafetyExecutor`. Direct writes to live config are **forbidden**.
+
+| Guardrail | Default | Contract |
+|:---|:---|:---|
+| `max_delta_per_step` | 0.1 (10%) | Absolute parameter change cap per update |
+| `max_updates_per_second` | 10.0 | Rate limit for stability |
+| `min_interval_us` | 100,000 (100ms) | Minimum cooldown between updates |
+
+**Violation Types (MUST block, not just log):**
+
+| Violation | Trigger |
+|:---|:---|
+| `DeltaTooLarge` | Change exceeds `max_delta_per_step` |
+| `RateLimitExceeded` | Updates exceed `max_updates_per_second` |
+| `OutOfBounds` | Proposed value outside domain bounds |
+| `UnknownParameter` | Parameter not in allowlist (allowlist pattern mandatory) |
+
+* **Rollback Requirement:** Every config swap MUST preserve a baseline for rollback. Rollback-free execution is forbidden.
+* **Fail Closed:** If `validate_delta()` returns `Err(Violation)`, the update is rejected entirely—partial application is forbidden.
+
+### 18. Atomic Configuration Contract
+
+Configuration swaps MUST be atomic with no torn reads in the control loop.
+
+| Requirement | Implementation |
+|:---|:---|
+| **Atomicity** | Arc-swap semantics with RwLock or true atomic primitives |
+| **Generation Counter** | Monotonically increasing `u64`, observable by readers |
+| **Zero-Allocation Hot Path** | `snapshot()` MUST NOT allocate (cheap Arc clone only) |
+| **No Mutex Contention** | Writers MUST NOT block readers in steady state |
+
+* **Canonical Types:** `AtomicConfig` (container) and `ConfigSnapshot` (immutable view with params + generation).
+* **Thread Safety:** All methods on `AtomicConfig` MUST be `Send + Sync`.
+
+### 19. Telemetry Digest Contract
+
+Streaming telemetry MUST be compact, fixed-schema, and lock-free in the push path.
+
+| Field | Type | Required |
+|:---|:---|:---|
+| `timestamp_us` | u64 | ✓ |
+| `objective_value` | f64 | ✓ |
+| `latency_p99_us` | Option<u64> | — |
+| `throughput_rps` | Option<f64> | — |
+| `error_rate` | Option<f64> | — |
+| `constraint_margin` | Option<f64> | — |
+
+* **Ring Buffer:** Fixed-capacity `TelemetryRingBuffer`, overflow evicts oldest. No dynamic allocation in `push()`.
+* **Size Budget:** `TelemetryDigest` MUST fit in ≤128 bytes for cache efficiency.
+* **Minimal Helpers:** `TelemetryDigest::objective(value)` and `TelemetryDigest::with_timestamp(ts, value)` are the canonical constructors.
+
+### 20. Tier Architecture Model
+
+ArqonHPO operates with a strict three-tier architecture. These tiers are **non-optional** and govern all runtime behavior.
+
+| Tier | Role | Responsibilities | Prohibitions |
+|:---|:---|:---|:---|
+| **Tier 1 (Safe Executor)** | Sole actuator | AtomicConfig swap, allowlist enforcement, bounds checking, max-delta limits, rate limits, rollback/snapback, audit emission | Cannot skip guardrails; cannot apply unevaluated proposals |
+| **Tier 2 (Adaptive Engine)** | Proposal generator | Reads telemetry digests, proposes bounded deltas, selects among approved variants | **Cannot mutate production state directly**; must be deterministic and time-budgeted |
+| **Tier Ω (Offline Discovery)** | Candidate generator | Runs continuously or periodically, generates new law families / architecture candidates, outputs diagnostic artifacts | **Never in the hot path**; outputs are candidates only, not direct actions |
+
+**Tier 1 Contract:**
+* The only component allowed to apply changes to production state.
+* Enforces allowlist (unknown parameters → rejection), bounds (out-of-bounds → rejection), max-delta (per-step change cap), rate limits, and rollback requirements.
+* Must be deterministic: same (config, proposal) → same outcome.
+
+**Tier 2 Contract:**
+* Reads compact telemetry digests from Tier 1's observation surface.
+* Proposes deltas or selects among approved variants.
+* All proposals go through Tier 1's guardrails before application.
+* Must complete within `budget_us` microseconds.
+
+**Tier Ω Contract:**
+* Runs in background / batch mode, never blocking the control loop.
+* Outputs candidates that must pass offline evaluation and promotion gates before entering the Approved Variant Catalog.
+* Outputs are labeled "diagnostic" or "candidate," never "decision."
+
+### 21. Merge-Blocking Tier Rules
+
+The following are **merge-blocking rules**. Pull requests violating these MUST NOT be merged.
+
+| Rule | Violation |
+|:---|:---|
+| Tier-2 cannot mutate production state | Any code path where Tier 2 writes to AtomicConfig without going through Tier 1 |
+| Tier-1 is sole actuator | Any direct config mutation outside SafetyExecutor |
+| Tier-Ω outputs are candidates only | Any code path where Ω output is applied to production without promotion gate |
+| Tier boundaries are explicit | Tier logic mixed without clear module separation |
+
+### 22. Variant Catalog Contract
+
+The **Approved Variant Catalog** is the safety boundary for discrete configuration choices.
+
+**Lifecycle States:**
+
+| State | Description | Online Eligible |
+|:---|:---|:---|
+| **Draft** | Initial candidate, not yet evaluated | ❌ |
+| **Evaluated** | Offline evaluation completed, results documented | ❌ |
+| **Approved** | Passed promotion gate, eligible for production selection | ✅ |
+| **Promoted** | Currently active in production selection pool | ✅ |
+| **Archived** | Retired from active use, retained for replay | ❌ |
+
+**Promotion Requirements:**
+* Offline evaluation evidence (benchmark results, safety metrics)
+* Documented constraints (bounds, applicability conditions)
+* Rollback plan (how to revert if issues arise)
+* Evidence pack attached to promotion record
+
+**Selection Rules:**
+* Runtime MUST only select among `Approved` or `Promoted` variants.
+* `Draft` and `Evaluated` variants are NEVER eligible for online selection.
+* Online "NAS-like" behavior is selection among approved variants, not live invention.
+
+**Schema Requirements:**
+* Variants must have unique IDs, version numbers, and creation timestamps.
+* Variants must be tied to reproducible artifacts and replay seeds.
+* Variant transitions must be audited (who, when, why).
+
+### 23. Safety Semantics for Co-evolving Laws
+
+**Clarification:** "Laws" and "physics" in this constitution refer to simulation/runtime update-rule parameters (e.g., diffusion rates, noise schedules, constraint weights), NOT real-world physical laws.
+
+**Explicit Invariants:**
+
+| Invariant | Requirement |
+|:---|:---|
+| No unbounded exploration online | All online search is bounded by approved catalog and delta limits |
+| No uncontrolled oscillation | Anti-thrashing rules required: cooldowns, hysteresis, confidence gating |
+| Homeostasis recovery | Must be demonstrable with shock tests (inject perturbation → observe recovery) |
+
+**Homeostatic Mode Caching:**
+* The runtime MAY cache "homeostatic modes" (stable configurations that achieve target SLOs).
+* Cached modes enable fast re-entry without re-optimization.
+* Cached modes MUST be versioned, audited, and constrained by the same guardrails as live proposals.
+* Mode cache eviction policy MUST be explicit (LRU, TTL, or capacity-based).
+
+---
+
+### Tier Ω Scope (Applies to Sections 20–29)
+
+Sections **12–21** govern **Tier Ω (Experimental)** features only.
+
+Tier 1 (Production) behavior **must** continue to satisfy all Core Principles in:
+
+* **Section II.1–11** (Pipeline integrity, determinism, contracts, privacy, boundedness),
+* **Section VIII** (Performance & Hot-Path Invariants),
+* **Section IX** (Observability & Telemetry Contracts), and
+* **Section X** (Data Governance & Retention),
+
+regardless of any Tier Ω configuration. **No Tier Ω behavior may weaken or bypass those invariants.**
+
+---
+
+### 12. Bounded Emergence (Tier Ω Only)
+
+We consciously work only inside the **Engineerable Sub-Space**.
+
+* **Tier Ω Only:** Even in experimental regimes, we serve systems where we retain control (budget, timeouts, caps).
+* **Chaos Ban (Default):** Highly chaotic or poorly characterized regimes are considered *out of scope* for production claims and live only in research sandboxes.
+* **Core Invariant Link:** All Tier Ω work remains subject to Determinism (II.2), Privacy (II.6), Safety (II.7–8), and Boundedness (VIII.1–2).
+
+### 13. Temporal Sovereignty (Tier Ω Only)
+
+**Time-varying structure** (adaptive schedules, time-to-target controllers) is a first-class control mechanism.
+
+* **Dynamic Schedules:** We assume control can be restored through well-designed temporal programs, not just static settings.
+
+### 14. Mathematical Rigor (Algebraic Preference, Tier Ω Only)
+
+* **Solvers over Heuristics:** If a problem can be solved by a matrix operation or algebraic solver, do not use a neural net or heuristic.
+* **Explicit Control:** Controllers must be explicit and observable. Hidden control loops are forbidden.
+* **Structured Sampling:** Prefer deterministic low-discrepancy / structured grids over naive random sweeps for discovery loops.
+
+### 15. The Omega Tier (Risk Classification, Tier Ω Only)
+
+Strategies are classified by risk profile:
+
+* **Tier 1 (Production):** Safe, bounded, and deterministic for benchmark claims.
+* **Tier Ω (Experimental):** Permitted to explore complex behavior but must be strictly confined and never become default by accident.
+
+### 16. Diagnostic Segregation (Tier Ω Only)
+
+* **Signals vs Decisions:** Outputs from Ω-tier probes are treated as **Diagnostic Signals**, not direct decision-makers in production defaults.
+
+### 17. The 4-Layer Hierarchy (Tier Ω Only)
+
+Complex systems follow the standard **Substrate → Observer → Controller → Architect** hierarchy.
+
+* **Explicit Roles:** Components must implicitly or explicitly fulfill one of these roles.
+* **Recursive Operators:** Recursive strategies must explicitly declare recursion depth limits and halt conditions.
+* **Meta-Optimizers:** Meta-optimizers whose output is the configuration of other optimizers are subject to strict evidence and safety gates.
+
+### 18. Probability Engines (Tier Ω Only)
+
+The system may support probability-shaping engines where outputs are distributions, not scalars.
+
+* **Superposition:** Decisions may be probabilistic until explicitly collapsed by a deterministic selection rule.
+
+### 19. Temporal Physics (Tier Ω Only)
+
+* **Phased Operation:** Systems may explicitly declare phases (e.g., `[
+  "probe",
+  "classify",
+  "refine"
+]`). Control policies must adapt to the active phase.
+
+### 20. The Reality Factory (Tier Ω Only)
+
+The system may manage governed experiment namespaces (“Realities”) as first-class lifecycle objects.
+
+* **Lifecycle States:** Experiments must track lifecycle state (`Draft` → `Running` → `Promoted` → `Archived`) with explicit transition gates.
+
+### 21. Strong Emergence Patterns (Tier Ω Only)
+
+* **Homeostatic Override:** Controllers must have the authority to force reset when error thresholds are breached.
+* **Curiosity Metrics:** “Surprise” is a valid optimization signal for discovery-only operators.
+
+---
+
+# III. Code Quality & Engineering Standards
+
+### 1. The "Boring Code" Manifesto
+
+We value clarity over cleverness. ArqonHPO must be readable by a junior engineer at 3 AM.
+
+* **Readability First:** If a "clever" one-liner creates cognitive load, expand it.
+* **Explicit over Implicit:** Magic behavior, monkey-patching, and hidden control flow are forbidden.
+* **Standard Tooling:** We adhere strictly to community standards (formatters, linters, type checkers).
+
+### 2. Asynchronous Boundaries
+
+If concurrency/parallel evaluation exists, it must not destroy determinism.
+
+* **Purity Mandate:** Core decision logic must remain synchronous and pure where possible.
+* **Timeout Mandate:** No external call (objective, subprocess, IO) shall exist without a configured timeout.
+
+### 3. Error Handling Philosophy
+
+Errors are data, not exceptions. They must be handled explicitly.
+
+* **Fail Loud (Developer Errors):** Logic errors and invariant violations must crash or hard-fail immediately.
+* **Fail Soft (Runtime Errors):** External failures must be handled via explicit rejection or controlled degradation.
+* **The "Swallow" Ban:** Silent discard of errors is forbidden.
+
+### 4. Logging & Observability
+
+* **Structured Only:** Logs must be structured and include correlation identifiers (e.g., `run_id`).
+* **Level Discipline:** `ERROR` means operator intervention is required. `WARN` means handled anomaly. `INFO` is lifecycle.
+* **Security Redaction:** Logs must never contain sensitive objective payloads at `INFO` or above.
+
+### 5. Configuration Discipline
+
+* **Config Over Code:** Operational thresholds (timeouts, budgets, caps) must be configurable, not magic numbers.
+* **Validation on Startup:** Invalid configuration must fail fast with explicit errors.
+
+### 6. Deterministic State & Contract Correctness
+
+Optimization systems die when state becomes ambiguous.
+
+* **State Machine Contracts:** Phase transitions and mode decisions must be explicit.
+* **Determinism:** Same seed + same env + same objective → same decisions and results (within defined tolerances).
+* **Artifact Contracts:** Artifact schema is a compatibility surface.
+
+### 7. Contract-First Definition
+
+* Typed config and artifact schemas are the source of truth.
+* Untyped ad-hoc dictionaries/maps in core paths are prohibited.
+
+### 8. Memory Safety & Resource Guarantees
+
+* **Resource Caps:** Every subsystem must define caps for memory, retries, and timeouts.
+
+### 9. Concurrency Safety & Ordering
+
+* **Ordering Invariants:** The solver must never assume ordering unless it enforces it.
+
+### 10. Performance Discipline
+
+* **Hot Path Hygiene:** Avoid unnecessary allocations and logging inside per-eval loops.
+* **Latency Budgets:** If a latency budget exists (time-to-target), it must be measured and guarded.
+
+### 11. API & Interface Stability
+
+* **Boundary Contracts:** Internal modules communicate via stable interfaces.
+
+### 12. Dependency Hygiene
+
+* **Admission Rules:** New dependencies are guilty until proven innocent.
+* **Pinning:** Benchmark-critical dependencies must be version-pinned.
+
+### 13. Documentation Standards
+
+* **Docs as Code:** Documentation must live in the repo.
+* **Decision Records:** Significant decisions must be captured (ADR or equivalent).
+
+### 14. Build & Artifact Integrity
+
+* **Reproducibility:** Builds and benchmark runs must be reproducible.
+* **Binary/Package Hygiene:** Produced artifacts must be traceable to a commit and environment.
+
+### 15. Mathematical Rigor (Algebraic Preference)
+
+* **Solvers over Heuristics:** Prefer explicit solvers where applicable.
+* **Explicit Control:** Hidden control loops are forbidden.
+* **Structured Sampling:** Prefer deterministic sampling schemes where it improves time-to-target and reproducibility.
+
+---
+
+# IV. Testing Strategy & Quality Gates
+
+### 1. TDD as the Working Standard
+
+Test-Driven Development (TDD) is the **default and expected workflow** for all ArqonHPO components.
+
+* **The Workflow:**
+  1. **Specify:** Define behavior in `/specs/` (SDD-first).
+  2. **Test:** Write or extend tests that express that behavior.
+  3. **Implement:** Write the code that satisfies the tests.
+  4. **Refactor:** Optimize while keeping the suite green.
+
+### 2. Coverage Expectations (Per Subsystem)
+
+Coverage is about behavioral exhaustiveness, not raw percentages.
+
+* **Solver Core:** Must cover probe, classify, mode select, refine, and budget accounting.
+* **Artifact Layer:** Must cover schema versioning, determinism, replay-critical fields.
+* **Benchmark Harness:** Must cover time-to-target measurement and reporting.
+
+### 3. Test Discipline Requirements
+
+* **Unit Tests:** Must run fast with zero external services.
+* **Integration Tests:** Must run end-to-end with real dependencies where relevant.
+* **Flaky Tests:** Flaky tests are **Critical Bugs**.
+* **Determinism:** Tests must avoid random sleeps and time-dependent logic; use controlled clocks.
+
+### 4. Quality Gates
+
+A PR **may not be merged** if any of the following are true:
+
+* **Determinism Gate:** nondeterministic behavior without explicit labeling and tests.
+* **Evidence Gate:** benchmark/perf claims without reproducible evidence.
+* **Artifact Gate:** schema changes without versioning and compatibility notes.
+* **Spec Gate:** behavior implemented without a Spec, or Spec not updated to match Code.
+* **Technical Debt Gate:** new `TODO`s without `TD-###` and TTL.
+
+### 5. Probe Guardrail Tests
+
+Probe changes require passing the following mandatory test classes:
+
+| Test Class | Requirement |
+|:---|:---|
+| `TestProbeOnlyQuality` | New probe beats legacy on shifted instances. |
+| `TestStructuredRouting` | NM wins on structured landscapes (mode selection). |
+| `TestMultimodalGuardrail` | Probe is robust on Rastrigin-class objectives. |
+| `TestGeometryRegression` | Probe geometry is deterministic and reproducible. |
+| `TestStructuredNMCorrectness` | NM periodic arithmetic is correct. |
+| `TestTimeToQuality` | Time-to-target metrics are computed and reported. |
+
+Reference implementation: `benchmarks/test_probe_guardrails.py`
+
+---
+
+# V. Lifecycle & Automation
+
+ArqonHPO does not “ship code”; it manufactures **artifacts** through a controlled factory.
+
+### 1. The Factory Mandate
+
+Manual releases are forbidden for production claims. CI is the source of truth.
+
+* **The Pipeline is Sovereign:** If it did not pass CI, it does not exist.
+
+### 2. Immutable & Reproducible Artifacts
+
+* **Immutable Artifacts:** Release artifacts must be identifiable by content hash.
+* **Reproducible Builds:** The same commit must build reproducibly in the canonical environment.
+
+### 3. Supply Chain Security
+
+* **Dependency Locking:** No floating versions for benchmark-critical paths.
+* **Provenance:** Artifact origin must be traceable (commit, branch, CI run).
+
+---
+
+# VI. Operational Excellence
+
+ArqonHPO is correctness-sensitive infrastructure for optimization. The way it behaves under real objectives is as important as the way it behaves in tests.
+
+### 1. Performance & Capacity Invariants
+
+* **Boundedness:** No unbounded loops. Budget and timeouts are mandatory.
+* **Overhead Discipline:** Policy updates and bookkeeping must remain bounded and low overhead.
+
+### 2. Observability & Audit
+
+* **Reconstructability:** Logs + artifacts must allow reconstruction of what happened in a run.
+* **No Silent Recovery:** Any fallback must be visible and test-covered.
+
+---
+
+# VII. Governance & Amendment
+
+Governance defines how ArqonHPO protects its mission and how this Constitution itself may change.
+
+### 1. Scope Protection
+
+ArqonHPO is probe-gated optimization for the two target use cases. Scope creep is a bug.
+
+### 2. Complexity Budget
+
+Complexity is technical debt with compound interest.
+
+* Adding major dependencies or new execution modes requires explicit review and an ADR.
+
+### 3. Amendments
+
+This Constitution is living but intentionally hard to change.
+
+* Amendments require a documented proposal (rationale + impact) and a version bump.
+
+---
+
+# VIII. Performance & Hot-Path Invariants
+
+Performance is not an optimization; it is a **correctness property**.
+
+### 1. Boundedness as Law
+
+Unbounded anything is a denial-of-service vector.
+
+* **No Unbounded Work:** Every loop must have a budget.
+* **CPU Boundaries:** Heavy work must not block the per-eval control loop without explicit design.
+
+### 2. Hot-Path Constraints
+
+* **O(1) or Amortized O(1):** Per-eval policy decisions must be O(1) or amortized O(1).
+* **No Hidden I/O:** Do not write artifacts inside the inner loop unless explicitly buffered.
+
+### 3. Hot-Path Parameter Representation & Determinism (v1.4.1, merge-blocking)
+
+This section defines non-negotiable architectural invariants for parameter storage in Tier-1/Tier-2 hot paths. Violations are merge blockers.
+
+**Hot Path Definition (Normative):**
+"Hot Path" means any code executing inside the Tier-2 decision window or Tier-1 apply window, specifically: all functions and their transitive callees executed during:
+1. `T2_decision_us` (start: digest popped → end: proposal emitted)
+2. `T1_apply_us` (start: proposal received → end: in-memory config swap completed)
+
+Hot Path includes: Tier-2 observe/decision loop, SPSA step math, guardrail validation, delta application, atomic swap, telemetry ingest, audit enqueue (non-blocking), and any per-tick scheduling within these windows.
+
+#### A. Hot-Path Disallowed Types (Merge-Blocking)
+
+In Hot Path code, the following are **FORBIDDEN**:
+* `std::collections::HashMap`
+* `hashbrown::HashMap`
+* Any map/dictionary keyed by strings (or heap-owned identifiers) used to store parameters or deltas.
+
+**Reason:** Hot Path must use dense indexed representations (`ParamVec`/`DeltaVec`) for determinism, locality, and zero-allocation guarantees.
+
+#### B. Hot-Path Representation Rule (Required)
+
+Tier-1 and Tier-2 parameter values and deltas MUST be represented as:
+* **ParamVec** = dense ordered numeric vector (`SmallVec<[f64; N]>` or `Vec<f64>`)
+* **DeltaVec** = same dense ordered numeric vector type.
+
+Tier-1/Tier-2 public APIs MUST NOT accept or return named-parameter maps.
+
+#### C. No Escape Hatches (Merge-Blocking)
+
+In Hot Path modules/crates:
+* `#[allow(clippy::disallowed_types)]` is **FORBIDDEN**.
+* Any allow/override of the Hot Path disallowed-type rules is **FORBIDDEN**.
+
+**Exception:** Boundary modules only (CLI/IO/artifact serialization) may use named maps, but must never be linked into Hot Path timing windows.
+
+#### D. Enforcement Requirements (CI Merge-Blocking)
+
+CI MUST enforce Hot Path type constraints using:
+* `cargo clippy --all-targets --all-features -- -D warnings`
+* `#![deny(clippy::disallowed_types)]` in the Hot Path crate/module root
+* `clippy.toml` specifying disallowed types, at minimum:
+  * `std::collections::HashMap`
+  * `hashbrown::HashMap`
+
+Any violation is a **MERGE BLOCKER**.
+
+#### E. Constructor/API Rule (Required)
+
+All Tier-1/Tier-2 constructors and runtime methods MUST accept only dense types:
+* Engine initialization MUST accept `(ParamRegistry, ParamVec)` (or a single struct containing them).
+* Hot Path runtime loops MUST NOT accept `NamedParams` or any `HashMap<String, _>` type (directly or indirectly).
+* All boundary conversion from named→dense MUST occur **once** at initialization or boundary serialization only.
+
+#### F. ParamRegistry Contract (Required for Audit + Replay)
+
+* **Existence REQUIRED:** A `ParamRegistry` (or equivalent) MUST exist to provide:
+  * Stable mapping: `name ↔ id/index`
+  * Deterministic ordering (consistent across runs with same schema)
+  * Schema/version identity
+* **Immutability REQUIRED:** The mapping MUST be immutable during a run for Tier-1/Tier-2 operation.
+
+#### G. Deterministic Replay Artifact Contract (Required)
+
+Artifacts MUST include the following fields (**exact keys**):
+* `seed`: `u64`
+* `registry_hash64`: `u64`
+* `registry_names`: `[String]` (stable ordered list)
+* `param_len`: `usize`
+* `params_vec`: `[f64]` (dense ordered values)
+
+*Optional (derived for readability only)*:
+* `params_named`: `{ String: f64 }`
+
+**Rule:** `params_named` MUST be derivable from `registry_names` + `params_vec` and MUST NOT be required for replay. Replay MUST NOT require string hashing to reconstruct the decision path.
+
+#### H. Tier Ω Exception Policy (Explicitly Bounded)
+
+* **Sandbox Exploration Allowed:** Tier Ω (experimental) MAY explore dynamic parameter sets.
+* **Production Invariants Preserved:** Tier-1/Tier-2 invariants remain non-bypassable even when Tier Ω is active.
+* **Promotion Gate:** Promotion from Tier Ω to production REQUIRES passing all hot-path invariant tests and freezing a registry.
+
+#### I. Performance Enforcement (Merge/Ship Blockers)
+
+* **No-Alloc Test REQUIRED:** CI MUST include a "no-alloc hot path" test for Tier-1 apply and Tier-2 observe/decision paths (release mode).
+  * `observe()` allocs == 0
+  * `apply()` allocs == 0
+* **Benchmark Gate REQUIRED:** CI MUST include a benchmark regression gate for `T2_decision_us` and `T1_apply_us` (release mode) consistent with VIII.5 timing budgets.
+* **Budgets Checked:** Budgets are checked in release mode and FAIL CI if exceeded.
+
+**Evidence Requirement:**
+* Any latency claim MUST attach evidence (Observed) including: build mode, CPU model, benchmark method, and p50/p99/max.
+* Allocation claims MUST be measured (Observed via instrumentation or allocator hook) or the claim is false.
+
+### 4. Time-to-Target Metrics
+
+The canonical quality-time tradeoff measurements are:
+
+* **Evals-to-Threshold:** Number of evaluations to first reach a target quality threshold.
+* **Hit-by-N:** Binary success metric—did the run reach threshold within N evals?
+* **Median-Best-at-Horizon:** Median of best-seen value at a fixed eval count across seeds.
+
+These metrics MUST be reported per-objective in benchmark artifacts.
+
+### 5. Timing Window Contracts
+
+For microsecond-latency operation, the following timing windows are canonical:
+
+| Timing Window | Definition | Typical Budget |
+|:---|:---|:---|
+| `T2_decision_us` | Digest popped from ring buffer → proposal emitted by Tier 2 | ≤1,000 µs |
+| `T1_apply_us` | Proposal received by Tier 1 → guardrails validated + atomic swap completed | ≤100 µs |
+| `E2E_visible_us` | Digest available → dataplane observes new config | ≤2,000 µs |
+
+**Measurement Requirements:**
+* Latency claims MUST specify: build mode (debug/release), hardware (CPU model, memory), and measurement method (wall clock, flamegraph, tracing).
+* Benchmarks MUST include p50, p99, and max latencies.
+* Regression guards MUST exist for all timing budgets (CI fails if exceeded).
+
+### 6. Hot Path Non-Blocking Audit
+
+Audit-to-disk MUST be explicitly decoupled from the critical path.
+
+* **Ring Buffer / Async Writer:** Audit events are pushed to a lock-free ring buffer; a background thread persists to disk.
+* **No Blocking I/O:** Disk I/O (file writes, network calls) is FORBIDDEN in the apply critical path.
+* **Overflow Policy:** If the ring buffer is full, the overflow policy MUST be explicit (drop oldest, block, or signal backpressure).
+
+### 7. Zero-Allocation Critical Path
+
+The critical path (`T1_apply_us` window) MUST remain zero-allocation:
+
+* **No Heap Allocations:** Use pre-allocated buffers, arena allocators, or stack allocation.
+* **No Blocking Syscalls:** No `malloc`, `mmap`, file I/O, or network I/O.
+* **Arc Clone Only:** `snapshot()` operations use cheap Arc clone, not deep copy.
+
+---
+
+# IX. Observability & Telemetry Contracts
+
+What cannot be observed cannot be governed.
+
+### 1. Logs, Metrics, Traces as First-Class Citizens
+
+* **Structured Logs Only:** Must include `run_id` and phase markers.
+* **Telemetry for Mode Decisions:** Mode selection and classification results must be observable.
+
+### 2. Structured Events & Correlation IDs
+
+For the Adaptive Engine control loop, the following event types are REQUIRED:
+
+| Event Type | Trigger | Required Fields |
+|:---|:---|:---|
+| `digest` | New telemetry digest pushed | `run_id`, `timestamp_us`, `digest_id`, `objective_value` |
+| `proposal` | Tier 2 emits a proposal | `run_id`, `proposal_id`, `config_version`, `delta_summary` |
+| `apply` | Tier 1 successfully applies config | `run_id`, `proposal_id`, `new_config_version`, `apply_latency_us` |
+| `rollback` | Tier 1 triggers rollback | `run_id`, `proposal_id`, `rollback_reason`, `reverted_to_version` |
+| `promotion` | Variant promoted to Approved/Promoted | `run_id`, `variant_id`, `old_state`, `new_state`, `evidence_ref` |
+
+**Correlation ID Requirements:**
+* All events in a single adaptation cycle MUST share the same `run_id`.
+* Proposals MUST have unique `proposal_id` for traceability.
+* Config versions MUST use monotonic `config_version` counters.
+
+---
+
+# X. Data Governance & Retention
+
+ArqonHPO may handle sensitive objective data. Data is an asset and a liability.
+
+### 1. Data Classification
+
+* **Run Artifacts:** schema-versioned run outputs.
+* **Objective Data:** treated as sensitive by default.
+
+### 2. Retention
+
+* **Explicit Retention:** No infinite retention by accident; retention policies must be explicit.
+
+---
+
+# XI. Internal Service Contracts & Complexity Escalation
+
+The internal structure must remain understandable, evolvable, and safe.
+
+### 1. Internal Contracts
+
+* **Versioned Contracts:** Internal boundaries must have explicit, versioned contracts (types + schemas).
+
+### 2. Complexity Budget & Escalation
+
+* Introducing a new core dependency or major execution mode requires a design review document and ADR.
+
+### 3. Benchmark Schema Contract
+
+Benchmark artifacts MUST follow a declarative schema:
+
+* **Objective Suite (minimum):** sphere_smooth_shift, rosenbrock_smooth_shift, rastrigin_torus.
+* **Cost Regimes:** cheap (1ms), expensive (20ms+).
+* **Output Schema:** CSV with columns [run_id, eval_id, best_so_far, elapsed_ms, params].
+* **Plots:** best_vs_time.png, cdf_time_to_threshold.png per objective.
+
+### 4. SDK Binding Compliance
+
+Python bindings MUST maintain parity with Rust core:
+
+* **Determinism Parity:** `ArqonProbe` and `ArqonSolver` (Python) MUST produce identical results to Rust core for same (seed, config).
+* **Sharding Verification:** Bitwise hash of sorted samples MUST match single-worker vs multi-worker configurations.
+* **Binding Changes:** Require parity tests in CI before merge.
+
+### 5. Strategy Parameter Governance
+
+Strategy parameters require explicit governance:
+
+* **K (parallel starts):** MUST have documented default and rationale.
+* **Triage Budget:** MUST be bounded; unbounded triage is forbidden.
+* **Stall Threshold:** MUST trigger rotation; silent stalling is forbidden.
+* **Spice Ratio:** MUST be configurable with documented default (10%).
+
+Changes to defaults require an ADR with benchmark evidence.
+
+---
+
+# XII. Glossary & Canonical Definitions
+
+To prevent interpretation drift (especially for Spec Kit agents), we define core vocabulary used throughout this Constitution.
+
+| Term | Definition |
+| :--- | :--- |
+| **ArqonHPO** | The probe-gated optimization engine described by this Constitution. |
+| **Probe** | Deterministic initial sampling phase to gather candidates and signal. |
+| **Classify** | Fixed-size test producing a label and score to drive mode selection. |
+| **Mode** | The chosen refinement strategy family (structured vs chaotic). |
+| **Time-to-Target** | Time/evals to reach a specified objective threshold. |
+| **Tier 1 (Safe Executor)** | The sole actuator for production state; enforces all guardrails before applying changes. |
+| **Tier 2 (Adaptive Engine)** | Reads telemetry, proposes deltas or variant selections; cannot mutate production state directly. |
+| **Tier Ω (Offline Discovery)** | Experimental/background loop that generates candidates; never in hot path, outputs are diagnostic only. |
+| **Homeostasis** | A stable operating regime the adaptive engine steers toward under varying conditions. |
+| **Law knobs** | Runtime/simulation parameters (diffusion, noise, decay, constraint weights) tunable within safety envelopes. |
+| **Variant Catalog** | Registry of approved configuration variants with lifecycle states (Draft → Evaluated → Approved → Promoted → Archived). |
+| **Promotion Gate** | Evidence pack + offline evaluation + rollback plan required to promote a variant to Approved state. |
+| **E2E_visible_us** | Time from digest availability to dataplane observing new config (microseconds). |
+| **T2_decision_us** | Time from digest popped to proposal emitted by Tier 2 (microseconds). |
+| **T1_apply_us** | Time from proposal received to atomic swap completed by Tier 1 (microseconds). |
+| **ParamVec** | Dense parameter storage (`SmallVec<[f64; 16]>`) used in Tier-1/Tier-2 hot paths. FORBIDDEN to use HashMap. (v1.4.0) |
+| **ParamRegistry** | Stable mapping between human-readable parameter names and dense array indices. Immutable during a run. (v1.4.0) |
+| **Boundary** | Any interface layer where human-readable names exist (CLI/SDK/artifacts/wire protocol). HashMap allowed only here. (v1.4.0) |
+| **Hot Path** | Code executed per-tick/per-decision/per-apply with strict latency budgets (<1ms). No heap allocation, no string ops. (v1.4.0) |
+
+---
+
+# XIV. ULTIMATE INTEGRITY ATTESTATION & EVIDENCE PACK
+
+This section is the **merge/ship gate**. It exists so “done” is not a feeling—it is a reproducible fact.
+
+---
+
+### 1) Merge/Ship Attestation (Required)
+
+By merging or shipping, the author(s) and reviewer(s) attest:
+
+- No placeholders exist in production paths (no TODOs, stubs, pseudocode-as-work, “later hardening”).
+- No fake evidence is presented (no invented logs, benchmarks, screenshots, coverage, or results).
+- No happy-path-only verification exists for critical behaviors.
+- No silent failure handling exists; errors are handled/logged/propagated with context.
+- Warnings were treated as errors (clean lint/typecheck/compile).
+- Any technical debt is recorded as `TD-###` with owner + TTL + exit criteria and is bounded by tests.
+- All claims are labeled Observed/Derived/Unverified, and Observed claims have attached evidence.
+
+If you cannot honestly attest to every item above, you must not merge/ship.
+
+---
+
+### 2) Evidence Pack (Attach or Link; Required)
+
+A change is invalid without a reproducible Evidence Pack. The Evidence Pack must be tied to a specific commit and must be reproducible by another engineer.
+
+#### 2.1 Build Proof
+- CI run or local output showing:
+  - clean build,
+  - clean lint/typecheck/format,
+  - warnings treated as errors.
+
+#### 2.2 Test Proof
+- Results for:
+  - unit tests,
+  - integration tests (where applicable),
+  - property/fuzz tests (where required by input boundaries),
+  - concurrency/ordering tests (where applicable).
+- A short note listing what is not covered and why (explicitly, not implicitly).
+
+#### 2.3 Failure Matrix Proof (Where the bad paths live)
+For each externally coupled feature, list:
+- failure scenarios tested (timeouts, retries, malformed responses, permission failures, overload/backpressure, partial failures),
+- test file(s) and test names (or equivalent pointers).
+
+#### 2.4 Traceability Proof (Truth Table)
+Provide a “truth table” mapping:
+- requirement / acceptance criteria → implementation location(s) → test location(s) → documentation location(s) → evidence artifact(s).
+
+Rule: If a requirement has no test, it is untested. If a test has no requirement, it is suspicious.
+
+#### 2.5 Runtime Proof (When Applicable)
+- example run logs demonstrating:
+  - normal behavior,
+  - at least one failure mode behaving correctly.
+- proof of observability works:
+  - correlation IDs exist,
+  - metrics/traces exist (or equivalent breadcrumbs).
+
+#### 2.6 Performance / Resource Proof (When Relevant)
+- baseline numbers + method + environment,
+- a regression guard (benchmark test, threshold check, or documented budget),
+- proof of bounded behavior (caps, backpressure, shedding policy).
+
+#### 2.7 Reproduction Commands
+- one-command verification (examples):
+  - `pytest`, `python -m build`, etc.
+- environment notes:
+  - pinned toolchains/dependencies,
+  - seed control for deterministic tests.
+
+### 2.8 Canonical Environment Mandate
+
+To ensure absolute reproducibility, all development and CI operations MUST use the canonical Conda environment: `helios-gpu-118`.
+
+**Paths:**
+- Python: `/home/irbsurfer/miniconda3/envs/helios-gpu-118/bin/python`
+- Cargo: `/home/irbsurfer/miniconda3/envs/helios-gpu-118/bin/cargo`
+
+**Rules:**
+- Do NOT rely on system `python` or `cargo`.
+- Scripts and tools MUST resolve these absolute paths or explicitly activate the environment.
+
+---
+
+### 3) Debt Register Enforcement (TD-###)
+
+If any `TD-###` exists in the change:
+- TTL date and owner are mandatory.
+- The debt boundary must be protected by tests so it cannot silently expand.
+- The exit criteria must be concrete.
+- Debt past TTL is a release/merge blocker.
+
+---
+
+### 4) Professional Review Checklist (Hard Questions Only)
+
+Review must answer “yes” with evidence:
+
+- Does this handle failure modes explicitly (not “assumed”)?
+- Are tests realistic, adversarial, and non-trivial (no lazy synthetics)?
+- Are there concurrency/ordering hazards, and are they tested or explicitly ruled out?
+- Is behavior observable (logs/metrics/traces/breadcrumbs)?
+- Are resource bounds explicit (timeouts, caps, retry budgets, queue bounds)?
+- Is the code readable under pressure (3 AM standard)?
+- Is documentation updated to match behavior and constraints?
+- Can another engineer reproduce the Evidence Pack from scratch?
+
+If any answer is “no,” the change is not complete.
+
+---
+
+### 5) Claim Ledger Summary (Required When Stating Status)
+
+If a deliverable claims completion or correctness, it must include:
+
+- Observed claims: link evidence
+- Derived claims: list assumptions + risks + how to verify
+- Unverified claims: list the minimal experiment to verify
+
+Rule: If it cannot be reproduced from the Evidence Pack, it is not true.  
+Rule: If it is not true, it is not done.
+
+---
+
+## Implementation Substrate & SDK Contract
+- Core implementation MUST be a Rust library crate exposing the probe-gated solver API.
+- CLI MUST be a thin Rust binary crate that delegates to the core.
+- SDKs (for example, Python) MUST be thin bindings over the same core, not reimplementing solver logic.
+- Artifacts MUST be language-agnostic (JSON) and serve as the compatibility contract between surfaces.
+
+**Version**: 1.0.0  
+**Ratified**: 2025-12-13  
+**Last Amended**: 2025-12-13  

@@ -1,96 +1,112 @@
 site_name: ArqonHPO
-site_description: "Adaptive Hyperparameter Optimization with automatic strategy selection"
-site_author: NovelByte Labs
-site_url: https://novelbytelabs.github.io/ArqonHPO/
+site_description: Microsecond-budget online optimization for running systems.
+site_url: https://novelbytelabs.github.io/ArqonHPO
+
 repo_url: https://github.com/novelbytelabs/ArqonHPO
 repo_name: novelbytelabs/ArqonHPO
-copyright: Copyright &copy; 2024 NovelByte Labs
+edit_uri: edit/main/docs/docs/
 
 theme:
   name: material
-  palette:
-    - media: "(prefers-color-scheme)"
-      toggle:
-        icon: material/brightness-auto
-        name: Switch to light mode
-    - media: "(prefers-color-scheme: light)"
-      scheme: default
-      primary: deep purple
-      accent: amber
-      toggle:
-        icon: material/brightness-7
-        name: Switch to dark mode
-    - media: "(prefers-color-scheme: dark)"
-      scheme: slate
-      primary: deep purple
-      accent: amber
-      toggle:
-        icon: material/brightness-4
-        name: Switch to system preference
-  features:
-    - navigation.sections
-    - navigation.expand
-    #    - toc.integrate
-    - search.suggest
-    - search.highlight
-    - content.tabs.link
-    - content.code.annotate
-    - navigation.top
-    - announce.dismiss
-    - content.code.copy
-    - content.action.copy
-    - content.action.view
-  icon:
-    repo: fontawesome/brands/github
   logo: assets/logo.svg
   favicon: assets/favicon.svg
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - navigation.tracking
+    - toc.follow
+    - content.action.edit
+    - content.code.copy
+    - content.tabs.link
+    - search.highlight
+    - search.suggest
+    - navigation.instant
+  palette:
+    - scheme: slate
+      primary: deep purple
+      accent: amber
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to Light mode
+    - scheme: default
+      primary: deep purple
+      accent: amber
+      toggle:
+        icon: material/weather-night
+        name: Switch to Dark mode
+  icon:
+    repo: fontawesome/brands/github
+
+plugins:
+  - search
+  - social
+  - git-revision-date-localized:
+      enable_creation_date: true
+      fallback_to_build_date: true
+  - minify:
+      minify_html: true
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - toc:
+      permalink: true
+  - pymdownx.superfences
+  - pymdownx.details
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.inlinehilite
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.snippets
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
 
 extra:
   social:
     - icon: fontawesome/brands/github
       link: https://github.com/novelbytelabs/ArqonHPO
+    - icon: fontawesome/brands/x-twitter
+      link: https://twitter.com/novelbytelabs
   generator: false
 
 nav:
-  - Home: "index.md"
-  - Quickstart: "quickstart.md"
-  - Cookbook:
-      - Overview: cookbook/index.md
-      - Simulation Tuning: cookbook/sim_tuning.md
-      - ML Model Tuning: cookbook/ml_tuning.md
-  - Concepts:
-      - PCR Algorithm: concepts/pcr_algorithm.md
-      - Probe Deep Dive: concepts/probe_deep_dive.md
-  - Reference:
-      - Python API: reference/python.md
-      - Rust API: reference/rust.md
-      - CLI: reference/cli.md
-  - Benchmarks: benchmarks.md
-  - Architecture:
-      - "ADR-001 Core": adrs/001-core-architecture.md
-      - "ADR-002 Python Bridge": adrs/002-python-bridge.md
-  - Assessments:
-      - "TDD Assessment": reports/TDD_ASSESSMENT_REPORT.md
-  - Changelog: "changelog.md"
-  - Contributing: contributing.md
-
-plugins:
-  - search
-
-markdown_extensions:
-  - admonition
-  - pymdownx.highlight:
-      anchor_linenums: true
-      line_spans: __span
-      pygments_lang_class: true
-  - pymdownx.inlinehilite
-  - pymdownx.snippets
-  - pymdownx.superfences
-  - pymdownx.details
-  - pymdownx.tabbed:
-      alternate_style: true
-  - attr_list
-  - md_in_html
-  - tables
-  - toc:
-      permalink: true
+  - Home: index.md
+  - Product:
+      - Overview: product/index.md
+      - Architecture: product/architecture.md
+      - Safety: product/safety.md
+      - Integrations: product/integrations.md
+  - Solutions:
+      - Overview: solutions/index.md
+      - Inference Serving: solutions/inference.md
+      - Systems & SRE: solutions/systems.md
+      - Edge & Robotics: solutions/edge.md
+  - Docs:
+      - Quickstart: documentation/quickstart.md
+      - Concepts:
+          - PCR Algorithm: documentation/concepts/pcr_algorithm.md
+          - Probe Deep Dive: documentation/concepts/probe_deep_dive.md
+      - Reference:
+          - Python API: documentation/reference/python.md
+          - Rust API: documentation/reference/rust.md
+          - CLI: documentation/reference/cli.md
+      - Cookbook:
+          - Overview: documentation/cookbook/index.md
+          - Simulation Tuning: documentation/cookbook/sim_tuning.md
+          - ML Tuning: documentation/cookbook/ml_tuning.md
+  - Benchmarks:
+      - Overview: benchmarks/index.md
+      - Methodology: benchmarks/methodology.md
+      - "Full Report": benchmarks/BENCHMARK_REPORT.md
+  - Project:
+      - About: project/about.md
+      - Roadmap: project/roadmap.md
+      - Changelog: project/changelog.md
+      - Contributing: project/contributing.md
+      - License: project/license.md
