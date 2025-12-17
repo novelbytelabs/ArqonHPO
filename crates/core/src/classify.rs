@@ -57,11 +57,11 @@ impl Classify for VarianceClassifier {
 // ============================================================================
 
 /// Classifies landscapes using residual decay analysis (PCR methodology).
-/// 
+///
 /// The algorithm measures how errors decrease across iterative refinement:
 /// - For smooth/structured functions, errors decay geometrically (α < 0.5)
 /// - For chaotic functions, errors do not decay consistently (α >= 0.5)
-/// 
+///
 /// The α value is estimated by fitting an exponential decay curve to the
 /// sequence of residuals between sorted objective values.
 pub struct ResidualDecayClassifier {
@@ -91,11 +91,11 @@ impl ResidualDecayClassifier {
     }
 
     /// Estimate the decay rate α from a sequence of residuals.
-    /// 
+    ///
     /// Given residuals E_k, we fit E_k ≈ C × β^k where:
     /// - β is the decay factor (0 < β < 1 for decay)
     /// - α = -ln(β) is the decay rate
-    /// 
+    ///
     /// For geometric decay (smooth functions): α is small (< 0.5)
     /// For non-decay (chaotic functions): α is large or undefined
     fn estimate_alpha(&self, residuals: &[f64]) -> f64 {
@@ -107,7 +107,7 @@ impl ResidualDecayClassifier {
         // We estimate ln(β) as the slope, then α = -ln(β)
         let mut log_residuals: Vec<f64> = Vec::new();
         let mut indices: Vec<f64> = Vec::new();
-        
+
         for (i, &r) in residuals.iter().enumerate() {
             if r > 1e-12 {
                 log_residuals.push(r.ln());
@@ -123,7 +123,11 @@ impl ResidualDecayClassifier {
         let n = log_residuals.len() as f64;
         let sum_x: f64 = indices.iter().sum();
         let sum_y: f64 = log_residuals.iter().sum();
-        let sum_xy: f64 = indices.iter().zip(log_residuals.iter()).map(|(x, y)| x * y).sum();
+        let sum_xy: f64 = indices
+            .iter()
+            .zip(log_residuals.iter())
+            .map(|(x, y)| x * y)
+            .sum();
         let sum_xx: f64 = indices.iter().map(|x| x * x).sum();
 
         let denom = n * sum_xx - sum_x * sum_x;
@@ -132,7 +136,7 @@ impl ResidualDecayClassifier {
         }
 
         let slope = (n * sum_xy - sum_x * sum_y) / denom; // This is ln(β)
-        
+
         // α = -ln(β) = -slope
         // For decay: slope < 0, so α > 0
         // For growth: slope > 0, so α < 0 (treat as chaotic)
@@ -143,7 +147,7 @@ impl ResidualDecayClassifier {
     }
 
     /// Compute residuals from sorted objective values.
-    /// 
+    ///
     /// Residuals are the differences between consecutive sorted values,
     /// computed from best (min) to worst (max). For structured functions,
     /// values near the optimum are densely packed, so residuals start small
@@ -156,16 +160,13 @@ impl ResidualDecayClassifier {
 
         let mut sorted = values.to_vec();
         sorted.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
-        
+
         // Reverse so we go from worst (largest) to best (smallest)
         // For structured functions, this produces decaying residuals
         sorted.reverse();
 
         // Residuals: E_k = |sorted[k] - sorted[k+1]|
-        sorted
-            .windows(2)
-            .map(|w| (w[0] - w[1]).abs())
-            .collect()
+        sorted.windows(2).map(|w| (w[0] - w[1]).abs()).collect()
     }
 }
 
@@ -178,7 +179,7 @@ impl Classify for ResidualDecayClassifier {
 
         let values: Vec<f64> = history.iter().map(|t| t.value).collect();
         let residuals = self.compute_residuals(&values);
-        
+
         if residuals.is_empty() {
             return (Landscape::Chaotic, 0.0);
         }
@@ -188,7 +189,7 @@ impl Classify for ResidualDecayClassifier {
         // Classification per PCR methodology:
         // α > threshold → Structured (geometric decay - residuals decrease quickly)
         // α ≤ threshold → Chaotic (flat or irregular residuals)
-        // 
+        //
         // Intuition: Higher α means faster exponential decay of residuals,
         // indicating a smooth, bowl-shaped function. Low α means residuals
         // stay constant or irregular, indicating many local optima.
@@ -204,7 +205,7 @@ impl Classify for ResidualDecayClassifier {
 mod tests {
     use super::*;
     use std::collections::HashMap;
-    
+
     /// Helper to create EvalTrace with given value
     fn trace(value: f64) -> EvalTrace {
         use std::sync::atomic::{AtomicU64, Ordering};
@@ -220,36 +221,43 @@ mod tests {
     #[test]
     fn test_residual_decay_alpha_estimation() {
         let classifier = ResidualDecayClassifier::default();
-        
+
         // Test estimate_alpha directly with geometric decay residuals
         // E_k = 10 * 0.5^k => [10, 5, 2.5, 1.25, ...]
         // This has slope = ln(0.5) ≈ -0.693, so α = 0.693
         let geometric_residuals = vec![10.0, 5.0, 2.5, 1.25, 0.625, 0.3125];
         let alpha = classifier.estimate_alpha(&geometric_residuals);
-        
+
         println!("Geometric decay α = {}", alpha);
         // For β=0.5, slope = ln(0.5) = -0.693, α = -slope = 0.693
-        assert!(alpha > 0.6 && alpha < 0.8, 
-                "Geometric decay with β=0.5 should have α ≈ 0.69, got {}", alpha);
+        assert!(
+            alpha > 0.6 && alpha < 0.8,
+            "Geometric decay with β=0.5 should have α ≈ 0.69, got {}",
+            alpha
+        );
     }
 
     #[test]
     fn test_residual_decay_flat_residuals_chaotic() {
         let classifier = ResidualDecayClassifier::default();
-        
+
         // Flat residuals: [1.0, 1.0, 1.0, ...] → slope ≈ 0, α ≈ 0
         let flat_residuals = vec![1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0];
         let alpha = classifier.estimate_alpha(&flat_residuals);
-        
+
         println!("Flat residuals α = {}", alpha);
         // Flat residuals should have α ≈ 0
-        assert!(alpha < 0.1, "Flat residuals should have α ≈ 0, got {}", alpha);
+        assert!(
+            alpha < 0.1,
+            "Flat residuals should have α ≈ 0, got {}",
+            alpha
+        );
     }
 
     #[test]
     fn test_residual_decay_sphere_structured() {
         // For a structured function (Sphere), when we sample densely and sort,
-        // the residuals (differences between consecutive sorted values) should 
+        // the residuals (differences between consecutive sorted values) should
         // decrease geometrically as we approach the optimum.
         //
         // Sphere f(x) = x^2, samples at x = 0.1, 0.2, ..., 1.0
@@ -263,51 +271,72 @@ mod tests {
         // Solution: Use samples that represent optimization convergence trajectory
         // where each step gets geometrically closer to the optimum.
         let classifier = ResidualDecayClassifier::default();
-        
+
         // Simulate optimization progress by using samples where the objective
         // decreases geometrically (like an optimizer converging)
         // Sample trajectory: 81, 27, 9, 3, 1, 0.33, 0.11, 0.037, 0.012, 0.004
         // (each is 1/3 of previous, showing geometric convergence)
         // When sorted ascending: 0.004, 0.012, ..., 81
         // Residuals: increasing pattern
-        // 
+        //
         // Actually, for classification we care about the SORTED values.
         // A structured function has values that, when sorted, show small gaps near optimum.
-        
+
         // Different approach: test with the integral behavior
         // A structured landscape has ONE dominant basin → many points near optimum
         // When sorted, lots of small residuals near the start
         let samples: Vec<EvalTrace> = vec![
             // Many values near optimum (geometric decay pattern in sorted residuals)
-            trace(0.001), trace(0.002), trace(0.004), trace(0.008), 
-            trace(0.016), trace(0.032), trace(0.064), trace(0.128),
-            trace(0.256), trace(0.512),
+            trace(0.001),
+            trace(0.002),
+            trace(0.004),
+            trace(0.008),
+            trace(0.016),
+            trace(0.032),
+            trace(0.064),
+            trace(0.128),
+            trace(0.256),
+            trace(0.512),
         ];
-        
+
         let (landscape, alpha) = classifier.classify(&samples);
-        
+
         println!("Sphere-like α = {}", alpha);
-        assert_eq!(landscape, Landscape::Structured, 
-                   "Geometric convergence should be Structured, α={}", alpha);
+        assert_eq!(
+            landscape,
+            Landscape::Structured,
+            "Geometric convergence should be Structured, α={}",
+            alpha
+        );
     }
 
     #[test]
     fn test_residual_decay_rastrigin_chaotic() {
         let classifier = ResidualDecayClassifier::default();
-        
+
         // Chaotic landscape: values spread evenly (linear spacing when sorted)
         // → constant residuals → α ≈ 0 → Chaotic
         let samples: Vec<EvalTrace> = vec![
-            trace(0.0), trace(1.0), trace(2.0), trace(3.0),
-            trace(4.0), trace(5.0), trace(6.0), trace(7.0),
-            trace(8.0), trace(9.0),
+            trace(0.0),
+            trace(1.0),
+            trace(2.0),
+            trace(3.0),
+            trace(4.0),
+            trace(5.0),
+            trace(6.0),
+            trace(7.0),
+            trace(8.0),
+            trace(9.0),
         ];
-        
+
         let (landscape, alpha) = classifier.classify(&samples);
-        
+
         println!("Rastrigin-like α = {}", alpha);
-        assert_eq!(landscape, Landscape::Chaotic, 
-                   "Flat residuals should be Chaotic, α={}", alpha);
+        assert_eq!(
+            landscape,
+            Landscape::Chaotic,
+            "Flat residuals should be Chaotic, α={}",
+            alpha
+        );
     }
 }
-

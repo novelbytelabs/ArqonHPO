@@ -3,10 +3,9 @@
 //! Constitution: II.17 - All updates MUST pass through SafetyExecutor.
 
 use crate::{
-    config_atomic::{ParamId, ParamVec, ConfigSnapshot, AtomicConfig},
-    proposer::Proposal,
+    config_atomic::{AtomicConfig, ConfigSnapshot, ParamId, ParamVec},
     control_safety::ControlSafety,
-
+    proposer::Proposal,
 };
 use std::sync::Arc;
 use std::time::Instant;
@@ -14,14 +13,40 @@ use std::time::Instant;
 /// Safety violation preventing apply.
 #[derive(Clone, Debug)]
 pub enum Violation {
-    DeltaTooLarge { param_id: ParamId, delta: f64, max: f64 },
-    RateLimitExceeded { rate: f64, max: f64 },
-    OutOfBounds { param_id: ParamId, value: f64, min: f64, max: f64 },
-    UnknownParameter { param_id: ParamId },
-    Thrashing { param_id: ParamId, flips: u32, limit: u32 },
-    BudgetExhausted { used: f64, limit: f64 },
-    ObjectiveRegression { count: u32, limit: u32 },
-    ConstraintViolation { margin: f64 },
+    DeltaTooLarge {
+        param_id: ParamId,
+        delta: f64,
+        max: f64,
+    },
+    RateLimitExceeded {
+        rate: f64,
+        max: f64,
+    },
+    OutOfBounds {
+        param_id: ParamId,
+        value: f64,
+        min: f64,
+        max: f64,
+    },
+    UnknownParameter {
+        param_id: ParamId,
+    },
+    Thrashing {
+        param_id: ParamId,
+        flips: u32,
+        limit: u32,
+    },
+    BudgetExhausted {
+        used: f64,
+        limit: f64,
+    },
+    ObjectiveRegression {
+        count: u32,
+        limit: u32,
+    },
+    ConstraintViolation {
+        margin: f64,
+    },
     AuditQueueFull,
     NoBaseline,
 }
@@ -86,13 +111,13 @@ impl Default for Guardrails {
 pub trait SafeExecutor {
     /// Apply a proposal through safety guardrails.
     fn apply(&mut self, proposal: Proposal) -> Result<ApplyReceipt, Violation>;
-    
+
     /// Rollback to baseline configuration.
     fn rollback(&mut self) -> Result<RollbackReceipt, Violation>;
-    
+
     /// Set current config as baseline for future rollbacks.
     fn set_baseline(&mut self);
-    
+
     /// Get current config snapshot (zero-copy).
     fn snapshot(&self) -> ConfigSnapshot;
 }
@@ -123,7 +148,7 @@ impl SafetyExecutor {
     pub fn validate_delta(&self, delta: &ParamVec, current: &ParamVec) -> Result<(), Violation> {
         for (i, (&d, &c)) in delta.iter().zip(current.iter()).enumerate() {
             let param_id = i as ParamId;
-            
+
             // Check delta magnitude
             if d.abs() > self.guardrails.max_delta_per_step {
                 return Err(Violation::DeltaTooLarge {
@@ -189,9 +214,9 @@ impl SafeExecutor for SafetyExecutor {
 
         // Extract delta from proposal
         let delta = match &proposal {
-            Proposal::ApplyPlus { delta, .. } |
-            Proposal::ApplyMinus { delta, .. } |
-            Proposal::Update { delta, .. } => delta.clone(),
+            Proposal::ApplyPlus { delta, .. }
+            | Proposal::ApplyMinus { delta, .. }
+            | Proposal::Update { delta, .. } => delta.clone(),
             Proposal::NoChange { .. } => {
                 // No-op
                 return Ok(ApplyReceipt {
@@ -221,7 +246,7 @@ impl SafeExecutor for SafetyExecutor {
 
         // Atomic swap
         let new_gen = self.config.swap(new_params);
-        
+
         // Track for rate limiting
         self.update_count_window.push(now_us);
         self.last_apply_us = now_us;
@@ -269,10 +294,10 @@ mod tests {
     fn test_validate_delta_too_large() {
         let config = Arc::new(AtomicConfig::new(ParamVec::from_slice(&[0.5, 0.5])));
         let executor = SafetyExecutor::new(config, Guardrails::default());
-        
+
         let delta = ParamVec::from_slice(&[0.5, 0.0]); // 0.5 > 0.1 max
         let current = ParamVec::from_slice(&[0.5, 0.5]);
-        
+
         let result = executor.validate_delta(&delta, &current);
         assert!(matches!(result, Err(Violation::DeltaTooLarge { .. })));
     }
@@ -281,10 +306,10 @@ mod tests {
     fn test_validate_delta_ok() {
         let config = Arc::new(AtomicConfig::new(ParamVec::from_slice(&[0.5, 0.5])));
         let executor = SafetyExecutor::new(config, Guardrails::default());
-        
+
         let delta = ParamVec::from_slice(&[0.05, 0.05]); // Within 0.1 limit
         let current = ParamVec::from_slice(&[0.5, 0.5]);
-        
+
         let result = executor.validate_delta(&delta, &current);
         assert!(result.is_ok());
     }

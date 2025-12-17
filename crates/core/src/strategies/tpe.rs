@@ -47,7 +47,7 @@ impl TPE {
     }
 
     /// Scott's Rule bandwidth: σ = 1.06 × stddev × n^(-1/5)
-    /// 
+    ///
     /// This is the standard bandwidth for kernel density estimation.
     /// It adapts to the sample distribution and count.
     pub fn scotts_bandwidth(values: &[f64]) -> f64 {
@@ -68,7 +68,7 @@ impl TPE {
     }
 
     /// Silverman's Rule bandwidth: σ = 0.9 × min(stddev, IQR/1.34) × n^(-1/5)
-    /// 
+    ///
     /// More robust to outliers than Scott's Rule.
     #[allow(dead_code)]
     pub fn silverman_bandwidth(values: &[f64]) -> f64 {
@@ -223,11 +223,14 @@ mod tests {
         // For n=10, stddev=1.0: σ = 1.06 × 1.0 × 10^(-0.2) = 1.06 × 0.631 ≈ 0.669
         let values: Vec<f64> = (0..10).map(|i| i as f64).collect();
         let bandwidth = TPE::scotts_bandwidth(&values);
-        
+
         // Values 0-9 have stddev ≈ 2.87
         // Expected: 1.06 × 2.87 × 10^(-0.2) ≈ 1.92
-        assert!(bandwidth > 1.0 && bandwidth < 3.0, 
-                "Bandwidth should be reasonable, got {}", bandwidth);
+        assert!(
+            bandwidth > 1.0 && bandwidth < 3.0,
+            "Bandwidth should be reasonable, got {}",
+            bandwidth
+        );
     }
 
     #[test]
@@ -236,13 +239,16 @@ mod tests {
         let narrow: Vec<f64> = (0..20).map(|i| 5.0 + (i as f64) * 0.01).collect();
         let narrow_bw = TPE::scotts_bandwidth(&narrow);
 
-        // Wide distribution  
+        // Wide distribution
         let wide: Vec<f64> = (0..20).map(|i| i as f64 * 10.0).collect();
         let wide_bw = TPE::scotts_bandwidth(&wide);
 
-        assert!(narrow_bw < wide_bw, 
-                "Narrow distribution should have smaller bandwidth: {} vs {}", 
-                narrow_bw, wide_bw);
+        assert!(
+            narrow_bw < wide_bw,
+            "Narrow distribution should have smaller bandwidth: {} vs {}",
+            narrow_bw,
+            wide_bw
+        );
     }
 
     #[test]
@@ -254,9 +260,12 @@ mod tests {
         let small_bw = TPE::scotts_bandwidth(&small_n);
         let large_bw = TPE::scotts_bandwidth(&large_n);
 
-        assert!(large_bw < small_bw, 
-                "Larger n should reduce bandwidth: {} vs {}", 
-                large_bw, small_bw);
+        assert!(
+            large_bw < small_bw,
+            "Larger n should reduce bandwidth: {} vs {}",
+            large_bw,
+            small_bw
+        );
     }
 
     #[test]
@@ -264,7 +273,7 @@ mod tests {
         // Very tight data should still have minimum bandwidth
         let tight: Vec<f64> = vec![1.0, 1.0, 1.0, 1.0, 1.0];
         let bw = TPE::scotts_bandwidth(&tight);
-        
+
         assert!(bw >= 1e-6, "Bandwidth should be clamped to minimum");
     }
 }

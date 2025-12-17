@@ -39,7 +39,10 @@ pub struct TelemetryDigest {
 }
 
 // Compile-time size assertion (AC-9)
-const _: () = assert!(size_of::<TelemetryDigest>() <= 128, "TelemetryDigest must be ≤128 bytes");
+const _: () = assert!(
+    size_of::<TelemetryDigest>() <= 128,
+    "TelemetryDigest must be ≤128 bytes"
+);
 
 impl TelemetryDigest {
     /// Create a new digest with required fields only.
@@ -101,7 +104,7 @@ impl TelemetryRingBuffer {
     /// Push a digest, evicting oldest if at capacity.
     pub fn push(&mut self, digest: TelemetryDigest) {
         let slot = (self.head + self.len) % self.capacity;
-        
+
         if self.len == self.capacity {
             // Overwrite oldest
             self.head = (self.head + 1) % self.capacity;
@@ -109,7 +112,7 @@ impl TelemetryRingBuffer {
         } else {
             self.len += 1;
         }
-        
+
         self.buffer[slot] = Some(digest);
     }
 
@@ -155,8 +158,13 @@ impl TelemetryRingBuffer {
     ) -> Vec<&TelemetryDigest> {
         self.iter()
             .filter(|d| {
-                d.validate(expected_generation, apply_timestamp_us, settle_time_us, max_age_us, now_us)
-                    == DigestValidity::Valid
+                d.validate(
+                    expected_generation,
+                    apply_timestamp_us,
+                    settle_time_us,
+                    max_age_us,
+                    now_us,
+                ) == DigestValidity::Valid
             })
             .collect()
     }
@@ -174,19 +182,19 @@ mod tests {
     #[test]
     fn test_digest_validation() {
         let digest = TelemetryDigest::new(1000, 0.5, 1);
-        
+
         // Valid case
         assert_eq!(
             digest.validate(1, 500, 100, 10000, 1500),
             DigestValidity::Valid
         );
-        
+
         // Wrong generation
         assert_eq!(
             digest.validate(2, 500, 100, 10000, 1500),
             DigestValidity::WrongGeneration
         );
-        
+
         // Settling period
         assert_eq!(
             digest.validate(1, 950, 100, 10000, 1500),
@@ -197,17 +205,17 @@ mod tests {
     #[test]
     fn test_ring_buffer_overflow() {
         let mut buf = TelemetryRingBuffer::new(3);
-        
+
         buf.push(TelemetryDigest::new(1, 0.1, 1));
         buf.push(TelemetryDigest::new(2, 0.2, 1));
         buf.push(TelemetryDigest::new(3, 0.3, 1));
         assert_eq!(buf.len(), 3);
         assert_eq!(buf.drop_count(), 0);
-        
+
         buf.push(TelemetryDigest::new(4, 0.4, 1));
         assert_eq!(buf.len(), 3);
         assert_eq!(buf.drop_count(), 1);
-        
+
         // Oldest should be evicted (timestamp 1)
         let timestamps: Vec<u64> = buf.iter().map(|d| d.timestamp_us).collect();
         assert_eq!(timestamps, vec![2, 3, 4]);

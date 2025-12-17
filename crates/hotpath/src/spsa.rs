@@ -4,10 +4,9 @@
 //! and decay schedules α=0.602, γ=0.101.
 
 use crate::config_atomic::ParamVec;
-use rand::SeedableRng;
 use rand::prelude::*;
+use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
-
 
 /// SPSA state machine states.
 #[derive(Clone, Debug, PartialEq)]
@@ -98,7 +97,7 @@ impl Spsa {
     pub fn iteration(&self) -> u64 {
         self.iteration
     }
-    
+
     /// Get current perturbation counter.
     pub fn perturbation_counter(&self) -> u64 {
         self.perturbation_counter
@@ -125,12 +124,12 @@ impl Spsa {
     pub fn generate_perturbation(&mut self) -> ParamVec {
         let c_k = self.perturbation_scale(self.iteration);
         let mut delta = ParamVec::with_capacity(self.num_params);
-        
+
         for _ in 0..self.num_params {
             let sign = if self.rng.random::<bool>() { 1.0 } else { -1.0 };
             delta.push(sign * c_k);
         }
-        
+
         self.perturbation_counter += 1;
         delta
     }
@@ -157,8 +156,8 @@ impl Spsa {
     /// Record an objective value from the eval window.
     pub fn record_objective(&mut self, value: f64) {
         match &mut self.state {
-            SpsaState::WaitingPlus { accumulated, .. } |
-            SpsaState::WaitingMinus { accumulated, .. } => {
+            SpsaState::WaitingPlus { accumulated, .. }
+            | SpsaState::WaitingMinus { accumulated, .. } => {
                 accumulated.push(value);
             }
             SpsaState::Ready => {}
@@ -168,8 +167,8 @@ impl Spsa {
     /// Check if we have enough samples in the current eval window.
     pub fn has_enough_samples(&self) -> bool {
         match &self.state {
-            SpsaState::WaitingPlus { accumulated, .. } |
-            SpsaState::WaitingMinus { accumulated, .. } => {
+            SpsaState::WaitingPlus { accumulated, .. }
+            | SpsaState::WaitingMinus { accumulated, .. } => {
                 accumulated.len() >= self.config.eval_window_digests
             }
             SpsaState::Ready => false,
@@ -190,7 +189,7 @@ impl Spsa {
 
         let trim_count = ((values.len() as f64) * trim_percent).ceil() as usize;
         let trimmed = &sorted[trim_count..sorted.len().saturating_sub(trim_count)];
-        
+
         if trimmed.is_empty() {
             sorted.iter().sum::<f64>() / sorted.len() as f64
         } else {
@@ -204,9 +203,11 @@ impl Spsa {
     /// None if still waiting for minus window.
     pub fn complete_eval_window(&mut self) -> Option<(ParamVec, ParamVec)> {
         match std::mem::replace(&mut self.state, SpsaState::Ready) {
-            SpsaState::WaitingPlus { delta, accumulated, .. } => {
+            SpsaState::WaitingPlus {
+                delta, accumulated, ..
+            } => {
                 let y_plus = Self::aggregate_objectives(&accumulated, 0.1);
-                
+
                 // Transition to minus phase
                 let _minus_delta: ParamVec = delta.iter().map(|&d| -d).collect();
                 self.perturbation_counter += 1;
@@ -218,23 +219,28 @@ impl Spsa {
                 };
                 None
             }
-            SpsaState::WaitingMinus { delta, y_plus, accumulated, .. } => {
+            SpsaState::WaitingMinus {
+                delta,
+                y_plus,
+                accumulated,
+                ..
+            } => {
                 let y_minus = Self::aggregate_objectives(&accumulated, 0.1);
-                
+
                 // Compute gradient: g_k = (y+ - y-) / (2 * Δ)
                 let a_k = self.learning_rate(self.iteration);
                 let mut gradient = ParamVec::with_capacity(self.num_params);
                 let mut update_delta = ParamVec::with_capacity(self.num_params);
-                
+
                 for &d in delta.iter() {
                     let g = (y_plus - y_minus) / (2.0 * d);
                     gradient.push(g);
                     update_delta.push(-a_k * g);
                 }
-                
+
                 self.iteration += 1;
                 self.state = SpsaState::Ready;
-                
+
                 Some((gradient, update_delta))
             }
             SpsaState::Ready => None,
@@ -264,17 +270,14 @@ mod tests {
 
         // All values should be ±1.0 (since perturbation_scale starts at 1.0)
         for &d in delta.iter() {
-            assert!(
-                (d.abs() - 1.0).abs() < 1e-10,
-                "Expected ±1.0, got {}", d
-            );
+            assert!((d.abs() - 1.0).abs() < 1e-10, "Expected ±1.0, got {}", d);
         }
     }
 
     #[test]
     fn test_learning_rate_decay() {
         let spsa = Spsa::new(0, 1, 0.1, 0.01, SpsaConfig::default());
-        
+
         let a0 = spsa.learning_rate(0);
         let a10 = spsa.learning_rate(10);
         let a100 = spsa.learning_rate(100);
@@ -287,7 +290,7 @@ mod tests {
     fn test_trimmed_mean() {
         let values = vec![1.0, 2.0, 3.0, 4.0, 100.0];
         let result = Spsa::aggregate_objectives(&values, 0.2);
-        
+
         // With 20% trim on 5 values, removes 1 from each end
         // Should average [2.0, 3.0, 4.0] = 3.0
         assert!((result - 3.0).abs() < 1e-10);

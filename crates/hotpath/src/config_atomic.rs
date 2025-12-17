@@ -4,8 +4,8 @@
 
 use smallvec::SmallVec;
 
-use std::sync::{Arc, RwLock};
 use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::{Arc, RwLock};
 
 /// Stable parameter identifier (u16 = up to 65K params).
 ///
@@ -38,17 +38,20 @@ impl ParamRegistry {
     /// Create a new registry from parameter names.
     pub fn new(names: impl IntoIterator<Item = impl Into<String>>) -> Self {
         let id_to_name: Vec<String> = names.into_iter().map(|n| n.into()).collect();
-        
+
         let mut name_map: Vec<(String, ParamId)> = id_to_name
             .iter()
             .enumerate()
             .map(|(i, name)| (name.clone(), i as ParamId))
             .collect();
-        
+
         // Sort by name for binary search
         name_map.sort_by(|a, b| a.0.cmp(&b.0));
-        
-        Self { name_map, id_to_name }
+
+        Self {
+            name_map,
+            id_to_name,
+        }
     }
 
     /// Look up a parameter ID by name.
@@ -82,19 +85,24 @@ impl ParamRegistry {
         // For simplicity, we can scan. Optimal: sort input if needed.
         // But for boundary conversion, a naive lookup is acceptable or
         // we assume map is large.
-        
+
         // Actually, we must produce a dense vector ordered by ID.
         // We can iterate IDs and look up in the map (O(N*M) or O(N log M) if map sorted).
         // Since input is slice, O(N*M).
         // Better: sort input map temporarily?
-        
-        // Let's assume the caller provides what we need. 
-        // But `to_param_vec` usually takes a HashMap. 
+
+        // Let's assume the caller provides what we need.
+        // But `to_param_vec` usually takes a HashMap.
         // If we strictly ban HashMap types in signatures... use `&[(String, f64)]`.
-        
+
         // Naive for now:
         for name in &self.id_to_name {
-            let val = map.iter().find(|(n, _)| n == name).map(|(_, v)| v).copied().unwrap_or(0.0);
+            let val = map
+                .iter()
+                .find(|(n, _)| n == name)
+                .map(|(_, v)| v)
+                .copied()
+                .unwrap_or(0.0);
             vec.push(val);
         }
         vec
@@ -125,7 +133,10 @@ pub struct ConfigSnapshot {
 impl ConfigSnapshot {
     /// Create a new snapshot with initial parameters and generation 0.
     pub fn new(params: ParamVec) -> Self {
-        Self { params, generation: 0 }
+        Self {
+            params,
+            generation: 0,
+        }
     }
 
     /// Create a snapshot with a specific generation.
@@ -226,11 +237,11 @@ mod tests {
     fn test_atomic_config_swap_increments_generation() {
         let config = AtomicConfig::new(ParamVec::from_slice(&[0.5]));
         assert_eq!(config.generation(), 0);
-        
+
         let gen1 = config.swap(ParamVec::from_slice(&[0.6]));
         assert_eq!(gen1, 1);
         assert_eq!(config.generation(), 1);
-        
+
         let gen2 = config.swap(ParamVec::from_slice(&[0.7]));
         assert_eq!(gen2, 2);
         assert_eq!(config.generation(), 2);
@@ -240,10 +251,10 @@ mod tests {
     fn test_atomic_config_rollback() {
         let config = AtomicConfig::new(ParamVec::from_slice(&[0.5]));
         config.set_baseline();
-        
+
         config.swap(ParamVec::from_slice(&[0.9]));
         assert_eq!(config.snapshot().params[0], 0.9);
-        
+
         let gen = config.rollback().unwrap();
         assert_eq!(config.snapshot().params[0], 0.5);
         assert_eq!(gen, 2);

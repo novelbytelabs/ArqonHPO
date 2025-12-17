@@ -4,8 +4,8 @@
 //! IX.2 - Events MUST include correlation IDs.
 
 use crossbeam_queue::ArrayQueue;
-use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::Arc;
 
 /// Audit policy defining how events are recorded.
 ///
@@ -16,15 +16,15 @@ pub enum AuditPolicy {
     /// Default for all tiers.
     #[default]
     InMemoryRequired,
-    
+
     /// In-memory + async background flush to disk.
     /// Production default.
     InMemoryPlusAsyncDisk,
-    
+
     /// In-memory only, no disk persistence.
     /// For benchmarks and constrained environments.
     InMemoryOnly,
-    
+
     /// Audit disabled. **FORBIDDEN in Tier 1/2.**
     /// Only allowed in Tier Ω sandbox.
     Disable,
@@ -67,8 +67,12 @@ pub enum AuditPolicyError {
 impl std::fmt::Display for AuditPolicyError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::DisableNotAllowedInTier1 => write!(f, "AuditPolicy::Disable is forbidden in Tier 1"),
-            Self::DisableNotAllowedInTier2 => write!(f, "AuditPolicy::Disable is forbidden in Tier 2"),
+            Self::DisableNotAllowedInTier1 => {
+                write!(f, "AuditPolicy::Disable is forbidden in Tier 1")
+            }
+            Self::DisableNotAllowedInTier2 => {
+                write!(f, "AuditPolicy::Disable is forbidden in Tier 2")
+            }
         }
     }
 }
@@ -103,12 +107,7 @@ pub struct AuditEvent {
 
 impl AuditEvent {
     /// Create a new audit event.
-    pub fn new(
-        event_type: EventType,
-        timestamp_us: u64,
-        run_id: u64,
-        config_version: u64,
-    ) -> Self {
+    pub fn new(event_type: EventType, timestamp_us: u64, run_id: u64, config_version: u64) -> Self {
         Self {
             event_type,
             timestamp_us,
@@ -208,7 +207,7 @@ impl AuditQueue {
     pub fn capacity(&self) -> usize {
         self.capacity
     }
-    
+
     /// Number of events that couldn't be enqueued (for monitoring).
     pub fn drop_count(&self) -> u64 {
         self.drop_count.load(Ordering::Relaxed)
@@ -224,7 +223,7 @@ mod tests {
         let event = AuditEvent::new(EventType::Apply, 1000, 42, 5)
             .with_proposal_id(123)
             .with_payload("delta applied");
-        
+
         assert!(matches!(event.event_type, EventType::Apply));
         assert_eq!(event.run_id, 42);
         assert_eq!(event.proposal_id, Some(123));
@@ -233,7 +232,7 @@ mod tests {
     #[test]
     fn test_audit_queue_enqueue() {
         let queue = AuditQueue::new(10);
-        
+
         let event = AuditEvent::new(EventType::Digest, 1000, 1, 1);
         assert_eq!(queue.enqueue(event), EnqueueResult::Ok);
         assert_eq!(queue.len(), 1);
@@ -242,10 +241,10 @@ mod tests {
     #[test]
     fn test_audit_queue_full() {
         let queue = AuditQueue::new(2);
-        
+
         queue.enqueue(AuditEvent::new(EventType::Digest, 1, 1, 1));
         queue.enqueue(AuditEvent::new(EventType::Digest, 2, 1, 1));
-        
+
         let result = queue.enqueue(AuditEvent::new(EventType::Digest, 3, 1, 1));
         assert_eq!(result, EnqueueResult::Full);
     }
@@ -253,10 +252,10 @@ mod tests {
     #[test]
     fn test_audit_queue_drain() {
         let queue = AuditQueue::new(10);
-        
+
         queue.enqueue(AuditEvent::new(EventType::Digest, 1, 1, 1));
         queue.enqueue(AuditEvent::new(EventType::Apply, 2, 1, 1));
-        
+
         let events = queue.drain();
         assert_eq!(events.len(), 2);
         assert!(queue.is_empty());
@@ -265,17 +264,22 @@ mod tests {
     #[test]
     fn test_no_silent_drops() {
         let queue = AuditQueue::new(100);
-        
+
         // Enqueue 100 events
         for i in 0..100 {
             let result = queue.enqueue(AuditEvent::new(EventType::Proposal, i, 1, 1));
-            assert_ne!(result, EnqueueResult::Full, "Event {} should not be dropped", i);
+            assert_ne!(
+                result,
+                EnqueueResult::Full,
+                "Event {} should not be dropped",
+                i
+            );
         }
-        
+
         // 101st should fail
         let result = queue.enqueue(AuditEvent::new(EventType::Proposal, 100, 1, 1));
         assert_eq!(result, EnqueueResult::Full);
-        
+
         // Drain and verify count
         let events = queue.drain();
         assert_eq!(events.len(), 100, "Exactly 100 events should be present");
@@ -286,7 +290,10 @@ mod tests {
         let policy = AuditPolicy::Disable;
         let result = policy.validate_for_tier(Tier::Tier1);
         assert!(result.is_err());
-        assert_eq!(result.unwrap_err(), AuditPolicyError::DisableNotAllowedInTier1);
+        assert_eq!(
+            result.unwrap_err(),
+            AuditPolicyError::DisableNotAllowedInTier1
+        );
     }
 
     #[test]
@@ -294,7 +301,10 @@ mod tests {
         let policy = AuditPolicy::Disable;
         let result = policy.validate_for_tier(Tier::Tier2);
         assert!(result.is_err());
-        assert_eq!(result.unwrap_err(), AuditPolicyError::DisableNotAllowedInTier2);
+        assert_eq!(
+            result.unwrap_err(),
+            AuditPolicyError::DisableNotAllowedInTier2
+        );
     }
 
     #[test]
@@ -306,7 +316,11 @@ mod tests {
 
     #[test]
     fn test_audit_policy_inmemory_allowed_all_tiers() {
-        for policy in [AuditPolicy::InMemoryRequired, AuditPolicy::InMemoryPlusAsyncDisk, AuditPolicy::InMemoryOnly] {
+        for policy in [
+            AuditPolicy::InMemoryRequired,
+            AuditPolicy::InMemoryPlusAsyncDisk,
+            AuditPolicy::InMemoryOnly,
+        ] {
             assert!(policy.validate_for_tier(Tier::Tier1).is_ok());
             assert!(policy.validate_for_tier(Tier::Tier2).is_ok());
             assert!(policy.validate_for_tier(Tier::TierOmega).is_ok());
@@ -316,22 +330,22 @@ mod tests {
     #[test]
     fn test_saturation_drop_count() {
         let queue = AuditQueue::new(5);
-        
+
         // Fill queue
         for i in 0..5 {
             queue.enqueue(AuditEvent::new(EventType::Digest, i, 1, 1));
         }
         assert_eq!(queue.drop_count(), 0);
-        
+
         // Try to enqueue 10 more (all should fail)
         for i in 5..15 {
             let result = queue.enqueue(AuditEvent::new(EventType::Digest, i, 1, 1));
             assert_eq!(result, EnqueueResult::Full);
         }
-        
+
         // Should have counted 10 drops
         assert_eq!(queue.drop_count(), 10);
-        
+
         // Queue still has original 5 events
         assert_eq!(queue.len(), 5);
     }
@@ -342,4 +356,3 @@ mod tests {
         assert_eq!(policy, AuditPolicy::InMemoryRequired);
     }
 }
-

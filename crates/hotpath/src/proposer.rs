@@ -2,10 +2,7 @@
 //!
 //! Constitution: II.20 - Tier 2 MUST NOT directly mutate production state.
 
-use crate::{
-    config_atomic::ParamVec,
-    telemetry::TelemetryDigest,
-};
+use crate::{config_atomic::ParamVec, telemetry::TelemetryDigest};
 
 /// Error from proposal generation.
 #[derive(Clone, Debug)]
@@ -44,9 +41,7 @@ pub enum Proposal {
         gradient_estimate: ParamVec,
     },
     /// No change (timeout, safe mode, etc.).
-    NoChange {
-        reason: NoChangeReason,
-    },
+    NoChange { reason: NoChangeReason },
 }
 
 /// Result of observing telemetry.
@@ -61,10 +56,10 @@ pub type ProposalResult = Result<Proposal, ProposalError>;
 pub trait AdaptiveProposer {
     /// Observe a telemetry digest and potentially generate a proposal.
     fn observe(&mut self, digest: TelemetryDigest) -> ProposalResult;
-    
+
     /// Get the current perturbation being evaluated (if any).
     fn current_perturbation(&self) -> Option<(u64, ParamVec)>;
-    
+
     /// Get the current SPSA iteration count.
     fn iteration(&self) -> u64;
 }
@@ -76,14 +71,16 @@ mod tests {
     #[test]
     fn test_proposal_variants() {
         let delta = ParamVec::from_slice(&[0.1, 0.2]);
-        
+
         let p = Proposal::ApplyPlus {
             perturbation_id: 1,
             delta: delta.clone(),
         };
-        
+
         match p {
-            Proposal::ApplyPlus { perturbation_id, .. } => {
+            Proposal::ApplyPlus {
+                perturbation_id, ..
+            } => {
                 assert_eq!(perturbation_id, 1);
             }
             _ => panic!("Expected ApplyPlus"),

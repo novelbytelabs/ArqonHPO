@@ -7,9 +7,9 @@
 //! - Probe seeding
 
 use crate::artifact::EvalTrace;
-use crate::config::{SolverConfig, Domain, Scale};
-use crate::strategies::{Strategy, StrategyAction};
+use crate::config::{Domain, Scale, SolverConfig};
 use crate::strategies::nelder_mead::NelderMead;
+use crate::strategies::{Strategy, StrategyAction};
 use std::collections::HashMap;
 
 /// Helper to create EvalTrace
@@ -30,17 +30,23 @@ fn trace(value: f64, x: f64, y: f64) -> EvalTrace {
 /// Create a 2D config for testing
 fn test_config_2d() -> SolverConfig {
     let mut bounds = HashMap::new();
-    bounds.insert("x".to_string(), Domain {
-        min: -5.0,
-        max: 5.0,
-        scale: Scale::Linear,
-    });
-    bounds.insert("y".to_string(), Domain {
-        min: -5.0,
-        max: 5.0,
-        scale: Scale::Linear,
-    });
-    
+    bounds.insert(
+        "x".to_string(),
+        Domain {
+            min: -5.0,
+            max: 5.0,
+            scale: Scale::Linear,
+        },
+    );
+    bounds.insert(
+        "y".to_string(),
+        Domain {
+            min: -5.0,
+            max: 5.0,
+            scale: Scale::Linear,
+        },
+    );
+
     SolverConfig {
         bounds,
         budget: 100,
@@ -53,9 +59,9 @@ fn test_config_2d() -> SolverConfig {
 /// Create history with 3 points forming a simplex (for 2D)
 fn simplex_history() -> Vec<EvalTrace> {
     vec![
-        trace(1.0, 0.0, 0.0),   // Best
-        trace(2.0, 1.0, 0.0),   // Second
-        trace(5.0, 0.0, 1.0),   // Worst
+        trace(1.0, 0.0, 0.0), // Best
+        trace(2.0, 1.0, 0.0), // Second
+        trace(5.0, 0.0, 1.0), // Worst
     ]
 }
 
@@ -65,9 +71,9 @@ fn test_nelder_mead_init_builds_simplex() {
     let mut nm = NelderMead::new(dim, vec![false; dim]);
     let config = test_config_2d();
     let history = simplex_history();
-    
+
     let action = nm.step(&config, &history);
-    
+
     // Should return an Evaluate action for reflection
     match action {
         StrategyAction::Evaluate(candidates) => {
@@ -84,18 +90,21 @@ fn test_nelder_mead_init_builds_simplex() {
 fn test_nelder_mead_deterministic() {
     let config = test_config_2d();
     let history = simplex_history();
-    
+
     let mut nm1 = NelderMead::new(2, vec![false; 2]);
     let mut nm2 = NelderMead::new(2, vec![false; 2]);
-    
+
     let action1 = nm1.step(&config, &history);
     let action2 = nm2.step(&config, &history);
-    
+
     match (action1, action2) {
         (StrategyAction::Evaluate(c1), StrategyAction::Evaluate(c2)) => {
             let x1 = c1[0].get("x").unwrap();
             let x2 = c2[0].get("x").unwrap();
-            assert!((x1 - x2).abs() < 1e-10, "Same input should produce same output");
+            assert!(
+                (x1 - x2).abs() < 1e-10,
+                "Same input should produce same output"
+            );
         }
         (StrategyAction::Wait, StrategyAction::Wait) => {}
         (StrategyAction::Converged, StrategyAction::Converged) => {}

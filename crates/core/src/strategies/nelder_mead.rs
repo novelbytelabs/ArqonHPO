@@ -1,5 +1,5 @@
 use crate::artifact::EvalTrace;
-use crate::config::{SolverConfig, wrap01, diff01, dist01, circular_mean01};
+use crate::config::{circular_mean01, diff01, dist01, wrap01, SolverConfig};
 use crate::strategies::{Strategy, StrategyAction};
 use std::collections::HashMap;
 
@@ -116,7 +116,11 @@ impl NelderMead {
     }
 
     /// Create NM with seed points from probe results (Top-K seeding)
-    pub fn with_seed_points(dim: usize, seeds: Vec<(f64, Vec<f64>)>, periodic_mask: Vec<bool>) -> Self {
+    pub fn with_seed_points(
+        dim: usize,
+        seeds: Vec<(f64, Vec<f64>)>,
+        periodic_mask: Vec<bool>,
+    ) -> Self {
         Self {
             dim,
             state: NMState::Init,
@@ -174,12 +178,17 @@ impl NelderMead {
     fn compute_centroid(&self) -> Vec<f64> {
         let n = self.dim;
         let mut centroid = vec![0.0; n];
-        
+
         // Use circular_mean01 for periodic, arithmetic mean for linear
         for dim_idx in 0..n {
             let is_periodic = self.periodic_mask.get(dim_idx).copied().unwrap_or(false);
             if is_periodic {
-                let values: Vec<f64> = self.simplex.iter().take(n).map(|(_, v)| v[dim_idx]).collect();
+                let values: Vec<f64> = self
+                    .simplex
+                    .iter()
+                    .take(n)
+                    .map(|(_, v)| v[dim_idx])
+                    .collect();
                 centroid[dim_idx] = circular_mean01(&values);
             } else {
                 let sum: f64 = self.simplex.iter().take(n).map(|(_, v)| v[dim_idx]).sum();
@@ -191,7 +200,10 @@ impl NelderMead {
 
     /// Compute reflection point: r = c + α*(c - worst)
     fn compute_reflection(&self, centroid: &[f64], worst: &[f64]) -> Vec<f64> {
-        centroid.iter().zip(worst.iter()).enumerate()
+        centroid
+            .iter()
+            .zip(worst.iter())
+            .enumerate()
             .map(|(i, (&c, &w))| {
                 let is_periodic = self.periodic_mask.get(i).copied().unwrap_or(false);
                 if is_periodic {
@@ -206,7 +218,10 @@ impl NelderMead {
 
     /// Compute expansion point: e = c + γ*(r - c)
     fn compute_expansion(&self, centroid: &[f64], reflection: &[f64]) -> Vec<f64> {
-        centroid.iter().zip(reflection.iter()).enumerate()
+        centroid
+            .iter()
+            .zip(reflection.iter())
+            .enumerate()
             .map(|(i, (&c, &r))| {
                 let is_periodic = self.periodic_mask.get(i).copied().unwrap_or(false);
                 if is_periodic {
@@ -220,7 +235,10 @@ impl NelderMead {
 
     /// Compute outside contraction: c_o = c + ρ*(r - c)
     fn compute_outside_contraction(&self, centroid: &[f64], reflection: &[f64]) -> Vec<f64> {
-        centroid.iter().zip(reflection.iter()).enumerate()
+        centroid
+            .iter()
+            .zip(reflection.iter())
+            .enumerate()
             .map(|(i, (&c, &r))| {
                 let is_periodic = self.periodic_mask.get(i).copied().unwrap_or(false);
                 if is_periodic {
@@ -234,7 +252,10 @@ impl NelderMead {
 
     /// Compute inside contraction: c_i = c + ρ*(worst - c)
     fn compute_inside_contraction(&self, centroid: &[f64], worst: &[f64]) -> Vec<f64> {
-        centroid.iter().zip(worst.iter()).enumerate()
+        centroid
+            .iter()
+            .zip(worst.iter())
+            .enumerate()
             .map(|(i, (&c, &w))| {
                 let is_periodic = self.periodic_mask.get(i).copied().unwrap_or(false);
                 if is_periodic {
@@ -249,9 +270,13 @@ impl NelderMead {
     /// Compute shrunk points: x_i = x_best + σ*(x_i - x_best)
     fn compute_shrunk_points(&self) -> Vec<Vec<f64>> {
         let best = &self.simplex[0].1;
-        self.simplex.iter().skip(1)
+        self.simplex
+            .iter()
+            .skip(1)
             .map(|(_, xi)| {
-                best.iter().zip(xi.iter()).enumerate()
+                best.iter()
+                    .zip(xi.iter())
+                    .enumerate()
                     .map(|(i, (&b, &x))| {
                         let is_periodic = self.periodic_mask.get(i).copied().unwrap_or(false);
                         if is_periodic {
@@ -272,9 +297,12 @@ impl NelderMead {
         }
         let best = &self.simplex[0].1;
         let worst = &self.simplex.last().unwrap().1;
-        
+
         // Compute max distance from best to any other point
-        let diameter: f64 = best.iter().zip(worst.iter()).enumerate()
+        let diameter: f64 = best
+            .iter()
+            .zip(worst.iter())
+            .enumerate()
             .map(|(i, (&b, &w))| {
                 let is_periodic = self.periodic_mask.get(i).copied().unwrap_or(false);
                 if is_periodic {
@@ -284,13 +312,14 @@ impl NelderMead {
                 }
             })
             .fold(0.0, f64::max);
-        
+
         diameter < self.tolerance
     }
 
     /// Sort simplex by objective value (ascending - minimization)
     fn sort_simplex(&mut self) {
-        self.simplex.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap_or(std::cmp::Ordering::Equal));
+        self.simplex
+            .sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap_or(std::cmp::Ordering::Equal));
     }
 }
 
@@ -306,7 +335,11 @@ impl Strategy for NelderMead {
             NMState::Init => {
                 // PHASE 5: Multi-seed prepass - pick K=3 diverse seeds from top candidates
                 let mut sorted: Vec<_> = history.iter().collect();
-                sorted.sort_by(|a, b| a.value.partial_cmp(&b.value).unwrap_or(std::cmp::Ordering::Equal));
+                sorted.sort_by(|a, b| {
+                    a.value
+                        .partial_cmp(&b.value)
+                        .unwrap_or(std::cmp::Ordering::Equal)
+                });
 
                 if sorted.is_empty() {
                     return StrategyAction::Wait;
@@ -317,72 +350,74 @@ impl Strategy for NelderMead {
                 let k = 3;
                 let pool_size = 10.min(sorted.len());
                 let mut seeds: Vec<(f64, Vec<f64>)> = Vec::new();
-                
+
                 // Always include best point
                 let best = &sorted[0];
                 seeds.push((best.value, self.dict_to_vec(&best.params, &keys)));
-                
+
                 // Farthest-point selection for remaining seeds
                 for _ in 1..k {
                     if seeds.len() >= pool_size {
                         break;
                     }
-                    
+
                     let mut best_min_dist = -1.0;
                     let mut best_idx = 1;
-                    
+
                     #[allow(clippy::needless_range_loop)]
                     for i in 1..pool_size {
                         let candidate = self.dict_to_vec(&sorted[i].params, &keys);
-                        
+
                         // Check if already selected
                         let already_selected = seeds.iter().any(|(_, s)| {
-                            s.iter().zip(candidate.iter())
+                            s.iter()
+                                .zip(candidate.iter())
                                 .all(|(a, b)| (a - b).abs() < 1e-9)
                         });
                         if already_selected {
                             continue;
                         }
-                        
+
                         // Compute min distance to all selected seeds
-                        let min_dist = seeds.iter()
+                        let min_dist = seeds
+                            .iter()
                             .map(|(_, s)| {
-                                s.iter().zip(candidate.iter())
+                                s.iter()
+                                    .zip(candidate.iter())
                                     .map(|(a, b)| (a - b).powi(2))
                                     .sum::<f64>()
                                     .sqrt()
                             })
                             .fold(f64::INFINITY, f64::min);
-                        
+
                         if min_dist > best_min_dist {
                             best_min_dist = min_dist;
                             best_idx = i;
                         }
                     }
-                    
+
                     if best_min_dist > 0.0 {
                         let selected = &sorted[best_idx];
                         seeds.push((selected.value, self.dict_to_vec(&selected.params, &keys)));
                     }
                 }
-                
+
                 // Start coordinate prepass on first seed
                 let (seed_val, seed_vec) = seeds.remove(0);
                 let remaining_seeds = seeds;
-                
+
                 // Simplified prepass: just δ=0.05 (one pass for speed)
                 let deltas = vec![0.05];
                 let delta = deltas[0];
-                
+
                 let mut plus = seed_vec.clone();
                 let mut minus = seed_vec.clone();
                 plus[0] = (plus[0] + delta).min(1.0);
                 minus[0] = (minus[0] - delta).max(0.0);
-                
+
                 let pending = vec![plus.clone(), minus.clone()];
-                let candidates: Vec<_> = pending.iter()
-                    .map(|v| self.vec_to_dict(v, &keys))
-                    .collect();
+                let candidates: Vec<_> =
+                    pending.iter().map(|v| self.vec_to_dict(v, &keys)).collect();
 
                 self.state = NMState::CoordinatePrepass {
                     best_point: seed_vec,
@@ -398,11 +433,20 @@ impl Strategy for NelderMead {
                 StrategyAction::Evaluate(candidates)
             }
 
-            NMState::CoordinatePrepass { best_point, best_value, deltas, delta_idx, dim_idx, pending, remaining_seeds, global_best } => {
+            NMState::CoordinatePrepass {
+                best_point,
+                best_value,
+                deltas,
+                delta_idx,
+                dim_idx,
+                pending,
+                remaining_seeds,
+                global_best,
+            } => {
                 // Process evaluation results: take greedy improving move
                 let mut current_best = best_point.clone();
                 let mut current_val = *best_value;
-                
+
                 // Check if any pending point improved
                 for eval in history.iter().rev().take(pending.len()) {
                     if eval.value < current_val {
@@ -410,10 +454,10 @@ impl Strategy for NelderMead {
                         current_val = eval.value;
                     }
                 }
-                
+
                 // Move to next dimension
                 let next_dim = dim_idx + 1;
-                
+
                 if next_dim < n {
                     // Continue with current delta, next dimension
                     let delta = deltas[*delta_idx];
@@ -421,9 +465,10 @@ impl Strategy for NelderMead {
                     let mut minus = current_best.clone();
                     plus[next_dim] = (plus[next_dim] + delta).min(1.0);
                     minus[next_dim] = (minus[next_dim] - delta).max(0.0);
-                    
+
                     let new_pending = vec![plus.clone(), minus.clone()];
-                    let candidates: Vec<_> = new_pending.iter()
+                    let candidates: Vec<_> = new_pending
+                        .iter()
                         .map(|v| self.vec_to_dict(v, &keys))
                         .collect();
 
@@ -446,21 +491,22 @@ impl Strategy for NelderMead {
                         Some((gv, gp)) if *gv < current_val => Some((*gv, gp.clone())),
                         _ => Some((current_val, current_best.clone())),
                     };
-                    
+
                     // Check if more seeds to try
                     let mut remaining = remaining_seeds.clone();
                     if !remaining.is_empty() {
                         // Start prepass on next seed
                         let (next_val, next_vec) = remaining.remove(0);
                         let delta = deltas[0];
-                        
+
                         let mut plus = next_vec.clone();
                         let mut minus = next_vec.clone();
                         plus[0] = (plus[0] + delta).min(1.0);
                         minus[0] = (minus[0] - delta).max(0.0);
-                        
+
                         let new_pending = vec![plus.clone(), minus.clone()];
-                        let candidates: Vec<_> = new_pending.iter()
+                        let candidates: Vec<_> = new_pending
+                            .iter()
                             .map(|v| self.vec_to_dict(v, &keys))
                             .collect();
 
@@ -478,11 +524,12 @@ impl Strategy for NelderMead {
                         StrategyAction::Evaluate(candidates)
                     } else {
                         // All seeds processed - use global best for simplex
-                        let (final_val, final_point) = new_global_best.unwrap_or((current_val, current_best));
-                        
+                        let (final_val, final_point) =
+                            new_global_best.unwrap_or((current_val, current_best));
+
                         self.simplex.clear();
                         self.simplex.push((final_val, final_point.clone()));
-                        
+
                         // Build axis-aligned simplex around best refined point
                         let scale = 0.05;
                         for dim_idx in 0..n {
@@ -495,13 +542,15 @@ impl Strategy for NelderMead {
                             }
                             self.simplex.push((f64::INFINITY, vertex));
                         }
-                        
+
                         // Request evaluation of simplex vertices
-                        let new_vertices: Vec<_> = self.simplex.iter()
+                        let new_vertices: Vec<_> = self
+                            .simplex
+                            .iter()
                             .skip(1)
                             .map(|(_, v)| self.vec_to_dict(v, &keys))
                             .collect();
-                        
+
                         self.state = NMState::SimplexBuild { evals_received: 0 };
                         StrategyAction::Evaluate(new_vertices)
                     }
@@ -512,32 +561,34 @@ impl Strategy for NelderMead {
                 // (Previous SimplexBuild logic moved here from Init)
                 // Simplex vertices already built, receive evaluations
                 let num_vertices_needed = n;
-                let start_idx = history.len().saturating_sub(num_vertices_needed - *evals_received);
-                
+                let start_idx = history
+                    .len()
+                    .saturating_sub(num_vertices_needed - *evals_received);
+
                 for (i, eval) in history.iter().skip(start_idx).enumerate() {
                     let simplex_idx = *evals_received + i + 1;
                     if simplex_idx < self.simplex.len() {
                         self.simplex[simplex_idx].0 = eval.value;
                     }
                 }
-                
+
                 self.sort_simplex();
-                
+
                 if self.check_convergence() {
                     self.state = NMState::Converged;
                     return StrategyAction::Converged;
                 }
-                
+
                 // Compute first reflection
                 let centroid = self.compute_centroid();
                 let worst = &self.simplex[n].1;
                 let mut reflection = self.compute_reflection(&centroid, worst);
                 self.clamp_to_bounds(&mut reflection, config, &keys);
-                
+
                 let best = self.simplex[0].0;
                 let second_worst = self.simplex[n - 1].0;
                 let worst_val = self.simplex[n].0;
-                
+
                 self.state = NMState::Reflection {
                     centroid,
                     reflection: reflection.clone(),
@@ -545,13 +596,17 @@ impl Strategy for NelderMead {
                     second_worst,
                     worst: worst_val,
                 };
-                
+
                 StrategyAction::Evaluate(vec![self.vec_to_dict(&reflection, &keys)])
             }
 
-
-
-            NMState::Reflection { centroid, reflection, best, second_worst, worst } => {
+            NMState::Reflection {
+                centroid,
+                reflection,
+                best,
+                second_worst,
+                worst,
+            } => {
                 let reflection_val = history.last().map(|t| t.value).unwrap_or(*worst);
 
                 if reflection_val < *best {
@@ -597,9 +652,17 @@ impl Strategy for NelderMead {
                 }
             }
 
-            NMState::Expansion { centroid: _, reflection, expansion: _, reflection_value } => {
+            NMState::Expansion {
+                centroid: _,
+                reflection,
+                expansion: _,
+                reflection_value,
+            } => {
                 let expansion_val = history.last().map(|t| t.value).unwrap_or(*reflection_value);
-                let expansion_pt = history.last().map(|t| self.dict_to_vec(&t.params, &keys)).unwrap_or_default();
+                let expansion_pt = history
+                    .last()
+                    .map(|t| self.dict_to_vec(&t.params, &keys))
+                    .unwrap_or_default();
 
                 if expansion_val < *reflection_value {
                     // Accept expansion
@@ -612,7 +675,11 @@ impl Strategy for NelderMead {
                 self.step(config, history)
             }
 
-            NMState::OutsideContraction { centroid: _, contraction, reflection_value } => {
+            NMState::OutsideContraction {
+                centroid: _,
+                contraction,
+                reflection_value,
+            } => {
                 let contraction_val = history.last().map(|t| t.value).unwrap_or(*reflection_value);
 
                 if contraction_val <= *reflection_value {
@@ -636,7 +703,10 @@ impl Strategy for NelderMead {
                 }
             }
 
-            NMState::InsideContraction { centroid: _, contraction } => {
+            NMState::InsideContraction {
+                centroid: _,
+                contraction,
+            } => {
                 let contraction_val = history.last().map(|t| t.value).unwrap_or(f64::INFINITY);
                 let worst_val = self.simplex[n].0;
 
@@ -661,7 +731,10 @@ impl Strategy for NelderMead {
                 }
             }
 
-            NMState::Shrink { shrunk_points, shrunk_idx } => {
+            NMState::Shrink {
+                shrunk_points,
+                shrunk_idx,
+            } => {
                 // Record the shrunk point we just evaluated
                 if let Some(last) = history.last() {
                     let idx = shrunk_idx + 1; // +1 because index 0 is best (unchanged)
@@ -685,8 +758,6 @@ impl Strategy for NelderMead {
                     self.step(config, history)
                 }
             }
-
-
 
             NMState::Converged => StrategyAction::Converged,
         }
@@ -712,9 +783,9 @@ mod tests {
         let nm = NelderMead::new(dim, vec![false; dim]);
         let centroid = vec![1.0, 1.0];
         let worst = vec![0.0, 0.0];
-        
+
         let reflection = nm.compute_reflection(&centroid, &worst);
-        
+
         // r = c + α*(c - w) = [1,1] + 1.0*([1,1] - [0,0]) = [2, 2]
         assert_eq!(reflection, vec![2.0, 2.0]);
     }
@@ -725,9 +796,9 @@ mod tests {
         let nm = NelderMead::new(dim, vec![false; dim]);
         let centroid = vec![1.0, 1.0];
         let reflection = vec![2.0, 2.0];
-        
+
         let expansion = nm.compute_expansion(&centroid, &reflection);
-        
+
         // e = c + γ*(r - c) = [1,1] + 2.0*([2,2] - [1,1]) = [3, 3]
         assert_eq!(expansion, vec![3.0, 3.0]);
     }
@@ -738,9 +809,9 @@ mod tests {
         let nm = NelderMead::new(dim, vec![false; dim]);
         let centroid = vec![1.0, 1.0];
         let reflection = vec![2.0, 2.0];
-        
+
         let contraction = nm.compute_outside_contraction(&centroid, &reflection);
-        
+
         // c_o = c + ρ*(r - c) = [1,1] + 0.5*([2,2] - [1,1]) = [1.5, 1.5]
         assert_eq!(contraction, vec![1.5, 1.5]);
     }
@@ -751,9 +822,9 @@ mod tests {
         let nm = NelderMead::new(dim, vec![false; dim]);
         let centroid = vec![1.0, 1.0];
         let worst = vec![0.0, 0.0];
-        
+
         let contraction = nm.compute_inside_contraction(&centroid, &worst);
-        
+
         // c_i = c + ρ*(w - c) = [1,1] + 0.5*([0,0] - [1,1]) = [0.5, 0.5]
         assert_eq!(contraction, vec![0.5, 0.5]);
     }
@@ -763,9 +834,9 @@ mod tests {
         let seed_val = 0.5;
         let seed_vec = vec![1.0_f64];
         let seeds = vec![(seed_val, seed_vec)];
-        
+
         let nm = NelderMead::with_seed_points(1, seeds.clone(), vec![false; 1]);
-        
+
         assert_eq!(nm.simplex.len(), 1);
         assert_eq!(nm.simplex[0].0, 0.5);
     }

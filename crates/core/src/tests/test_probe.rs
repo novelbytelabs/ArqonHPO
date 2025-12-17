@@ -5,19 +5,22 @@
 //! - Deterministic sampling
 //! - Multi-scale coverage
 
-use crate::config::{SolverConfig, Domain, Scale};
+use crate::config::{Domain, Scale, SolverConfig};
 use crate::probe::{Probe, UniformProbe};
 use std::collections::HashMap;
 
 /// Create a basic config for testing
 fn test_config() -> SolverConfig {
     let mut bounds = HashMap::new();
-    bounds.insert("x".to_string(), Domain {
-        min: -5.0,
-        max: 5.0,
-        scale: Scale::Linear,
-    });
-    
+    bounds.insert(
+        "x".to_string(),
+        Domain {
+            min: -5.0,
+            max: 5.0,
+            scale: Scale::Linear,
+        },
+    );
+
     SolverConfig {
         bounds,
         budget: 50,
@@ -31,16 +34,19 @@ fn test_config() -> SolverConfig {
 fn test_uniform_probe_deterministic() {
     let config = test_config();
     let probe = UniformProbe;
-    
+
     let samples1 = probe.sample(&config);
     let samples2 = probe.sample(&config);
-    
+
     assert_eq!(samples1.len(), samples2.len());
-    
+
     for (s1, s2) in samples1.iter().zip(samples2.iter()) {
         let x1 = s1.get("x").unwrap();
         let x2 = s2.get("x").unwrap();
-        assert!((x1 - x2).abs() < 1e-10, "Same seed should produce same samples");
+        assert!(
+            (x1 - x2).abs() < 1e-10,
+            "Same seed should produce same samples"
+        );
     }
 }
 
@@ -48,9 +54,9 @@ fn test_uniform_probe_deterministic() {
 fn test_uniform_probe_respects_bounds() {
     let config = test_config();
     let probe = UniformProbe;
-    
+
     let samples = probe.sample(&config);
-    
+
     for sample in samples {
         let x = sample.get("x").unwrap();
         assert!(*x >= -5.0 && *x <= 5.0, "Sample should be within bounds");
@@ -61,11 +67,15 @@ fn test_uniform_probe_respects_bounds() {
 fn test_uniform_probe_sample_count() {
     let config = test_config();
     let probe = UniformProbe;
-    
+
     let samples = probe.sample(&config);
     let expected = (config.budget as f64 * config.probe_ratio).ceil() as usize;
-    
-    assert_eq!(samples.len(), expected, "Should generate correct number of samples");
+
+    assert_eq!(
+        samples.len(),
+        expected,
+        "Should generate correct number of samples"
+    );
 }
 
 // ============================================================================

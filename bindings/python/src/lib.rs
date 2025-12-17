@@ -59,7 +59,7 @@ fn _internal(m: &Bound<'_, PyModule>) -> PyResult<()> {
     Ok(())
 }
 
-use arqonhpo_core::probe::{PrimeSqrtSlopesRotProbe, PrimeSqrtSlopesRotConfig};
+use arqonhpo_core::probe::{PrimeSqrtSlopesRotConfig, PrimeSqrtSlopesRotProbe};
 
 #[pyclass]
 struct ArqonProbe {
@@ -76,25 +76,25 @@ impl ArqonProbe {
         let config: SolverConfig = serde_json::from_str(&config_json).map_err(|e| {
             PyErr::new::<pyo3::exceptions::PyValueError, _>(format!("Invalid config: {}", e))
         })?;
-        
+
         // Probe config (Primary) for now
         let spice_ratio = PrimeSqrtSlopesRotConfig::adaptive_spice_for_landscape(false);
         let p_config = PrimeSqrtSlopesRotConfig::with_spice(spice_ratio);
         // Note: PrimeSqrtSlopesRotProbe internally handles seeds via seed_rotation.
         // We pass seed to constructor.
         let probe = PrimeSqrtSlopesRotProbe::with_seed_and_config(seed, p_config);
-        
+
         Ok(ArqonProbe {
             inner: probe,
             config,
         })
     }
-    
+
     /// Generate a single pure LDS point at the given global index (Stateless)
     fn sample_at(&self, index: usize) -> HashMap<String, f64> {
         self.inner.sample_at(index, &self.config)
     }
-    
+
     /// Generate a range of pure LDS points [start, start+count) (Stateless)
     /// This enables zero-coordination sharding.
     fn sample_range(&self, start: usize, count: usize) -> Vec<HashMap<String, f64>> {

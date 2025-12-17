@@ -4,7 +4,7 @@
 
 use crate::{
     config_atomic::{ParamId, ParamVec},
-    executor::{Violation, Guardrails},
+    executor::{Guardrails, Violation},
 };
 
 /// Reason for entering SafeMode.
@@ -88,7 +88,9 @@ impl ControlSafety {
         self.safe_mode = Some(SafeMode {
             entered_at_us: now_us,
             reason,
-            exit_condition: SafeModeExit::Timer { remaining_us: cooldown_us },
+            exit_condition: SafeModeExit::Timer {
+                remaining_us: cooldown_us,
+            },
         });
     }
 
@@ -137,18 +139,24 @@ impl ControlSafety {
     /// Record a delta for control safety tracking.
     pub fn record_delta(&mut self, delta: &ParamVec, now_us: u64) {
         let minute_us: u64 = 60_000_000;
-        
+
         // Collect flags for SafeMode triggers in first pass to avoid borrow issues
         let mut enter_thrashing_mode = false;
         let mut enter_budget_mode = false;
 
         for (i, &d) in delta.iter().enumerate() {
             let param_id = i as ParamId;
-            let direction: i8 = if d > 0.0 { 1 } else if d < 0.0 { -1 } else { 0 };
+            let direction: i8 = if d > 0.0 {
+                1
+            } else if d < 0.0 {
+                -1
+            } else {
+                0
+            };
 
             // Direction tracking
             let history = &mut self.direction_tracker[param_id as usize];
-            
+
             // Reset window if expired
             if now_us.saturating_sub(history.window_start_us) > minute_us {
                 history.flip_count = 0;
@@ -160,7 +168,7 @@ impl ControlSafety {
                 if let Some(last) = history.last_direction {
                     if last != 0 && last != direction {
                         history.flip_count += 1;
-                        
+
                         // Check thrashing limit
                         if history.flip_count > self.guardrails.direction_flip_limit {
                             enter_thrashing_mode = true;
@@ -172,7 +180,7 @@ impl ControlSafety {
 
             // Budget tracking
             let budget = &mut self.delta_budget[param_id as usize];
-            
+
             // Reset window if expired
             if now_us.saturating_sub(budget.window_start_us) > minute_us {
                 budget.cumulative = 0.0;
@@ -186,7 +194,7 @@ impl ControlSafety {
                 enter_budget_mode = true;
             }
         }
-        
+
         // Enter SafeMode after iteration to avoid borrow conflicts
         if enter_thrashing_mode {
             self.enter_safe_mode(
@@ -232,7 +240,7 @@ mod tests {
     fn test_safe_mode_entry() {
         let mut cs = ControlSafety::new(Guardrails::default(), 10);
         assert!(!cs.is_safe_mode());
-        
+
         cs.enter_safe_mode(SafeModeReason::Thrashing, 1000, 30_000_000);
         assert!(cs.is_safe_mode());
         assert_eq!(cs.safe_mode().unwrap().reason, SafeModeReason::Thrashing);
@@ -242,11 +250,11 @@ mod tests {
     fn test_safe_mode_timer_exit() {
         let mut cs = ControlSafety::new(Guardrails::default(), 10);
         cs.enter_safe_mode(SafeModeReason::Thrashing, 1000, 100);
-        
+
         // Before timer
         assert!(!cs.try_exit_safe_mode(1050));
         assert!(cs.is_safe_mode());
-        
+
         // After timer
         assert!(cs.try_exit_safe_mode(1200));
         assert!(!cs.is_safe_mode());
@@ -254,18 +262,21 @@ mod tests {
 
     #[test]
     fn test_direction_flip_detection() {
-        let mut cs = ControlSafety::new(Guardrails {
-            direction_flip_limit: 2,
-            cooldown_after_flip_us: 1000,
-            ..Default::default()
-        }, 1);
+        let mut cs = ControlSafety::new(
+            Guardrails {
+                direction_flip_limit: 2,
+                cooldown_after_flip_us: 1000,
+                ..Default::default()
+            },
+            1,
+        );
 
         cs.record_delta(&ParamVec::from_slice(&[0.05]), 1000);
         cs.record_delta(&ParamVec::from_slice(&[-0.05]), 2000); // flip 1
-        cs.record_delta(&ParamVec::from_slice(&[0.05]), 3000);  // flip 2
-        
+        cs.record_delta(&ParamVec::from_slice(&[0.05]), 3000); // flip 2
+
         assert!(!cs.is_safe_mode());
-        
+
         cs.record_delta(&ParamVec::from_slice(&[-0.05]), 4000); // flip 3 → SafeMode
         assert!(cs.is_safe_mode());
     }
