@@ -130,13 +130,11 @@ impl Solver {
                         if current_count == 0 {
                             let candidates = self.probe.sample(&self.config);
                             return Some(candidates);
+                        } else if self.history.len() >= probe_budget {
+                            self.phase = Phase::Classify;
+                            continue;
                         } else {
-                            if self.history.len() >= probe_budget {
-                                self.phase = Phase::Classify;
-                                continue;
-                            } else {
-                                return None;
-                            }
+                            return None;
                         }
                     } else {
                         self.phase = Phase::Classify;

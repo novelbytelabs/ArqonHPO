@@ -7,20 +7,15 @@ use rand_chacha::ChaCha8Rng;
 use std::collections::HashMap;
 
 /// Bandwidth selection rule for kernel density estimation
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub enum BandwidthRule {
     /// Scott's Rule: σ = 1.06 × stddev × n^(-1/5)
+    #[default]
     Scott,
     /// Silverman's Rule: σ = 0.9 × min(stddev, IQR/1.34) × n^(-1/5)
     Silverman,
     /// Fixed percentage of range
     Fixed,
-}
-
-impl Default for BandwidthRule {
-    fn default() -> Self {
-        BandwidthRule::Scott
-    }
 }
 
 #[allow(dead_code)]

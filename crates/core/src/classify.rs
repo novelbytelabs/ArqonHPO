@@ -139,7 +139,7 @@ impl ResidualDecayClassifier {
         let alpha = -slope;
 
         // Clamp to reasonable range [0, 2]
-        alpha.max(0.0).min(2.0)
+        alpha.clamp(0.0, 2.0)
     }
 
     /// Compute residuals from sorted objective values.

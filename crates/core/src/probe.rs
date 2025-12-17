@@ -53,15 +53,10 @@ impl Probe for UniformProbe {
 ///
 /// This is superior to uniform random sampling for detecting landscape structure
 /// because prime ratios are mutually coprime and don't share common harmonics.
+#[derive(Default)]
 pub struct PrimeIndexProbe {
     /// Max number of primes to use (default: use as many as needed for sample count)
     pub max_primes: Option<usize>,
-}
-
-impl Default for PrimeIndexProbe {
-    fn default() -> Self {
-        Self { max_primes: None }
-    }
 }
 
 impl PrimeIndexProbe {

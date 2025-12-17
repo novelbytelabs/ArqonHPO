@@ -1,3 +1,9 @@
+//! ArqonHPO Python Bindings - Boundary code for Python interface.
+//!
+//! Constitution VIII.3: This module is BOUNDARY CODE, not hot-path.
+//! HashMap usage is ALLOWED here. Conversion to dense ParamVec happens
+//! at the hotpath crate boundary.
+#![allow(clippy::disallowed_types)] // Boundary code - HashMap allowed per VIII.3
 #![allow(non_local_definitions)]
 use arqonhpo_core::artifact::EvalTrace;
 use arqonhpo_core::config::SolverConfig;
@@ -53,7 +59,7 @@ fn _internal(m: &Bound<'_, PyModule>) -> PyResult<()> {
     Ok(())
 }
 
-use arqonhpo_core::probe::{Probe, PrimeSqrtSlopesRotProbe, PrimeSqrtSlopesRotConfig};
+use arqonhpo_core::probe::{PrimeSqrtSlopesRotProbe, PrimeSqrtSlopesRotConfig};
 
 #[pyclass]
 struct ArqonProbe {

@@ -331,6 +331,7 @@ impl Strategy for NelderMead {
                     let mut best_min_dist = -1.0;
                     let mut best_idx = 1;
                     
+                    #[allow(clippy::needless_range_loop)]
                     for i in 1..pool_size {
                         let candidate = self.dict_to_vec(&sorted[i].params, &keys);
                         
@@ -598,7 +599,7 @@ impl Strategy for NelderMead {
 
             NMState::Expansion { centroid: _, reflection, expansion: _, reflection_value } => {
                 let expansion_val = history.last().map(|t| t.value).unwrap_or(*reflection_value);
-                let expansion_pt = history.last().map(|t| self.dict_to_vec(&t.params, &keys)).unwrap_or_else(Vec::new);
+                let expansion_pt = history.last().map(|t| self.dict_to_vec(&t.params, &keys)).unwrap_or_default();
 
                 if expansion_val < *reflection_value {
                     // Accept expansion
