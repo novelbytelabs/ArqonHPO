@@ -1,9 +1,17 @@
 <!--
 Sync Impact Report:
 
-- ArqonHPO Constitution v1.0.0 → v1.1.0 (2025-12-16)
+- ArqonHPO Constitution v1.1.0 → v1.2.0 (2025-12-16)
 
-## Added Sections (MINOR bump)
+## Added Sections (MINOR bump - Adaptive Engine)
+- II.16: Adaptive Engine Specification (SPSA algorithm, decay schedules, perturbation rules)
+- II.17: Safety Executor Contract (Guardrails, violations, rollback requirements)
+- II.18: Atomic Configuration Contract (Lock-free swaps, generation counters)
+- II.19: Telemetry Digest Contract (Compact schema, ring buffer requirements)
+- IV.6: Adaptive Engine Guardrail Tests (6 mandatory test classes)
+- VIII.4: Online Optimization Invariants (Decision budget, allocation-free hot path)
+
+## Previously Added (v1.1.0)
 - II.12: Probe Algorithm Specification (Kronecker/Weyl, banned p/1000, CP shifts)
 - II.13: Dimension Type Contract (Linear, Log, Periodic with circular arithmetic)
 - II.14: Multi-Start Strategy Contract (K-parallel, diversity seeding, triage budget)
@@ -15,22 +23,22 @@ Sync Impact Report:
 - XI.5: Strategy Parameter Governance (K, triage, stall, spice defaults)
 
 ## Modified Sections
-- Tier Ω Scope reference: 12-21 → 16-25 (renumbering for new sections)
+- Tier Ω Scope reference: 16-25 → 20-29 (renumbering for new sections)
 
 ## Templates Requiring Updates
-- ⚠ .specify/templates/plan-template.md: Review for probe algorithm references
-- ⚠ .specify/templates/spec-template.md: Review for dimension type constraint language
-- ⚠ .specify/templates/tasks-template.md: Add Probe Guardrail Tests to test phase
+- ⚠ .specify/templates/plan-template.md: Review for adaptive engine references
+- ⚠ .specify/templates/spec-template.md: Review for safety executor constraint language
+- ⚠ .specify/templates/tasks-template.md: Add Adaptive Engine Guardrail Tests to test phase
 
 ## Reference Evidence
-- Branch: experiment/probe-upgrade
-- Tests: benchmarks/test_probe_guardrails.py
-- Technote: docs/TECHNOTE_PROBE_UPGRADE.md
+- Branch: experiment/architecture-ideas
+- Source: crates/core/src/adaptive_engine/
+- Files: mod.rs, spsa.rs, safety_executor.rs, config_atomic.rs, telemetry.rs
 -->
 
 # ArqonHPO Constitution
 
-**Version**: 1.1.0  
+**Version**: 1.2.0  
 **Ratification Date**: 2025-12-13  
 **Last Amended**: 2025-12-16  
 
@@ -448,9 +456,78 @@ Probes must support stateless parallel execution.
 * **SDK Parity:** `ArqonProbe` (Python) MUST expose identical behavior to Rust core.
 * **Verification:** Bitwise hash of sorted sample coordinates MUST match single-worker vs multi-worker configurations.
 
+### 16. Adaptive Engine Specification
+
+Online parameter adaptation MUST use validated optimization algorithms with mandatory safety layers.
+
+| Aspect | Requirement |
+|:---|:---|
+| **Default Algorithm** | SPSA (Simultaneous Perturbation Stochastic Approximation) — 2 evaluations per gradient estimate, regardless of dimension |
+| **Banned Patterns** | Finite-difference gradients (O(n) evals), unbounded learning rates, global step sizes without decay |
+| **Decay Schedule** | `a_k = a₀/(k+1+A)^α` and `c_k = c₀/(k+1)^γ` with standard exponents (α=0.602, γ=0.101) |
+| **Perturbation** | ±1 Bernoulli (symmetric) ONLY; Gaussian perturbations are forbidden due to heavy tails |
+| **Determinism** | Same (seed, iteration) MUST produce identical perturbation vectors |
+| **State Machine** | Ready → WaitingPlus → WaitingMinus → Ready (strict 2-eval cycle) |
+
+* **Canonical Implementation:** `Spsa` struct with `ChaCha8Rng` for deterministic perturbations.
+* **Budget Enforcement:** Each adaptation cycle MUST complete within `budget_us` microseconds.
+
+### 17. Safety Executor Contract
+
+All configuration updates MUST pass through `SafetyExecutor`. Direct writes to live config are **forbidden**.
+
+| Guardrail | Default | Contract |
+|:---|:---|:---|
+| `max_delta_per_step` | 0.1 (10%) | Absolute parameter change cap per update |
+| `max_updates_per_second` | 10.0 | Rate limit for stability |
+| `min_interval_us` | 100,000 (100ms) | Minimum cooldown between updates |
+
+**Violation Types (MUST block, not just log):**
+
+| Violation | Trigger |
+|:---|:---|
+| `DeltaTooLarge` | Change exceeds `max_delta_per_step` |
+| `RateLimitExceeded` | Updates exceed `max_updates_per_second` |
+| `OutOfBounds` | Proposed value outside domain bounds |
+| `UnknownParameter` | Parameter not in allowlist (allowlist pattern mandatory) |
+
+* **Rollback Requirement:** Every config swap MUST preserve a baseline for rollback. Rollback-free execution is forbidden.
+* **Fail Closed:** If `validate_delta()` returns `Err(Violation)`, the update is rejected entirely—partial application is forbidden.
+
+### 18. Atomic Configuration Contract
+
+Configuration swaps MUST be atomic with no torn reads in the control loop.
+
+| Requirement | Implementation |
+|:---|:---|
+| **Atomicity** | Arc-swap semantics with RwLock or true atomic primitives |
+| **Generation Counter** | Monotonically increasing `u64`, observable by readers |
+| **Zero-Allocation Hot Path** | `snapshot()` MUST NOT allocate (cheap Arc clone only) |
+| **No Mutex Contention** | Writers MUST NOT block readers in steady state |
+
+* **Canonical Types:** `AtomicConfig` (container) and `ConfigSnapshot` (immutable view with params + generation).
+* **Thread Safety:** All methods on `AtomicConfig` MUST be `Send + Sync`.
+
+### 19. Telemetry Digest Contract
+
+Streaming telemetry MUST be compact, fixed-schema, and lock-free in the push path.
+
+| Field | Type | Required |
+|:---|:---|:---|
+| `timestamp_us` | u64 | ✓ |
+| `objective_value` | f64 | ✓ |
+| `latency_p99_us` | Option<u64> | — |
+| `throughput_rps` | Option<f64> | — |
+| `error_rate` | Option<f64> | — |
+| `constraint_margin` | Option<f64> | — |
+
+* **Ring Buffer:** Fixed-capacity `TelemetryRingBuffer`, overflow evicts oldest. No dynamic allocation in `push()`.
+* **Size Budget:** `TelemetryDigest` MUST fit in ≤128 bytes for cache efficiency.
+* **Minimal Helpers:** `TelemetryDigest::objective(value)` and `TelemetryDigest::with_timestamp(ts, value)` are the canonical constructors.
+
 ---
 
-### Tier Ω Scope (Applies to Sections 16–25)
+### Tier Ω Scope (Applies to Sections 20–29)
 
 Sections **12–21** govern **Tier Ω (Experimental)** features only.
 
