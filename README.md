@@ -4,38 +4,46 @@
 [![Docs](https://img.shields.io/badge/docs-mkdocs-blue)](https://novelbytelabs.github.io/ArqonHPO/)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
-**Adaptive Hyperparameter Optimization** with automatic strategy selection.
+**Adaptive Hyperparameter Optimization** with automatic strategy selection and real-time parameter tuning.
 
 ArqonHPO automatically detects your objective function's landscape and selects the optimal optimization strategy:
 
 - **Smooth, expensive simulations?** → Nelder-Mead (minimizes evaluations)
 - **Noisy, cheap ML training?** → TPE (handles variance)
+- **Live production systems?** → **NEW!** Adaptive Engine (microsecond-latency tuning)
+
+## ✨ What's New in v0.2.0
+
+- 🔥 **Adaptive Engine** - Real-time SPSA optimizer with µs latency
+- 🛡️ **Hot-Path Enforcement** - Constitution-mandated safety (no HashMap in critical paths)
+- ⚡ **109ns T1 Apply** - Sub-microsecond config updates
+- 🔒 **Safety Executor** - Guardrails prevent unbounded changes
+- 📊 **Audit Queue** - Lock-free, non-blocking event logging
 
 ## Features
 
-- 🚀 **300x Faster** - Run 30,000 trials in the time Python solvers run 100.
-- 🦀 **Rust Core** - Zero-overhead, deterministic execution.
-- 🎯 **Auto-Pilot** - Automatically selects Nelder-Mead (smooth) or TPE (noisy).
+- 🚀 **300x Faster** - Run 30,000 trials in the time Python solvers run 100
+- 🦀 **Rust Core** - Zero-overhead, deterministic execution
+- 🎯 **Auto-Pilot** - Automatically selects Nelder-Mead (smooth) or TPE (noisy)
 - 🐍 **Python Ready** - Simple `pip install arqonhpo`
 - 🔁 **Reproducible** - Seed-controlled, artifact-auditable runs
+- ⚙️ **Adaptive Engine** - Live parameter tuning for production systems
 
 ## 🚀 Performance
 
 **ArqonHPO is built for one thing: Speed.**
 
-In high-throughput optimization—like real-time control, high-frequency trading, or massive-scale simulations—time is your most precious resource. Traditional Python-based optimizers waste 99% of your time on overhead. ArqonHPO flips the script.
-
 | Metric | ArqonHPO | Optuna (TPE) | Advantage |
 |--------|----------|--------------|-----------|
 | **100 Trials (2D)** | 1.1 ms | 344 ms | **313x faster** |
 | **Throughput** | ~33,000/sec | ~300/sec | **100x volume** |
+| **T1 Apply** | 109 ns | N/A | **Hot path optimized** |
+| **T2 Decision** | 200 ns | N/A | **Microsecond latency** |
 
 > **"Speed is King"** - When evaluations are cheap (<10ms), ArqonHPO allows you to brute-force the problem with massive volume, beating smarter but slower algorithms.
 
 ### ⚡ Ideal for Multi-Agent Systems
 If you are building a **MAS** with <1ms deadlines, ArqonHPO is the *only* viable choice.
-- **Optuna (846ms)**: Blocks your event loop, causing massive lag.
-- **ArqonHPO (2.9ms)**: Fits comfortably inside a single message handler.
 
 ## Installation
 
@@ -115,7 +123,31 @@ print(f"Best: {best['params']} -> {best['value']:.4f}")
                     │  │  • TPE (Chaotic)            │   │
                     │  └─────────────────────────────┘   │
                     └─────────────────────────────────────┘
+                                     │
+                    ┌────────────────▼────────────────────┐
+                    │           hotpath (v0.2.0)          │
+                    │  ┌─────────────────────────────┐   │
+                    │  │  Tier 2: AdaptiveEngine     │   │
+                    │  │  • SPSA Optimizer           │   │
+                    │  │  • Telemetry Ingestion      │   │
+                    │  └─────────────────────────────┘   │
+                    │  ┌─────────────────────────────┐   │
+                    │  │  Tier 1: SafetyExecutor     │   │
+                    │  │  • Guardrails & Rollback    │   │
+                    │  │  • Audit Queue (lock-free)  │   │
+                    │  └─────────────────────────────┘   │
+                    └─────────────────────────────────────┘
 ```
+
+## Constitution
+
+ArqonHPO is developed under a **Constitution** - a living document that codifies invariants, contracts, and quality standards. Key principles:
+
+- **Hot-Path Enforcement (VIII.3)**: No `HashMap` in Tier 1/2 code
+- **Timing Contracts (VIII.4)**: T1 ≤ 100µs, T2 ≤ 1000µs (p99)
+- **Audit Completeness**: No silent drops, lock-free queuing
+
+See [`.specify/memory/constitution.md`](.specify/memory/constitution.md) for the full document.
 
 ## Contributing
 
@@ -124,3 +156,4 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 ## License
 
 Apache License 2.0 - see [LICENSE](LICENSE) for details.
+
