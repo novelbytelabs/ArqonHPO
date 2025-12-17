@@ -8,6 +8,9 @@ serde = { workspace = true }
 rand = { workspace = true }
 rand_chacha = { workspace = true }
 rand_distr = { workspace = true }
+smallvec = { workspace = true }
+crossbeam-queue = { workspace = true }
 thiserror = { workspace = true }
 miette = { workspace = true }
 tracing = { workspace = true }
+static_assertions = { workspace = true }
