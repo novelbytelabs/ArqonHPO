@@ -49,7 +49,7 @@ pub use executor::{
     ApplyReceipt, RollbackReceipt
 };
 pub use control_safety::{SafeMode, SafeModeReason, SafeModeExit, ControlSafety};
-pub use audit::{AuditEvent, AuditQueue, EventType, EnqueueResult};
+pub use audit::{AuditEvent, AuditQueue, EventType, EnqueueResult, AuditPolicy, Tier, AuditPolicyError};
 
 use std::sync::Arc;
 
