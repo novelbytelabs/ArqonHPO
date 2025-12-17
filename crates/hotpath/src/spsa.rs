@@ -98,6 +98,11 @@ impl Spsa {
     pub fn iteration(&self) -> u64 {
         self.iteration
     }
+    
+    /// Get current perturbation counter.
+    pub fn perturbation_counter(&self) -> u64 {
+        self.perturbation_counter
+    }
 
     /// Get current state.
     pub fn state(&self) -> &SpsaState {

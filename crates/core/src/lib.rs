@@ -9,7 +9,9 @@ pub mod machine;
 pub mod probe;
 pub mod rng;
 pub mod strategies;
-pub mod adaptive_engine;
+
+// Re-export hotpath as adaptive_engine for API compatibility
+pub use hotpath as adaptive_engine;
 
 #[cfg(test)]
 mod tests;

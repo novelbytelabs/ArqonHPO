@@ -109,6 +109,7 @@ version = "0.1.0"
 dependencies = [
  "criterion",
  "crossbeam-queue",
+ "hotpath",
  "miette",
  "rand",
  "rand_chacha",
