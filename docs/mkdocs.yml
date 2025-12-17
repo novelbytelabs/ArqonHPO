@@ -77,36 +77,23 @@ extra:
 
 nav:
   - Home: index.md
-  - Product:
-      - Overview: product/index.md
-      - Architecture: product/architecture.md
-      - Safety: product/safety.md
-      - Integrations: product/integrations.md
-  - Solutions:
-      - Overview: solutions/index.md
-      - Inference Serving: solutions/inference.md
-      - Systems & SRE: solutions/systems.md
-      - Edge & Robotics: solutions/edge.md
+  - Why: why/index.md
+  - Demos: demos/index.md
+  - Benchmarks: benchmarks/index.md
   - Docs:
+      - documentation/index.md
       - Quickstart: documentation/quickstart.md
-      - Concepts:
-          - PCR Algorithm: documentation/concepts/pcr_algorithm.md
-          - Probe Deep Dive: documentation/concepts/probe_deep_dive.md
+      - Concepts: documentation/concepts/
       - Reference:
           - Python API: documentation/reference/python.md
-          - Rust API: documentation/reference/rust.md
+          - Rust Core: documentation/reference/rust.md
           - CLI: documentation/reference/cli.md
-      - Cookbook:
-          - Overview: documentation/cookbook/index.md
-          - Simulation Tuning: documentation/cookbook/sim_tuning.md
-          - ML Tuning: documentation/cookbook/ml_tuning.md
-  - Benchmarks:
-      - Overview: benchmarks/index.md
-      - Methodology: benchmarks/methodology.md
-      - "Full Report": benchmarks/BENCHMARK_REPORT.md
+      - Cookbook: documentation/cookbook/
+  - Community: community/index.md
   - Project:
       - About: project/about.md
       - Roadmap: project/roadmap.md
       - Changelog: project/changelog.md
       - Contributing: project/contributing.md
-      - License: project/license.md
+      - License: project/LICENSE
+      - Constitution: project/constitution.md
