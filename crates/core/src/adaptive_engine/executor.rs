@@ -266,11 +266,11 @@ mod tests {
 
     #[test]
     fn test_validate_delta_too_large() {
-        let config = Arc::new(AtomicConfig::new(ParamVec::from([0.5, 0.5])));
+        let config = Arc::new(AtomicConfig::new(ParamVec::from_slice(&[0.5, 0.5])));
         let executor = SafetyExecutor::new(config, Guardrails::default());
         
-        let delta = ParamVec::from([0.5, 0.0]); // 0.5 > 0.1 max
-        let current = ParamVec::from([0.5, 0.5]);
+        let delta = ParamVec::from_slice(&[0.5, 0.0]); // 0.5 > 0.1 max
+        let current = ParamVec::from_slice(&[0.5, 0.5]);
         
         let result = executor.validate_delta(&delta, &current);
         assert!(matches!(result, Err(Violation::DeltaTooLarge { .. })));
@@ -278,11 +278,11 @@ mod tests {
 
     #[test]
     fn test_validate_delta_ok() {
-        let config = Arc::new(AtomicConfig::new(ParamVec::from([0.5, 0.5])));
+        let config = Arc::new(AtomicConfig::new(ParamVec::from_slice(&[0.5, 0.5])));
         let executor = SafetyExecutor::new(config, Guardrails::default());
         
-        let delta = ParamVec::from([0.05, 0.05]); // Within 0.1 limit
-        let current = ParamVec::from([0.5, 0.5]);
+        let delta = ParamVec::from_slice(&[0.05, 0.05]); // Within 0.1 limit
+        let current = ParamVec::from_slice(&[0.5, 0.5]);
         
         let result = executor.validate_delta(&delta, &current);
         assert!(result.is_ok());

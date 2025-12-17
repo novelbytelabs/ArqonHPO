@@ -17,6 +17,11 @@ pub type ParamId = u16;
 /// This avoids heap allocation in the hot path for typical workloads.
 pub type ParamVec = SmallVec<[f64; 16]>;
 
+/// Create a ParamVec from a slice (for testing and initialization).
+pub fn param_vec(values: &[f64]) -> ParamVec {
+    ParamVec::from_slice(values)
+}
+
 /// Mapping between human-readable parameter names and dense IDs.
 ///
 /// Created once at initialization and immutable thereafter.
@@ -183,31 +188,31 @@ mod tests {
 
     #[test]
     fn test_config_snapshot_generation() {
-        let params = ParamVec::from([1.0, 2.0, 3.0]);
+        let params = ParamVec::from_slice(&[1.0, 2.0, 3.0]);
         let snapshot = ConfigSnapshot::with_generation(params, 42);
         assert_eq!(snapshot.generation, 42);
     }
 
     #[test]
     fn test_atomic_config_swap_increments_generation() {
-        let config = AtomicConfig::new(ParamVec::from([0.5]));
+        let config = AtomicConfig::new(ParamVec::from_slice(&[0.5]));
         assert_eq!(config.generation(), 0);
         
-        let gen1 = config.swap(ParamVec::from([0.6]));
+        let gen1 = config.swap(ParamVec::from_slice(&[0.6]));
         assert_eq!(gen1, 1);
         assert_eq!(config.generation(), 1);
         
-        let gen2 = config.swap(ParamVec::from([0.7]));
+        let gen2 = config.swap(ParamVec::from_slice(&[0.7]));
         assert_eq!(gen2, 2);
         assert_eq!(config.generation(), 2);
     }
 
     #[test]
     fn test_atomic_config_rollback() {
-        let config = AtomicConfig::new(ParamVec::from([0.5]));
+        let config = AtomicConfig::new(ParamVec::from_slice(&[0.5]));
         config.set_baseline();
         
-        config.swap(ParamVec::from([0.9]));
+        config.swap(ParamVec::from_slice(&[0.9]));
         assert_eq!(config.snapshot().params[0], 0.9);
         
         let gen = config.rollback().unwrap();

@@ -75,7 +75,7 @@ mod tests {
 
     #[test]
     fn test_proposal_variants() {
-        let delta = ParamVec::from([0.1, 0.2]);
+        let delta = ParamVec::from_slice(&[0.1, 0.2]);
         
         let p = Proposal::ApplyPlus {
             perturbation_id: 1,

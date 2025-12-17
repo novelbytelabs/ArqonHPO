@@ -20,12 +20,12 @@
 
 **Purpose**: Module structure and dependencies
 
-- [ ] T001 Create adaptive_engine/ module directory under crates/core/src/
-- [ ] T002 Add dependencies to Cargo.toml: smallvec, crossbeam-queue
-- [ ] T003 [P] Create mod.rs with module declarations and re-exports
-- [ ] T004 [P] Add `pub mod adaptive_engine` to crates/core/src/lib.rs
+- [x] T001 Create adaptive_engine/ module directory under crates/core/src/
+- [x] T002 Add dependencies to Cargo.toml: smallvec, crossbeam-queue
+- [x] T003 [P] Create mod.rs with module declarations and re-exports
+- [x] T004 [P] Add `pub mod adaptive_engine` to crates/core/src/lib.rs
 
-**Checkpoint**: Module skeleton compiles with `cargo check`
+**Checkpoint**: Module skeleton compiles with `cargo check` ✅
 
 ---
 
@@ -37,20 +37,20 @@
 
 ### Core Types
 
-- [ ] T005 Create ParamId type alias (u16) in adaptive_engine/config_atomic.rs
-- [ ] T006 [P] Create ParamVec type (SmallVec<[f64; 16]>) in adaptive_engine/config_atomic.rs
-- [ ] T007 [P] Create ParamRegistry struct with name↔id mapping in adaptive_engine/config_atomic.rs
-- [ ] T008 Create ConfigSnapshot struct with params: ParamVec and generation: u64
-- [ ] T009 Create AtomicConfig with RwLock<Arc<ConfigSnapshot>> and AtomicU64 generation
+- [x] T005 Create ParamId type alias (u16) in adaptive_engine/config_atomic.rs
+- [x] T006 [P] Create ParamVec type (SmallVec<[f64; 16]>) in adaptive_engine/config_atomic.rs
+- [x] T007 [P] Create ParamRegistry struct with name↔id mapping in adaptive_engine/config_atomic.rs
+- [x] T008 Create ConfigSnapshot struct with params: ParamVec and generation: u64
+- [x] T009 Create AtomicConfig with RwLock<Arc<ConfigSnapshot>> and AtomicU64 generation
 
 ### Tests for Foundational
 
-- [ ] T010 [P] Unit test: ParamVec size assertion (≤256 bytes) in tests/test_adaptive_engine.rs
-- [ ] T011 [P] Unit test: ConfigSnapshot generation monotonicity in tests/test_adaptive_engine.rs
-- [ ] T012 [P] Unit test: AtomicConfig::swap() increments generation in tests/test_adaptive_engine.rs
-- [ ] T013 Unit test: AtomicConfig is Send + Sync (compile-time check)
+- [x] T010 [P] Unit test: ParamVec size assertion (≤256 bytes) in tests/test_adaptive_engine.rs
+- [x] T011 [P] Unit test: ConfigSnapshot generation monotonicity in tests/test_adaptive_engine.rs
+- [x] T012 [P] Unit test: AtomicConfig::swap() increments generation in tests/test_adaptive_engine.rs
+- [x] T013 Unit test: AtomicConfig is Send + Sync (compile-time check)
 
-**Checkpoint**: Foundation types compile and tests pass
+**Checkpoint**: Foundation types compile and tests pass ✅
 
 ---
 
