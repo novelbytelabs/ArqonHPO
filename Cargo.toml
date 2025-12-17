@@ -23,7 +23,7 @@ miette = { version = "7.0", features = ["fancy"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 clap = { version = "4.4", features = ["derive", "env"] }
-pyo3 = { version = "0.24", features = ["extension-module"] }
+pyo3 = { version = "0.27", features = ["extension-module"] }
 
 # Internal crates
 arqonhpo-core = { path = "crates/core" }
