@@ -21,5 +21,5 @@ pub use executor::{
     ApplyReceipt, RollbackReceipt
 };
 pub use control_safety::{ControlSafety, SafeMode, SafeModeReason, SafeModeExit};
-pub use audit::{AuditQueue, AuditEvent, EventType, AuditPolicy};
+pub use audit::{AuditQueue, AuditEvent, EventType, AuditPolicy, EnqueueResult};
 pub use orchestrator::{AdaptiveEngine, AdaptiveEngineConfig};

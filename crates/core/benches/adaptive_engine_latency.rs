@@ -139,6 +139,88 @@ fn bench_audit_queue(c: &mut Criterion) {
     });
 }
 
+/// Test queue saturation: enqueue never blocks, drop counter works, T1/T2 stable.
+fn bench_queue_saturation(c: &mut Criterion) {
+    use arqonhpo_core::adaptive_engine::{AuditQueue, AuditEvent, EventType, EnqueueResult};
+    use std::time::Instant;
+    
+    let mut group = c.benchmark_group("Queue_Saturation");
+    
+    // Pre-saturate queue
+    let queue = AuditQueue::new(100);
+    for i in 0..100 {
+        queue.enqueue(AuditEvent::new(EventType::Digest, i, 1, 1));
+    }
+    assert_eq!(queue.len(), 100, "Queue should be full");
+    
+    // Benchmark enqueue on saturated queue (should be non-blocking)
+    group.bench_function("enqueue_saturated", |b| {
+        b.iter(|| {
+            let event = AuditEvent::new(EventType::Digest, black_box(1000), 1, 1);
+            let result = queue.enqueue(event);
+            assert_eq!(result, EnqueueResult::Full);
+            black_box(result)
+        })
+    });
+    
+    // Verify drop counter increments (run 1000 enqueues and check)
+    let initial_drops = queue.drop_count();
+    let start = Instant::now();
+    for _ in 0..1000 {
+        let event = AuditEvent::new(EventType::Digest, 999, 1, 1);
+        let _ = queue.enqueue(event);
+    }
+    let elapsed = start.elapsed();
+    let final_drops = queue.drop_count();
+    
+    // Assert: 1000 drops should have been counted
+    assert_eq!(final_drops - initial_drops, 1000, "All 1000 drops should be counted");
+    
+    // Assert: 1000 enqueues took less than 1ms (non-blocking)
+    assert!(elapsed.as_micros() < 1000, "1000 saturated enqueues took {}µs, should be <1000µs", elapsed.as_micros());
+    
+    group.finish();
+}
+
+/// Benchmark T1 apply latency under queue saturation.
+fn bench_t1_under_saturation(c: &mut Criterion) {
+    use arqonhpo_core::adaptive_engine::{AuditQueue, AuditEvent, EventType};
+    
+    let mut group = c.benchmark_group("T1_Saturated");
+    
+    // Saturate a queue
+    let queue = AuditQueue::new(10);
+    for i in 0..10 {
+        queue.enqueue(AuditEvent::new(EventType::Digest, i, 1, 1));
+    }
+    
+    // Setup executor
+    let params = param_vec(&vec![0.5; 4]);
+    let config = Arc::new(AtomicConfig::new(params.clone()));
+    let mut executor = SafetyExecutor::new(config, Guardrails::default());
+    
+    let delta = param_vec(&vec![0.01; 4]);
+    let proposal = Proposal::Update {
+        iteration: 0,
+        delta: delta.clone(),
+        gradient_estimate: delta,
+    };
+    
+    group.bench_function("apply_4params", |b| {
+        b.iter(|| {
+            // Attempt enqueue on saturated queue (fast, non-blocking)
+            let event = AuditEvent::new(EventType::Apply, 1000, 1, 1);
+            let _ = queue.enqueue(event);
+            
+            // Apply proposal
+            let p = proposal.clone();
+            black_box(executor.apply(p))
+        })
+    });
+    
+    group.finish();
+}
+
 criterion_group!(
     benches,
     bench_t2_decision,
@@ -147,6 +229,9 @@ criterion_group!(
     bench_perturbation_generation,
     bench_telemetry_buffer,
     bench_audit_queue,
+    bench_queue_saturation,
+    bench_t1_under_saturation,
 );
 
 criterion_main!(benches);
+
