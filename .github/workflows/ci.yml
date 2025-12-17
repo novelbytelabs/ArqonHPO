@@ -48,6 +48,11 @@ jobs:
         with:
           key: ${{ matrix.os }}-${{ matrix.rust }}
 
+      # Cargo.lock v4 format is incompatible with Rust 1.75's Cargo
+      - name: Remove Cargo.lock for MSRV
+        if: matrix.rust != 'stable'
+        run: rm -f Cargo.lock
+
       - name: Check
         run: cargo check --workspace
 
