@@ -1,44 +1,43 @@
 <!--
 Sync Impact Report:
 
-- ArqonHPO Constitution v1.1.0 → v1.2.0 (2025-12-16)
+- ArqonHPO Constitution v1.2.0 → v1.3.0 (2025-12-16)
 
-## Added Sections (MINOR bump - Adaptive Engine)
-- II.16: Adaptive Engine Specification (SPSA algorithm, decay schedules, perturbation rules)
-- II.17: Safety Executor Contract (Guardrails, violations, rollback requirements)
-- II.18: Atomic Configuration Contract (Lock-free swaps, generation counters)
-- II.19: Telemetry Digest Contract (Compact schema, ring buffer requirements)
-- IV.6: Adaptive Engine Guardrail Tests (6 mandatory test classes)
-- VIII.4: Online Optimization Invariants (Decision budget, allocation-free hot path)
+## Amendment Summary (v1.3.0)
+This amendment makes the Tier 1/2/Ω architecture explicit and non-optional, codifies the
+Variant Catalog lifecycle, adds timing window contracts for microsecond-latency operation,
+and strengthens safety semantics for co-evolving laws. All changes are additive and clarifying;
+no existing Integrity Covenant or 8-Pillar DONE standard has been weakened.
 
-## Previously Added (v1.1.0)
-- II.12: Probe Algorithm Specification (Kronecker/Weyl, banned p/1000, CP shifts)
-- II.13: Dimension Type Contract (Linear, Log, Periodic with circular arithmetic)
-- II.14: Multi-Start Strategy Contract (K-parallel, diversity seeding, triage budget)
-- II.15: Parallel Sharding Contract (Stateless, collision-free, SDK parity)
-- IV.5: Probe Guardrail Tests (6 mandatory test classes)
-- VIII.3: Time-to-Target Metrics (Evals-to-Threshold, Hit-by-N, Median-Best)
-- XI.3: Benchmark Schema Contract (Objective suite, cost regimes, output schema)
-- XI.4: SDK Binding Compliance (Determinism parity, sharding verification)
-- XI.5: Strategy Parameter Governance (K, triage, stall, spice defaults)
+## Added Sections (MINOR bump - Tier Architecture & Control Primitive)
+- I.1: Control Primitive Posture (microsecond decision loops, Discovery Offline/Adaptation Online)
+- II.20: Tier Architecture Model (Tier 1 Executor, Tier 2 Adaptive Engine, Tier Ω Discovery)
+- II.21: Merge-Blocking Tier Rules (explicit prohibitions)
+- II.22: Variant Catalog Contract (lifecycle states, promotion gates, selection rules)
+- II.23: Safety Semantics for Co-evolving Laws (anti-thrashing, homeostatic mode caching)
+- VIII.4: Timing Window Contracts (T2_decision_us, T1_apply_us, E2E_visible_us)
+- VIII.5: Hot Path Non-Blocking Audit (async writer, no disk I/O in critical path)
+- IX.2: Structured Events & Correlation IDs (digest/proposal/apply/rollback/promotion)
+- XII: Glossary expansions (Homeostasis, Law knobs, Variant Catalog, Promotion Gate, E2E_visible_us, Tier 2)
 
-## Modified Sections
-- Tier Ω Scope reference: 16-25 → 20-29 (renumbering for new sections)
+## Previously Added (v1.2.0 - Adaptive Engine)
+- II.16-19: SPSA, Safety Executor, Atomic Config, Telemetry Digest
+- IV.6: Adaptive Engine Guardrail Tests
+- VIII.3: Time-to-Target Metrics
 
-## Templates Requiring Updates
-- ⚠ .specify/templates/plan-template.md: Review for adaptive engine references
-- ⚠ .specify/templates/spec-template.md: Review for safety executor constraint language
-- ⚠ .specify/templates/tasks-template.md: Add Adaptive Engine Guardrail Tests to test phase
+## Previously Added (v1.1.0 - Probe Upgrade)
+- II.12-15: Probe Algorithm, Dimension Types, Multi-Start, Parallel Sharding
+- IV.5: Probe Guardrail Tests
+- XI.3-5: Benchmark Schema, SDK Binding, Strategy Governance
 
 ## Reference Evidence
 - Branch: experiment/architecture-ideas
-- Source: crates/core/src/adaptive_engine/
-- Files: mod.rs, spsa.rs, safety_executor.rs, config_atomic.rs, telemetry.rs
+- Source: docs/docs/index.md, README.md, crates/core/src/adaptive_engine/
 -->
 
 # ArqonHPO Constitution
 
-**Version**: 1.2.0  
+**Version**: 1.3.0  
 **Ratification Date**: 2025-12-13  
 **Last Amended**: 2025-12-16  
 
@@ -258,12 +257,18 @@ If a situation, decision, or design choice is not explicitly covered by this Con
 
 ## 1. The Vision
 
-**ArqonHPO is a probe-gated optimization engine for time-to-target.**
+**ArqonHPO is a probe-gated optimization engine for time-to-target—and a runtime control primitive for microsecond-latency adaptation.**
 
 It is built to be clearly competitive for two product-aligned use cases:
 
 1. **Fast simulation tuning:** expensive evaluations (milliseconds to seconds) where reaching a useful threshold quickly matters.
-2. **Sklearn-style model tuning:** moderate-cost evaluations where optimizer overhead is material and “good-enough quickly” often wins.
+2. **Sklearn-style model tuning:** moderate-cost evaluations where optimizer overhead is material and "good-enough quickly" often wins.
+
+**Control Primitive Posture:** Once the decision loop operates at microseconds, optimization is treated as a feedback control primitive. The system's job is to steer toward homeostasis under changing conditions (drift, load, hardware throttling) using bounded changes. This is achieved through:
+
+* **Discovery Offline, Adaptation Online:** Offline discovery (Tier Ω) generates and evaluates candidates; online adaptation (Tier 2) selects among approved variants and proposes bounded deltas.
+* **Law Control:** Online tuning of "physics knobs" (diffusion, noise, decay, damping, constraint weights) within allowlisted parameters and strict safety envelopes.
+* **Microsecond Latency:** ArqonHPO is designed for 1–10ms decision latency, enabling embedding in live control loops without blocking the dataplane.
 
 ## 2. The Scope
 
@@ -271,13 +276,15 @@ To achieve this vision, we must be ruthless about what ArqonHPO **is** and what 
 
 ### 2.1 In Scope (The Core Product)
 
-ArqonHPO is **probe-gated optimization**. It is responsible for:
+ArqonHPO is **probe-gated optimization** and **runtime adaptation**. It is responsible for:
 
 * **The Probe Phase:** Deterministic sampling to gather an initial signal and candidates.
 * **The Classification Phase:** A fixed-size test that labels the landscape (e.g., structured vs chaotic) and produces a score.
 * **The Mode Selection Phase:** Selecting a refinement strategy based on the classification result.
 * **The Refinement Phase:** Executing the chosen optimizer within the remaining budget.
 * **Audit Artifacts:** Schema-versioned run artifacts sufficient for replay and accountability.
+* **Systems/Infrastructure Knobs:** Tuning database parameters, connection pools, cache sizes, and runtime configurations in bounded, safe, auditable ways.
+* **Runtime Law Tuning:** Adjusting simulation/physics parameters (e.g., diffusion rates, constraint weights) within safety envelopes during online operation.
 
 ### 2.2 Out of Scope (The Boundaries)
 
@@ -524,6 +531,91 @@ Streaming telemetry MUST be compact, fixed-schema, and lock-free in the push pat
 * **Ring Buffer:** Fixed-capacity `TelemetryRingBuffer`, overflow evicts oldest. No dynamic allocation in `push()`.
 * **Size Budget:** `TelemetryDigest` MUST fit in ≤128 bytes for cache efficiency.
 * **Minimal Helpers:** `TelemetryDigest::objective(value)` and `TelemetryDigest::with_timestamp(ts, value)` are the canonical constructors.
+
+### 20. Tier Architecture Model
+
+ArqonHPO operates with a strict three-tier architecture. These tiers are **non-optional** and govern all runtime behavior.
+
+| Tier | Role | Responsibilities | Prohibitions |
+|:---|:---|:---|:---|
+| **Tier 1 (Safe Executor)** | Sole actuator | AtomicConfig swap, allowlist enforcement, bounds checking, max-delta limits, rate limits, rollback/snapback, audit emission | Cannot skip guardrails; cannot apply unevaluated proposals |
+| **Tier 2 (Adaptive Engine)** | Proposal generator | Reads telemetry digests, proposes bounded deltas, selects among approved variants | **Cannot mutate production state directly**; must be deterministic and time-budgeted |
+| **Tier Ω (Offline Discovery)** | Candidate generator | Runs continuously or periodically, generates new law families / architecture candidates, outputs diagnostic artifacts | **Never in the hot path**; outputs are candidates only, not direct actions |
+
+**Tier 1 Contract:**
+* The only component allowed to apply changes to production state.
+* Enforces allowlist (unknown parameters → rejection), bounds (out-of-bounds → rejection), max-delta (per-step change cap), rate limits, and rollback requirements.
+* Must be deterministic: same (config, proposal) → same outcome.
+
+**Tier 2 Contract:**
+* Reads compact telemetry digests from Tier 1's observation surface.
+* Proposes deltas or selects among approved variants.
+* All proposals go through Tier 1's guardrails before application.
+* Must complete within `budget_us` microseconds.
+
+**Tier Ω Contract:**
+* Runs in background / batch mode, never blocking the control loop.
+* Outputs candidates that must pass offline evaluation and promotion gates before entering the Approved Variant Catalog.
+* Outputs are labeled "diagnostic" or "candidate," never "decision."
+
+### 21. Merge-Blocking Tier Rules
+
+The following are **merge-blocking rules**. Pull requests violating these MUST NOT be merged.
+
+| Rule | Violation |
+|:---|:---|
+| Tier-2 cannot mutate production state | Any code path where Tier 2 writes to AtomicConfig without going through Tier 1 |
+| Tier-1 is sole actuator | Any direct config mutation outside SafetyExecutor |
+| Tier-Ω outputs are candidates only | Any code path where Ω output is applied to production without promotion gate |
+| Tier boundaries are explicit | Tier logic mixed without clear module separation |
+
+### 22. Variant Catalog Contract
+
+The **Approved Variant Catalog** is the safety boundary for discrete configuration choices.
+
+**Lifecycle States:**
+
+| State | Description | Online Eligible |
+|:---|:---|:---|
+| **Draft** | Initial candidate, not yet evaluated | ❌ |
+| **Evaluated** | Offline evaluation completed, results documented | ❌ |
+| **Approved** | Passed promotion gate, eligible for production selection | ✅ |
+| **Promoted** | Currently active in production selection pool | ✅ |
+| **Archived** | Retired from active use, retained for replay | ❌ |
+
+**Promotion Requirements:**
+* Offline evaluation evidence (benchmark results, safety metrics)
+* Documented constraints (bounds, applicability conditions)
+* Rollback plan (how to revert if issues arise)
+* Evidence pack attached to promotion record
+
+**Selection Rules:**
+* Runtime MUST only select among `Approved` or `Promoted` variants.
+* `Draft` and `Evaluated` variants are NEVER eligible for online selection.
+* Online "NAS-like" behavior is selection among approved variants, not live invention.
+
+**Schema Requirements:**
+* Variants must have unique IDs, version numbers, and creation timestamps.
+* Variants must be tied to reproducible artifacts and replay seeds.
+* Variant transitions must be audited (who, when, why).
+
+### 23. Safety Semantics for Co-evolving Laws
+
+**Clarification:** "Laws" and "physics" in this constitution refer to simulation/runtime update-rule parameters (e.g., diffusion rates, noise schedules, constraint weights), NOT real-world physical laws.
+
+**Explicit Invariants:**
+
+| Invariant | Requirement |
+|:---|:---|
+| No unbounded exploration online | All online search is bounded by approved catalog and delta limits |
+| No uncontrolled oscillation | Anti-thrashing rules required: cooldowns, hysteresis, confidence gating |
+| Homeostasis recovery | Must be demonstrable with shock tests (inject perturbation → observe recovery) |
+
+**Homeostatic Mode Caching:**
+* The runtime MAY cache "homeostatic modes" (stable configurations that achieve target SLOs).
+* Cached modes enable fast re-entry without re-optimization.
+* Cached modes MUST be versioned, audited, and constrained by the same guardrails as live proposals.
+* Mode cache eviction policy MUST be explicit (LRU, TTL, or capacity-based).
 
 ---
 
@@ -837,6 +929,37 @@ The canonical quality-time tradeoff measurements are:
 
 These metrics MUST be reported per-objective in benchmark artifacts.
 
+### 4. Timing Window Contracts
+
+For microsecond-latency operation, the following timing windows are canonical:
+
+| Timing Window | Definition | Typical Budget |
+|:---|:---|:---|
+| `T2_decision_us` | Digest popped from ring buffer → proposal emitted by Tier 2 | ≤1,000 µs |
+| `T1_apply_us` | Proposal received by Tier 1 → guardrails validated + atomic swap completed | ≤100 µs |
+| `E2E_visible_us` | Digest available → dataplane observes new config | ≤2,000 µs |
+
+**Measurement Requirements:**
+* Latency claims MUST specify: build mode (debug/release), hardware (CPU model, memory), and measurement method (wall clock, flamegraph, tracing).
+* Benchmarks MUST include p50, p99, and max latencies.
+* Regression guards MUST exist for all timing budgets (CI fails if exceeded).
+
+### 5. Hot Path Non-Blocking Audit
+
+Audit-to-disk MUST be explicitly decoupled from the critical path.
+
+* **Ring Buffer / Async Writer:** Audit events are pushed to a lock-free ring buffer; a background thread persists to disk.
+* **No Blocking I/O:** Disk I/O (file writes, network calls) is FORBIDDEN in the apply critical path.
+* **Overflow Policy:** If the ring buffer is full, the overflow policy MUST be explicit (drop oldest, block, or signal backpressure).
+
+### 6. Zero-Allocation Critical Path
+
+The critical path (`T1_apply_us` window) MUST remain zero-allocation:
+
+* **No Heap Allocations:** Use pre-allocated buffers, arena allocators, or stack allocation.
+* **No Blocking Syscalls:** No `malloc`, `mmap`, file I/O, or network I/O.
+* **Arc Clone Only:** `snapshot()` operations use cheap Arc clone, not deep copy.
+
 ---
 
 # IX. Observability & Telemetry Contracts
@@ -847,6 +970,23 @@ What cannot be observed cannot be governed.
 
 * **Structured Logs Only:** Must include `run_id` and phase markers.
 * **Telemetry for Mode Decisions:** Mode selection and classification results must be observable.
+
+### 2. Structured Events & Correlation IDs
+
+For the Adaptive Engine control loop, the following event types are REQUIRED:
+
+| Event Type | Trigger | Required Fields |
+|:---|:---|:---|
+| `digest` | New telemetry digest pushed | `run_id`, `timestamp_us`, `digest_id`, `objective_value` |
+| `proposal` | Tier 2 emits a proposal | `run_id`, `proposal_id`, `config_version`, `delta_summary` |
+| `apply` | Tier 1 successfully applies config | `run_id`, `proposal_id`, `new_config_version`, `apply_latency_us` |
+| `rollback` | Tier 1 triggers rollback | `run_id`, `proposal_id`, `rollback_reason`, `reverted_to_version` |
+| `promotion` | Variant promoted to Approved/Promoted | `run_id`, `variant_id`, `old_state`, `new_state`, `evidence_ref` |
+
+**Correlation ID Requirements:**
+* All events in a single adaptation cycle MUST share the same `run_id`.
+* Proposals MUST have unique `proposal_id` for traceability.
+* Config versions MUST use monotonic `config_version` counters.
 
 ---
 
@@ -918,8 +1058,16 @@ To prevent interpretation drift (especially for Spec Kit agents), we define core
 | **Classify** | Fixed-size test producing a label and score to drive mode selection. |
 | **Mode** | The chosen refinement strategy family (structured vs chaotic). |
 | **Time-to-Target** | Time/evals to reach a specified objective threshold. |
-| **Tier 1** | Production behavior and benchmark claims subject to all core constraints. |
-| **Tier Ω** | Experimental features allowed only under strict confinement; never default. |
+| **Tier 1 (Safe Executor)** | The sole actuator for production state; enforces all guardrails before applying changes. |
+| **Tier 2 (Adaptive Engine)** | Reads telemetry, proposes deltas or variant selections; cannot mutate production state directly. |
+| **Tier Ω (Offline Discovery)** | Experimental/background loop that generates candidates; never in hot path, outputs are diagnostic only. |
+| **Homeostasis** | A stable operating regime the adaptive engine steers toward under varying conditions. |
+| **Law knobs** | Runtime/simulation parameters (diffusion, noise, decay, constraint weights) tunable within safety envelopes. |
+| **Variant Catalog** | Registry of approved configuration variants with lifecycle states (Draft → Evaluated → Approved → Promoted → Archived). |
+| **Promotion Gate** | Evidence pack + offline evaluation + rollback plan required to promote a variant to Approved state. |
+| **E2E_visible_us** | Time from digest availability to dataplane observing new config (microseconds). |
+| **T2_decision_us** | Time from digest popped to proposal emitted by Tier 2 (microseconds). |
+| **T1_apply_us** | Time from proposal received to atomic swap completed by Tier 1 (microseconds). |
 
 ---
 
