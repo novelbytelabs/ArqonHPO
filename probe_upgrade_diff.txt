@@ -1,0 +1,68 @@
+ README.md                                          |  32 +-
+ benchmarks/ABLATION_BENCHMARK.md                   |  26 +
+ benchmarks/PROBE_UPGRADE_BENCHMARK.md              |  27 +
+ benchmarks/ab_cp_shift.py                          |  90 +++
+ benchmarks/debug_classifier_impact.py              |  52 ++
+ benchmarks/debug_periodic.py                       | 163 +++++
+ benchmarks/demo_parallel_sharding.py               | 112 ++++
+ benchmarks/report_sharding.py                      | 124 ++++
+ benchmarks/reporting/aggregate.py                  | 248 +++++++
+ benchmarks/reporting/plot.py                       | 152 +++++
+ benchmarks/reporting/schema.py                     |  63 ++
+ .../sphere_smooth_shift__cheap__best_vs_time.png   | Bin 0 -> 38416 bytes
+ ..._smooth_shift__cheap__cdf_time_to_threshold.png | Bin 0 -> 29222 bytes
+ .../reports/ci_smoke/sharding/points_hash.txt      |   1 +
+ .../plots/rastrigin_torus__cheap__best_vs_time.png | Bin 0 -> 33514 bytes
+ ...strigin_torus__cheap__cdf_time_to_threshold.png | Bin 0 -> 31589 bytes
+ ...strigin_torus__expensive_20ms__best_vs_time.png | Bin 0 -> 50884 bytes
+ ...orus__expensive_20ms__cdf_time_to_threshold.png | Bin 0 -> 35750 bytes
+ ...osenbrock_smooth_shift__cheap__best_vs_time.png | Bin 0 -> 47560 bytes
+ ..._smooth_shift__cheap__cdf_time_to_threshold.png | Bin 0 -> 31898 bytes
+ ..._smooth_shift__expensive_20ms__best_vs_time.png | Bin 0 -> 58928 bytes
+ ...hift__expensive_20ms__cdf_time_to_threshold.png | Bin 0 -> 36952 bytes
+ .../sphere_smooth_shift__cheap__best_vs_time.png   | Bin 0 -> 44594 bytes
+ ..._smooth_shift__cheap__cdf_time_to_threshold.png | Bin 0 -> 33334 bytes
+ ..._smooth_shift__expensive_20ms__best_vs_time.png | Bin 0 -> 58825 bytes
+ ...hift__expensive_20ms__cdf_time_to_threshold.png | Bin 0 -> 35406 bytes
+ benchmarks/run_ablation_benchmark.py               | 458 +++++++++++++
+ benchmarks/run_phase8_suite.py                     | 386 +++++++++++
+ benchmarks/run_probe_benchmark.py                  | 505 +++++++++++++++
+ benchmarks/test_probe_guardrails.py                | 720 +++++++++++++++++++++
+ benchmarks/viz_probe.py                            |  70 ++
+ benchmarks/viz_probe_upgrade.py                    | 162 +++++
+ bindings/python/python/arqonhpo/__init__.py        |   4 +-
+ bindings/python/src/lib.rs                         |  44 ++
+ crates/core/error_log.txt                          |   0
+ crates/core/error_log_2.txt                        |   0
+ crates/core/src/config.rs                          |  55 +-
+ crates/core/src/machine.rs                         | 169 ++++-
+ crates/core/src/probe.rs                           | 489 +++++++++++++-
+ crates/core/src/strategies/mod.rs                  |   1 +
+ crates/core/src/strategies/multi_start_nm.rs       | 332 ++++++++++
+ crates/core/src/strategies/nelder_mead.rs          | 417 +++++++++---
+ crates/core/src/tests/test_nelder_mead.rs          |   7 +-
+ docs/TECHNOTE_PROBE_UPGRADE.md                     | 159 +++++
+ docs/docs/assets/probe_comparison.png              | Bin 0 -> 83575 bytes
+ docs/docs/concepts/probe_deep_dive.md              |  62 +-
+ docs/docs/index.md                                 |  33 +-
+ .../rastrigin_torus__cheap__best_vs_time.png       | Bin 0 -> 33514 bytes
+ ...strigin_torus__cheap__cdf_time_to_threshold.png | Bin 0 -> 31589 bytes
+ ...strigin_torus__expensive_20ms__best_vs_time.png | Bin 0 -> 50884 bytes
+ ...orus__expensive_20ms__cdf_time_to_threshold.png | Bin 0 -> 35750 bytes
+ ...osenbrock_smooth_shift__cheap__best_vs_time.png | Bin 0 -> 47560 bytes
+ ..._smooth_shift__cheap__cdf_time_to_threshold.png | Bin 0 -> 31898 bytes
+ ..._smooth_shift__expensive_20ms__best_vs_time.png | Bin 0 -> 58928 bytes
+ ...hift__expensive_20ms__cdf_time_to_threshold.png | Bin 0 -> 36952 bytes
+ .../sphere_smooth_shift__cheap__best_vs_time.png   | Bin 0 -> 44594 bytes
+ ..._smooth_shift__cheap__cdf_time_to_threshold.png | Bin 0 -> 33334 bytes
+ ..._smooth_shift__expensive_20ms__best_vs_time.png | Bin 0 -> 58825 bytes
+ ...hift__expensive_20ms__cdf_time_to_threshold.png | Bin 0 -> 35406 bytes
+ docs/docs/reports/time_to_quality.md               |  97 +++
+ docs/failed_experiments.md                         |  25 +
+ docs/mkdocs.yml                                    |   2 +
+ .../sphere_smooth_shift__cheap__best_vs_time.png   | Bin 0 -> 37536 bytes
+ ..._smooth_shift__cheap__cdf_time_to_threshold.png | Bin 0 -> 29254 bytes
+ reports/sharding/points_hash.txt                   |   1 +
+ specs/002-two-use-cases/spec.md                    |   3 +-
+ specs/constitution.md                              | 115 ++++
+ 67 files changed, 5271 insertions(+), 135 deletions(-)
