@@ -1289,12 +1289,71 @@ Rule: If it is not true, it is not done.
 
 ---
 
+# V. Naming, Positioning & Brand Constitution
+
+This section defines the **non-negotiable** nomenclature and positioning hierarchy for the project. These rules apply to all documentation, website copy, repository descriptions, and marketing materials.
+
+### 1. The Hierarchy Implementation
+
+The Arqon stack is always presented in this specific order of authority:
+
+| Level | Canonical Term | Usage Scope |
+|:---|:---|:---|
+| **Company** | **Arqon Tech** | Organization, copyright, legal, "Built by..." credits |
+| **Product** | **Arqon Runtime Optimizer** | The User-Facing Product, the Website, the Solution |
+| **Category** | **Runtime Optimization Infrastructure** | The functional category we own (genericized) |
+| **Engine** | **ArqonHPO** | The internal Rust core, the algorithm, the technical "powered by" component |
+
+### 2. Mandatory Rules
+
+#### Rule 1: Product vs. Engine Separation
+*   **The Product is "Arqon Runtime Optimizer"**. This is the title of the website, the H1 of the home page, and how we refer to the solution in sales/marketing contexts.
+*   **The Engine is "ArqonHPO"**. This refers *strictly* to the underlying technical artifacts (crates, algorithms, inner loops).
+    *   *Correct:* "Arqon Runtime Optimizer is powered by the sub-microsecond ArqonHPO engine."
+    *   *Incorrect:* "Download ArqonHPO to optimize your cloud." (User downloads the Product, which contains the Engine).
+
+#### Rule 2: Title Case Branding
+*   **Arqon Runtime Optimizer** is a proper noun. Always Title Case.
+*   **ArqonHPO** is a proper noun / code identifier. Always CamelCase with "HPO".
+*   "Runtime optimization" (the activity) is lowercase unless part of the formal Category name.
+
+#### Rule 3: Category Ownership
+*   We do not brand the category as "Arqon Optimization". We use the generic **Runtime Optimization Infrastructure** to establish the standard.
+*   *Why?* We want to own the generic term "Runtime Optimization" in the user's mind, just as "Search" or "Databases" are categories.
+
+#### Rule 4: Stack Presentation Order
+When introducing the project, follow: **Company → Product → Category → Engine**.
+*   *Example:* "Arqon Tech presents Arqon Runtime Optimizer, the first Runtime Optimization Infrastructure powered by the ArqonHPO engine."
+
+### 3. Copy & Positioning Standards
+
+#### Headline Standards
+*   **H1**: Arqon Runtime Optimizer
+*   **Subhead**: "Runtime optimization infrastructure for live production systems."
+*   **Support**: "Deterministic, guardrailed, sub-microsecond control loops—powered by ArqonHPO."
+
+#### Glossary & Do/Don't
+
+| Term | Definition | Do | Don't |
+|:---|:---|:---|:---|
+| **Arqon Tech** | The company/entity. | "Copyright 2025 Arqon Tech" | "Copyright ArqonHPO" |
+| **Arqon Runtime Optimizer** | The commercial/downloadable product. | "Install Arqon Runtime Optimizer" | "Install ArqonHPO" (unless specifically referring to the crate) |
+| **Runtime Optimization** | The activity/category. | "The leader in Runtime Optimization" | "The leader in Hyperparameter Tuning" (too offline) |
+| **ArqonHPO** | The Rust core engine. | "Powered by ArqonHPO" | "Arqon HPO" (space), "arqonhpo" (unless code) |
+
+### 4. Migration Note
+*   The crate name remains `arqonhpo` in `Cargo.toml` and PyPI for limits of identifier stability.
+*   The documentation site title moves to **Arqon Runtime Optimizer**.
+*   The repo name may remain `ArqonHPO` or move to `arqon-runtime-optimizer` at discretion of Ops, but the *public name* is migrated.
+
+---
+
 ## Implementation Substrate & SDK Contract
 - Core implementation MUST be a Rust library crate exposing the probe-gated solver API.
 - CLI MUST be a thin Rust binary crate that delegates to the core.
 - SDKs (for example, Python) MUST be thin bindings over the same core, not reimplementing solver logic.
 - Artifacts MUST be language-agnostic (JSON) and serve as the compatibility contract between surfaces.
 
-**Version**: 1.0.0  
-**Ratified**: 2025-12-13  
-**Last Amended**: 2025-12-13  
+**Version**: 1.5.0  
+**Ratified**: 2025-12-17  
+**Last Amended**: 2025-12-17  
