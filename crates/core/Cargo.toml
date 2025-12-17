@@ -17,7 +17,7 @@ static_assertions = { workspace = true }
 hotpath = { version = "0.1.0", path = "../hotpath" }
 
 [dev-dependencies]
-criterion = "0.5"
+criterion = "=0.5.1"
 serde_json.workspace = true
 
 [[bench]]
