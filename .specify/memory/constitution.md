@@ -1,45 +1,44 @@
 <!--
 Sync Impact Report:
 
-- ArqonHPO Constitution v1.2.0 → v1.3.0 (2025-12-16)
+- ArqonHPO Constitution v1.3.0 → v1.4.0 (2025-12-17)
 
-## Amendment Summary (v1.3.0)
-This amendment makes the Tier 1/2/Ω architecture explicit and non-optional, codifies the
-Variant Catalog lifecycle, adds timing window contracts for microsecond-latency operation,
-and strengthens safety semantics for co-evolving laws. All changes are additive and clarifying;
-no existing Integrity Covenant or 8-Pillar DONE standard has been weakened.
+## Amendment Summary (v1.4.0)
+This amendment locks in a non-negotiable architectural invariant: Tier-1/Tier-2 hot paths
+MUST use dense, index-addressed parameter storage (ParamVec/SmallVec). HashMap<String, …>
+is FORBIDDEN in hot paths and allowed only at boundaries. This invariant enables sub-microsecond
+control loops, ensures deterministic replay, and prevents regression into string-in-the-loop patterns.
 
-## Added Sections (MINOR bump - Tier Architecture & Control Primitive)
-- I.1: Control Primitive Posture (microsecond decision loops, Discovery Offline/Adaptation Online)
-- II.20: Tier Architecture Model (Tier 1 Executor, Tier 2 Adaptive Engine, Tier Ω Discovery)
-- II.21: Merge-Blocking Tier Rules (explicit prohibitions)
-- II.22: Variant Catalog Contract (lifecycle states, promotion gates, selection rules)
-- II.23: Safety Semantics for Co-evolving Laws (anti-thrashing, homeostatic mode caching)
-- VIII.4: Timing Window Contracts (T2_decision_us, T1_apply_us, E2E_visible_us)
-- VIII.5: Hot Path Non-Blocking Audit (async writer, no disk I/O in critical path)
-- IX.2: Structured Events & Correlation IDs (digest/proposal/apply/rollback/promotion)
-- XII: Glossary expansions (Homeostasis, Law knobs, Variant Catalog, Promotion Gate, E2E_visible_us, Tier 2)
+## Added Sections (MINOR bump - Hot-Path Parameter Representation)
+- VIII.3: Hot-Path Parameter Representation & Determinism (NEW, merge-blocking)
+  - A. Hot-path representation rule (ParamVec mandatory, HashMap forbidden)
+  - B. Boundary-only HashMap rule (CLI/SDK/artifacts only)
+  - C. ParamRegistry contract (stable name↔index mapping)
+  - D. Deterministic replay and artifact requirement
+  - E. Tier Ω exception policy
+  - F. Enforcement (merge/ship blockers)
+- XII: Glossary additions (ParamVec, ParamRegistry, Boundary, Hot Path)
 
-## Previously Added (v1.2.0 - Adaptive Engine)
-- II.16-19: SPSA, Safety Executor, Atomic Config, Telemetry Digest
-- IV.6: Adaptive Engine Guardrail Tests
-- VIII.3: Time-to-Target Metrics
+## Prior Amendments
+- v1.3.0 (2025-12-16): Tier 1/2/Ω architecture, Variant Catalog, timing contracts
+- v1.2.0: SPSA, Safety Executor, Atomic Config, Telemetry Digest (Adaptive Engine)
+- v1.1.0: Probe Algorithm, Dimension Types, Multi-Start, Parallel Sharding
 
-## Previously Added (v1.1.0 - Probe Upgrade)
-- II.12-15: Probe Algorithm, Dimension Types, Multi-Start, Parallel Sharding
-- IV.5: Probe Guardrail Tests
-- XI.3-5: Benchmark Schema, SDK Binding, Strategy Governance
+## Templates Requiring Updates
+- ✅ plan-template.md: Add "Hot-Path Parameter Representation" checklist
+- ✅ spec-template.md: Require param representation statement for Tier-1/Tier-2 features
+- ✅ tasks-template.md: Add registry, artifact, no-alloc test, benchmark gate tasks
 
 ## Reference Evidence
-- Branch: experiment/architecture-ideas
-- Source: docs/docs/index.md, README.md, crates/core/src/adaptive_engine/
+- Branch: 005-adaptive-engine
+- Benchmark proof: T2_decision=210ns, T1_apply=107ns (SmallVec vs HashMap benchmark comparison)
 -->
 
 # ArqonHPO Constitution
 
-**Version**: 1.3.0  
+**Version**: 1.4.0  
 **Ratification Date**: 2025-12-13  
-**Last Amended**: 2025-12-16  
+**Last Amended**: 2025-12-17  
 
 This document defines the **non-negotiable principles** that govern how ArqonHPO is designed, evolved, and maintained.
 
@@ -919,7 +918,75 @@ Unbounded anything is a denial-of-service vector.
 * **O(1) or Amortized O(1):** Per-eval policy decisions must be O(1) or amortized O(1).
 * **No Hidden I/O:** Do not write artifacts inside the inner loop unless explicitly buffered.
 
-### 3. Time-to-Target Metrics
+### 3. Hot-Path Parameter Representation & Determinism (v1.4.0, merge-blocking)
+
+This section defines non-negotiable architectural invariants for parameter storage in Tier-1/Tier-2 hot paths. Violations are merge blockers.
+
+**Rationale:**
+This invariant enables sub-microsecond control loops (T2_decision + T1_apply ~ 0.3µs), enforces determinism and stable ordering for replay and audit, and prevents gradual regression into "strings in the loop" patterns that destroy latency and reproducibility.
+
+#### A. Hot-Path Representation Rule (Tier 1/2 Only)
+
+* **Dense Storage REQUIRED:** Tier-1 and Tier-2 hot paths MUST use dense, index-addressed parameter storage:
+  * `ParamVec := SmallVec<[f64; 16]>` for ≤16 parameters.
+  * `Vec<f64>` or equivalent dense representation for larger parameter sets.
+* **HashMap FORBIDDEN:** `HashMap<String, f64>` is FORBIDDEN inside Tier-1/Tier-2 hot paths.
+* **String Operations FORBIDDEN:** String keys, hashing, and dynamic key lookups are FORBIDDEN inside Tier-1/Tier-2 hot paths.
+* **Heap Allocation FORBIDDEN:** The critical path MUST NOT allocate on the heap per decision/apply cycle.
+
+#### B. Boundary-Only HashMap Rule
+
+* **Boundaries Defined:** `HashMap<String, …>` MAY be used only at boundaries:
+  * CLI/SDK inputs
+  * Config parsing/validation
+  * Governance wire protocol payloads
+  * Artifact serialization/deserialization
+* **Single Conversion Rule:** Boundary conversion MUST happen exactly once per run initialization:
+  * name-based inputs → `ParamRegistry` + `ParamVec`
+  * No repeated conversions inside the control loop.
+* **Conversion Audit:** The conversion from named params to dense representation MUST be logged as an audit event.
+
+#### C. ParamRegistry Contract (Required for Audit + Replay)
+
+* **Existence REQUIRED:** A `ParamRegistry` (or equivalent) MUST exist to provide:
+  * Stable mapping: `name ↔ id/index`
+  * Deterministic ordering (consistent across runs with same schema)
+  * Schema/version identity
+* **Immutability REQUIRED:** The mapping MUST be immutable during a run for Tier-1/Tier-2 operation. Mid-run parameter set mutation is FORBIDDEN in production mode.
+* **Schema Versioning:** Any change to the registry mapping is a schema-impacting change and MUST follow semantic version rules.
+
+#### D. Deterministic Replay and Artifact Requirement
+
+* **Dual Storage REQUIRED:** Artifacts MUST store BOTH:
+  1. The dense parameter vector values (for fast deterministic replay)
+  2. The registry mapping (for human traceability)
+* **Replay Independence:** Replay MUST NOT require string hashing to reconstruct the decision path.
+* **Compliance Test:** If an artifact can't replay without dynamic key operations, it is non-compliant and fails the Evidence Pack validation.
+
+#### E. Tier Ω Exception Policy (Explicitly Bounded)
+
+* **Sandbox Exploration Allowed:** Tier Ω (experimental) MAY explore dynamic parameter sets.
+* **Production Invariants Preserved:** Tier-1/Tier-2 invariants remain non-bypassable even when Tier Ω is active.
+* **Promotion Gate:** Promotion from Tier Ω to production REQUIRES:
+  * Freezing a final parameter allowlist
+  * Producing a registry mapping with stable ordering
+  * Passing all hot-path invariant tests
+
+#### F. Enforcement (Merge/Ship Blockers)
+
+* **No-Alloc Test REQUIRED:** CI MUST include a "no-alloc hot path" test for Tier-1 apply and Tier-2 observe/decision paths (release mode).
+* **Benchmark Gate REQUIRED:** CI MUST include a benchmark regression gate for `T2_decision_us` and `T1_apply_us` (release mode) consistent with VIII.5 timing budgets.
+* **Static Lint REQUIRED:** CI MUST include a compile-time or lint-time check to prevent HashMap usage inside `crates/core/src/adaptive_engine` and Tier-1 executor modules.
+  * Acceptable implementations:
+    * Denylist via clippy + module-level `#[forbid]` attributes
+    * Architectural type separation: `ParamVec` exists only in core; `HashMap` types exist only in boundary modules
+    * Feature-gated compilation that fails if HashMap appears in hot modules
+
+**Evidence Requirement:**
+* Any latency claim MUST attach evidence (Observed) including: build mode, CPU model, benchmark method, and p50/p99/max.
+* Allocation claims MUST be measured (Observed via instrumentation or allocator hook) or the claim is false.
+
+### 4. Time-to-Target Metrics
 
 The canonical quality-time tradeoff measurements are:
 
@@ -929,7 +996,7 @@ The canonical quality-time tradeoff measurements are:
 
 These metrics MUST be reported per-objective in benchmark artifacts.
 
-### 4. Timing Window Contracts
+### 5. Timing Window Contracts
 
 For microsecond-latency operation, the following timing windows are canonical:
 
@@ -944,7 +1011,7 @@ For microsecond-latency operation, the following timing windows are canonical:
 * Benchmarks MUST include p50, p99, and max latencies.
 * Regression guards MUST exist for all timing budgets (CI fails if exceeded).
 
-### 5. Hot Path Non-Blocking Audit
+### 6. Hot Path Non-Blocking Audit
 
 Audit-to-disk MUST be explicitly decoupled from the critical path.
 
@@ -952,7 +1019,7 @@ Audit-to-disk MUST be explicitly decoupled from the critical path.
 * **No Blocking I/O:** Disk I/O (file writes, network calls) is FORBIDDEN in the apply critical path.
 * **Overflow Policy:** If the ring buffer is full, the overflow policy MUST be explicit (drop oldest, block, or signal backpressure).
 
-### 6. Zero-Allocation Critical Path
+### 7. Zero-Allocation Critical Path
 
 The critical path (`T1_apply_us` window) MUST remain zero-allocation:
 
@@ -1068,6 +1135,10 @@ To prevent interpretation drift (especially for Spec Kit agents), we define core
 | **E2E_visible_us** | Time from digest availability to dataplane observing new config (microseconds). |
 | **T2_decision_us** | Time from digest popped to proposal emitted by Tier 2 (microseconds). |
 | **T1_apply_us** | Time from proposal received to atomic swap completed by Tier 1 (microseconds). |
+| **ParamVec** | Dense parameter storage (`SmallVec<[f64; 16]>`) used in Tier-1/Tier-2 hot paths. FORBIDDEN to use HashMap. (v1.4.0) |
+| **ParamRegistry** | Stable mapping between human-readable parameter names and dense array indices. Immutable during a run. (v1.4.0) |
+| **Boundary** | Any interface layer where human-readable names exist (CLI/SDK/artifacts/wire protocol). HashMap allowed only here. (v1.4.0) |
+| **Hot Path** | Code executed per-tick/per-decision/per-apply with strict latency budgets (<1ms). No heap allocation, no string ops. (v1.4.0) |
 
 ---
 

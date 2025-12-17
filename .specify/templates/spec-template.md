@@ -18,6 +18,10 @@
 - Objective remains pure and side-effect free.
 - Tests precede implementation for solver logic/sampling math.
 - Observability includes phase timings and solver-mode rationale.
+- **[v1.4.0] Hot-Path Parameter Representation** (if Tier-1/Tier-2 feature):
+  - ParamVec (dense storage) MUST be used; HashMap<String, f64> FORBIDDEN in hot paths.
+  - ParamRegistry MUST exist for stable name↔index mapping.
+  - State param representation plan: [NEEDS CLARIFICATION if touching Tier-1/Tier-2]
 
 ## User Scenarios & Testing *(mandatory)*
 

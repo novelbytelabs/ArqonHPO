@@ -38,6 +38,11 @@
 - Verify the canonical environment is identified for benchmark claims (default: conda env `helios-gpu-118`) and an environment export is captured for reproducibility.
 - Verify tests exist/are planned first for solver logic and sampling math; integration test covers end-to-end flow.
 - Verify observability exists (phase timings + mode selection rationale) and that all loops are bounded with timeouts.
+- **[v1.4.0] Hot-Path Parameter Representation** (Tier-1/Tier-2 features ONLY):
+  - [ ] Verify ParamVec (dense storage) is used in hot paths; HashMap<String, f64> is FORBIDDEN.
+  - [ ] Verify ParamRegistry exists for name↔index mapping and is immutable during run.
+  - [ ] Verify boundary conversion (HashMap → ParamVec) happens exactly once at initialization.
+  - [ ] Verify artifacts store both dense param values AND registry mapping for replay.
 
 ## Project Structure
 
