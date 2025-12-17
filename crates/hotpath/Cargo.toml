@@ -1,0 +1,14 @@
+[package]
+name = "hotpath"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+serde = { workspace = true }
+rand = { workspace = true }
+rand_chacha = { workspace = true }
+smallvec = { workspace = true }
+crossbeam-queue = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+static_assertions = { workspace = true }
