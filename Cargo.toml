@@ -7,6 +7,9 @@ members = [
 ]
 resolver = "2"
 
+[package]
+rust-version = "1.75"
+
 [workspace.dependencies]
 # Dependencies
 serde = { version = "1.0", features = ["derive"] }

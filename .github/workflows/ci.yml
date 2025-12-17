@@ -8,9 +8,64 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
 
 jobs:
+  # ==========================================================================
+  # Rust CI - Cross-platform with MSRV testing
+  # ==========================================================================
   rust:
+    name: Rust ${{ matrix.rust }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        rust: [stable, "1.75"]  # MSRV = 1.75 (edition 2021 + rand_chacha)
+        exclude:
+          # Only test MSRV on Linux to save CI minutes
+          - os: macos-latest
+            rust: "1.75"
+          - os: windows-latest
+            rust: "1.75"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Rust ${{ matrix.rust }}
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.rust }}
+          components: clippy, rustfmt
+
+      - name: Cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.os }}-${{ matrix.rust }}
+
+      - name: Check
+        run: cargo check --workspace
+
+      - name: Clippy
+        run: cargo clippy --workspace -- -D warnings
+
+      - name: Format
+        run: cargo fmt --check
+        # Only check format on stable (rustfmt may differ between versions)
+        if: matrix.rust == 'stable'
+
+      - name: Test
+        run: cargo test --workspace
+
+      - name: Audit
+        run: cargo install cargo-audit && cargo audit
+        # Only audit on Linux stable (save CI minutes)
+        if: matrix.os == 'ubuntu-latest' && matrix.rust == 'stable'
+
+  # ==========================================================================
+  # Coverage - Tarpaulin on Linux
+  # ==========================================================================
+  coverage:
+    name: Coverage
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -21,30 +76,60 @@ jobs:
       - name: Cache
         uses: Swatinem/rust-cache@v2
 
-      - name: Check
-        run: cargo check --workspace
+      - name: Install Tarpaulin
+        run: cargo install cargo-tarpaulin
 
-      - name: Clippy
-        run: cargo clippy --workspace -- -D warnings
+      - name: Generate Coverage
+        run: cargo tarpaulin --workspace --out xml --skip-clean
 
-      - name: Format
-        run: cargo fmt --check
+      - name: Upload to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: cobertura.xml
+          fail_ci_if_error: false
+          token: ${{ secrets.CODECOV_TOKEN }}
 
-      - name: Test
-        run: cargo test --workspace
-
-      - name: Audit
-        run: cargo install cargo-audit && cargo audit
-
-  python:
+  # ==========================================================================
+  # Benchmarks - Performance regression detection
+  # ==========================================================================
+  bench:
+    name: Benchmarks
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Python
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache
+        uses: Swatinem/rust-cache@v2
+
+      - name: Run Benchmarks
+        run: cargo bench --workspace -- --noplot
+
+      - name: Store Benchmark Results
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results
+          path: target/criterion/
+
+  # ==========================================================================
+  # Python - Multi-version matrix
+  # ==========================================================================
+  python:
+    name: Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
-          python-version: "3.10"
+          python-version: ${{ matrix.python-version }}
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
@@ -62,7 +147,11 @@ jobs:
           cd bindings/python
           PYTHONPATH=tests pytest tests/
 
+  # ==========================================================================
+  # Documentation
+  # ==========================================================================
   docs:
+    name: Documentation
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

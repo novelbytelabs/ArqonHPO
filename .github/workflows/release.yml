@@ -10,29 +10,52 @@ permissions:
   id-token: write
 
 jobs:
+  # ==========================================================================
+  # Build - True cross-platform (runs on native OS)
+  # ==========================================================================
   build:
-    runs-on: ubuntu-latest
+    name: Build ${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
-        target:
-          - x86_64-unknown-linux-gnu
-          - x86_64-apple-darwin
-          - x86_64-pc-windows-msvc
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            artifact_name: arqonhpo
+            asset_name: arqonhpo-linux-amd64
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            artifact_name: arqonhpo
+            asset_name: arqonhpo-darwin-amd64
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            artifact_name: arqonhpo
+            asset_name: arqonhpo-darwin-arm64
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            artifact_name: arqonhpo.exe
+            asset_name: arqonhpo-windows-amd64.exe
     steps:
       - uses: actions/checkout@v4
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
 
       - name: Build
-        run: cargo build --release --workspace
+        run: cargo build --release --target ${{ matrix.target }}
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: arqonhpo-${{ matrix.target }}
-          path: target/release/arqonhpo*
+          name: ${{ matrix.asset_name }}
+          path: target/${{ matrix.target }}/release/${{ matrix.artifact_name }}
 
+  # ==========================================================================
+  # SLSA Provenance - Supply Chain Security (Level 3)
+  # ==========================================================================
   provenance:
     needs: build
     permissions:
@@ -45,7 +68,11 @@ jobs:
         ${{ needs.build.outputs.hashes }}
       upload-assets: true
 
+  # ==========================================================================
+  # SBOM - Software Bill of Materials
+  # ==========================================================================
   sbom:
+    name: Generate SBOM
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -62,8 +89,16 @@ jobs:
           name: sbom
           path: sbom.json
 
+  # ==========================================================================
+  # Python Wheels - Multi-platform
+  # ==========================================================================
   python-wheels:
-    runs-on: ubuntu-latest
+    name: Python Wheels (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
     steps:
       - uses: actions/checkout@v4
 
@@ -81,5 +116,28 @@ jobs:
       - name: Upload Wheels
         uses: actions/upload-artifact@v4
         with:
-          name: python-wheels
+          name: python-wheels-${{ matrix.os }}
           path: target/wheels/*.whl
+
+  # ==========================================================================
+  # Create GitHub Release
+  # ==========================================================================
+  release:
+    name: Create Release
+    needs: [build, python-wheels]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download All Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: artifacts/**/*
+          generate_release_notes: true
+          draft: false
+          prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') || contains(github.ref, 'rc') }}
