@@ -4,7 +4,8 @@
 [![Docs](https://img.shields.io/badge/docs-mkdocs-blue)](https://novelbytelabs.github.io/ArqonHPO/)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
-**Machine-speed optimization for live systems.**  
+# **Machine-speed optimization for live systems.**  
+
 ArqonHPO is a Rust-first optimization runtime that can sit *inside* a control loop: it proposes bounded parameter updates, ingests telemetry/reward signals, and produces deterministic, auditable decisions with sub-microsecond overhead.
 
 It’s not “run an offline study.” It’s: **measure → decide → apply → measure again**.
@@ -36,15 +37,15 @@ If your loop must run at machine speed, ArqonHPO is built for that.
 ### Tier-2: Adaptive decision engine (hot path)
 - Online optimizer designed for **continuous tuning under drift**
 - Runs under strict time budgets
-- Produces **bounded, stable deltas** rather than “wild” parameter jumps
+- Produces **bounded, stable deltas** rather than “wild” parameter jumps 
 
 ### Tier-1: Safety executor (hot path)
 - Guardrails: bounds, max-delta, cooldown/dwell, rollback hooks
-- Non-blocking audit + telemetry emission (never blocks the hot path)
+- Non-blocking audit + telemetry emission (never blocks the hot path) 
 
 ### Determinism + evidence
 - Stable parameter ordering (registry) for replayability
-- Seeded decisioning, audit trail, and artifacts for “why did it change?”
+- Seeded decisioning, audit trail, and artifacts for “why did it change?” 
 
 ---
 
