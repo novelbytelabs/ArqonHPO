@@ -103,4 +103,5 @@ nav:
       - Changelog: project/changelog.md
       - Contributing: project/contributing.md
       - License: project/LICENSE
+      - CI/CD Runbook: project/ci_cd.md
       - Constitution: project/constitution.md
