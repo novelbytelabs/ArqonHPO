@@ -15,7 +15,7 @@ hide:
     padding: 10rem 0 12rem; /* Increased padding */
     text-align: center;
     /* Stronger Glowing Orb Background */
-    background: radial-gradient(circle at 50% 40%, rgba(99, 102, 241, 0.35) 0%, transparent 70%);
+    background: radial-gradient(circle at 50% 40%, rgba(99, 102, 241, 0.35) 0%, transparent 50%);
     margin: -2rem -2rem 0 -2rem !important;
     overflow: visible;
   }
@@ -55,11 +55,12 @@ hide:
   
   .hero-subtitle {
     font-size: 2rem !important;
-    color: #cbd5e1;
+    font-weight: 700 !important;
+    color: #fff !important;
+    text-align: center !important;
     max-width: 900px;
-    margin: 0 auto 2rem;
+    margin: 0 auto 2rem !important;
     line-height: 1.3;
-    font-weight: 400;
     text-shadow: 0 2px 10px rgba(0,0,0,0.5);
   }
   
@@ -95,20 +96,35 @@ hide:
   }
   
   .hero-engine {
-    font-size: 1rem;
+    font-size: 1.2rem;
     color: #94a3b8;
     margin-bottom: 4rem;
     font-family: 'Inter', sans-serif;
-    opacity: 0.8;
   }
   .hero-engine code {
-    background: rgba(99, 102, 241, 0.15);
+    background: rgba(99, 102, 241, 0.25);
     color: #a5b4fc;
-    padding: 0.4rem 0.8rem;
-    border-radius: 6px;
-    border: 1px solid rgba(99, 102, 241, 0.3);
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    border: 1px solid rgba(99, 102, 241, 0.4);
     font-family: monospace; 
-    font-weight: 600;
+    font-weight: 700;
+    
+    /* Glowing Orb Effect */
+    box-shadow: 0 0 60px rgba(99, 102, 241, 0.5), inset 0 0 20px rgba(99, 102, 241, 0.2);
+    text-shadow: 0 0 10px rgba(99, 102, 241, 0.5);
+    animation: pulse-glow 3s ease-in-out infinite;
+  }
+
+  @keyframes pulse-glow {
+    0%, 100% {
+      box-shadow: 0 0 30px rgba(99, 102, 241, 0.3), inset 0 0 10px rgba(99, 102, 241, 0.1);
+      transform: scale(1);
+    }
+    50% {
+      box-shadow: 0 0 80px rgba(99, 102, 241, 0.6), inset 0 0 30px rgba(99, 102, 241, 0.4);
+      transform: scale(1.02);
+    }
   }
 
   .cta-buttons {
@@ -227,7 +243,7 @@ hide:
 <div class="hero-section">
   <div class="hero-content">
     <h1 class="hero-title">Arqon Runtime Optimizer</h1>
-    <h2 class="hero-subtitle" style="font-weight: 700; color: #fff;">Optimization isn't a workflow anymore.<br>It's a control loop.</h2>
+    <h2 class="hero-subtitle">Optimization isn't a workflow anymore.<br>It's a control loop.</h2>
     <p class="hero-support">Safe self-optimization, robustness, and resilience for live systems—with microsecond-class overhead and deterministic governance.</p>
     
     <div class="hero-bullets">
@@ -247,7 +263,19 @@ hide:
 
 <!-- 1. The Beachhead Picks (Fastest Adoption) -->
 <div style="margin: 4rem 0;">
-  <h2 style="text-align: center; font-size: 2.2rem; margin-bottom: 3rem;">Real-Time Policy Autopilot</h2>
+  <h2 style="text-align: center; font-size: 2.2rem; margin-bottom: 2rem;">Real-Time Policy Autopilot</h2>
+  
+  <!-- Poignant Example -->
+  <div style="text-align: center; max-width: 700px; margin: 0 auto 3rem; background: rgba(15, 23, 42, 0.6); padding: 1.5rem; border-radius: 12px; border: 1px solid rgba(99, 102, 241, 0.2);">
+    <div style="font-family: monospace; font-size: 1.25rem;">
+        <span style="color: #94a3b8; text-decoration: line-through; opacity: 0.6;">const TIMEOUT = 300;</span>
+        <span style="margin: 0 1rem; color: #6366f1;">→</span>
+        <span style="color: #4ade80; font-weight: bold;">fn timeout(load, latency) -> ms</span>
+    </div>
+    <div style="margin-top: 0.8rem; font-size: 1rem; color: #cbd5e1;">
+        Don't deploy a number. Deploy a <strong>policy</strong> that continuously finds the right number.
+    </div>
+  </div>
   <div class="grid-4">
     <div class="card">
       <div style="color: #6366f1; font-weight: 700; margin-bottom: 0.5rem; text-transform: uppercase; font-size: 0.85rem;">Beachhead 1</div>

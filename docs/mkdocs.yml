@@ -23,6 +23,7 @@ theme:
     - search.suggest
     - navigation.instant
   palette:
+    # Dark mode is the default
     - scheme: slate
       primary: deep purple
       accent: amber
@@ -74,6 +75,12 @@ extra:
     - icon: fontawesome/brands/x-twitter
       link: https://twitter.com/novelbytelabs
   generator: false
+
+extra_css:
+  - stylesheets/extra.css
+
+extra_javascript:
+  - javascripts/theme.js
 
 nav:
   - Home: index.md

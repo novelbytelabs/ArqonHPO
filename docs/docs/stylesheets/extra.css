@@ -5,6 +5,11 @@
   --md-accent-fg-color: #f59e0b;
 }
 
+/* Force dark mode as default */
+body {
+  --md-default-scheme: slate;
+}
+
 [data-md-color-scheme="slate"] {
   --md-bg-color: #0f172a;
   --md-code-bg-color: #1e293b;
