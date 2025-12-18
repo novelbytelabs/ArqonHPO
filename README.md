@@ -4,46 +4,63 @@
 [![Docs](https://img.shields.io/badge/docs-mkdocs-blue)](https://novelbytelabs.github.io/ArqonHPO/)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
-**Adaptive Hyperparameter Optimization** with automatic strategy selection and real-time parameter tuning.
+**Machine-speed optimization for live systems.**  
+ArqonHPO is a Rust-first optimization runtime that can sit *inside* a control loop: it proposes bounded parameter updates, ingests telemetry/reward signals, and produces deterministic, auditable decisions with sub-microsecond overhead.
 
-ArqonHPO automatically detects your objective function's landscape and selects the optimal optimization strategy:
+It’s not “run an offline study.” It’s: **measure → decide → apply → measure again**.
 
-- **Smooth, expensive simulations?** → Nelder-Mead (minimizes evaluations)
-- **Noisy, cheap ML training?** → TPE (handles variance)
-- **Live production systems?** → **NEW!** Adaptive Engine (microsecond-latency tuning)
+---
 
-## ✨ What's New in v0.2.0
+## What ArqonHPO is for
 
-- 🔥 **Adaptive Engine** - Real-time SPSA optimizer with µs latency
-- 🛡️ **Hot-Path Enforcement** - Constitution-mandated safety (no HashMap in critical paths)
-- ⚡ **109ns T1 Apply** - Sub-microsecond config updates
-- 🔒 **Safety Executor** - Guardrails prevent unbounded changes
-- 📊 **Audit Queue** - Lock-free, non-blocking event logging
+ArqonHPO shines when:
 
-## Features
+- Your system has **knobs** (timeouts, batch sizes, thresholds, weights, cache TTLs, controller gains…)
+- You have **telemetry or a reward signal** (latency, error rate, cost/request, quality proxy…)
+- The “best settings” **move over time** (drift, load changes, hardware changes, data changes)
+- Human tuning is expensive and slow, and “set it once” goes stale
 
-- 🚀 **300x Faster** - Run 30,000 trials in the time Python solvers run 100
-- 🦀 **Rust Core** - Zero-overhead, deterministic execution
-- 🎯 **Auto-Pilot** - Automatically selects Nelder-Mead (smooth) or TPE (noisy)
-- 🐍 **Python Ready** - Simple `pip install arqonhpo`
-- 🔁 **Reproducible** - Seed-controlled, artifact-auditable runs
-- ⚙️ **Adaptive Engine** - Live parameter tuning for production systems
+If your evaluation is extremely expensive (minutes/hours per trial), classic offline HPO can be a better fit.  
+If your loop must run at machine speed, ArqonHPO is built for that.
 
-## 🚀 Performance
+---
 
-**ArqonHPO is built for one thing: Speed.**
+## Core idea (one sentence)
 
-| Metric | ArqonHPO | Optuna (TPE) | Advantage |
-|--------|----------|--------------|-----------|
-| **100 Trials (2D)** | 1.1 ms | 344 ms | **313x faster** |
-| **Throughput** | ~33,000/sec | ~300/sec | **100x volume** |
-| **T1 Apply** | 109 ns | N/A | **Hot path optimized** |
-| **T2 Decision** | 200 ns | N/A | **Microsecond latency** |
+**Optuna optimizes experiments. ArqonHPO optimizes decisions.**
 
-> **"Speed is King"** - When evaluations are cheap (<10ms), ArqonHPO allows you to brute-force the problem with massive volume, beating smarter but slower algorithms.
+---
 
-### ⚡ Ideal for Multi-Agent Systems
-If you are building a **MAS** with <1ms deadlines, ArqonHPO is the *only* viable choice.
+## What’s in the box
+
+### Tier-2: Adaptive decision engine (hot path)
+- Online optimizer designed for **continuous tuning under drift**
+- Runs under strict time budgets
+- Produces **bounded, stable deltas** rather than “wild” parameter jumps
+
+### Tier-1: Safety executor (hot path)
+- Guardrails: bounds, max-delta, cooldown/dwell, rollback hooks
+- Non-blocking audit + telemetry emission (never blocks the hot path)
+
+### Determinism + evidence
+- Stable parameter ordering (registry) for replayability
+- Seeded decisioning, audit trail, and artifacts for “why did it change?”
+
+---
+
+## Performance
+
+ArqonHPO is designed to add **near-zero overhead** to a live loop.
+
+Typical p50 numbers (example from local benches):
+
+- **T2 (decide/observe): ~200–235 ns**
+- **T1 (apply): ~110–120 ns**
+
+Your actual performance will depend on CPU, build flags, and integration, but the design goal is consistent:
+**fast enough to be in the loop, safe enough to ship.**
+
+---
 
 ## Installation
 
@@ -51,7 +68,7 @@ If you are building a **MAS** with <1ms deadlines, ArqonHPO is the *only* viable
 pip install arqonhpo
 ```
 
-Or build from source:
+Build from source (Python bindings via maturin):
 
 ```bash
 git clone https://github.com/novelbytelabs/ArqonHPO.git
@@ -60,31 +77,36 @@ pip install maturin
 maturin develop -m bindings/python/Cargo.toml
 ```
 
-## Quick Start
+---
+
+## Quick start (ask/tell loop)
+
+> This example shows the *shape* of integration: you supply measurements, ArqonHPO returns proposals.
 
 ```python
 import json
 from arqonhpo import ArqonSolver
 
-# Define your objective function
 def objective(params):
     x, y = params["x"], params["y"]
-    return (x - 2)**2 + (y + 1)**2  # Minimum at (2, -1)
+    return (x - 2)**2 + (y + 1)**2
 
-# Configure solver
 config = {
     "seed": 42,
-    "budget": 50,
+    "budget": 200,
     "bounds": {
         "x": {"min": -10.0, "max": 10.0},
         "y": {"min": -10.0, "max": 10.0}
-    }
+    },
+    # Optional production-style safety knobs (examples):
+    # "max_delta": {"x": 0.25, "y": 0.25},
+    # "cooldown_steps": 5,
 }
 
 solver = ArqonSolver(json.dumps(config))
 
-# Optimization loop
-best = {"value": float('inf')}
+best = {"value": float("inf"), "params": None}
+
 while (batch := solver.ask()) is not None:
     results = []
     for params in batch:
@@ -97,63 +119,61 @@ while (batch := solver.ask()) is not None:
 print(f"Best: {best['params']} -> {best['value']:.4f}")
 ```
 
+---
+
+## How it fits in a real system
+
+ArqonHPO expects three things:
+
+1. **Telemetry / reward signal**
+   A scalar “how are we doing?” (latency, error rate, cost, quality proxy, etc.)
+
+2. **Actuation surface**
+   Parameters you can safely change at runtime
+
+3. **Policy / constraints**
+   Bounds + limits that make changes safe and reversible
+
+ArqonHPO does **not** require you to adopt a giant platform.
+But to deliver the “runtime optimization” promise, you will typically integrate at least:
+
+* a telemetry digest (even minimal),
+* safe actuation,
+* guardrails (policy).
+
+---
+
+## Constitution (merge-blocking invariants)
+
+ArqonHPO is developed under a Constitution: a living spec of invariants and timing contracts.
+
+Highlights:
+
+* **Hot-Path Representation:** Tier-1/Tier-2 code uses dense parameter vectors (no `HashMap` in hot path)
+* **Timing Contracts:** T1/T2 must remain within defined budgets (p99 targets)
+* **Non-blocking observability:** audit/telemetry must never block the hot path
+* **Deterministic replay:** decisions must be reproducible from artifacts + seeds
+
+See: `project/constitution.md`
+
+---
+
 ## Documentation
 
-- [**Quickstart**](https://novelbytelabs.github.io/ArqonHPO/quickstart/) - Get running in 5 minutes
-- [**Cookbook**](https://novelbytelabs.github.io/ArqonHPO/cookbook/) - Sim tuning & ML tuning recipes
-- [**API Reference**](https://novelbytelabs.github.io/ArqonHPO/reference/python/)
+- [**Quickstart**](https://novelbytelabs.github.io/ArqonHPO/documentation/quickstart/)
+- [**Cookbook (Recipes)**](https://novelbytelabs.github.io/ArqonHPO/documentation/cookbook/)
+- [**API Reference**](https://novelbytelabs.github.io/ArqonHPO/documentation/reference/python/)
+- [**Architecture**](https://novelbytelabs.github.io/ArqonHPO/why/architecture/)
 
-## Architecture
-
-```
-┌─────────────┐     ┌─────────────────────────────────────┐
-│   Python    │────▶│          arqonhpo._internal         │
-│   Client    │     │             (PyO3)                  │
-└─────────────┘     └────────────────┬────────────────────┘
-                                     │
-                    ┌────────────────▼────────────────────┐
-                    │          arqonhpo-core              │
-                    │  ┌─────────────────────────────┐   │
-                    │  │    Solver State Machine     │   │
-                    │  │  Probe→Classify→Refine      │   │
-                    │  └─────────────────────────────┘   │
-                    │  ┌─────────────────────────────┐   │
-                    │  │       Strategies            │   │
-                    │  │  • NelderMead (Structured)  │   │
-                    │  │  • TPE (Chaotic)            │   │
-                    │  └─────────────────────────────┘   │
-                    └─────────────────────────────────────┘
-                                     │
-                    ┌────────────────▼────────────────────┐
-                    │           hotpath (v0.2.0)          │
-                    │  ┌─────────────────────────────┐   │
-                    │  │  Tier 2: AdaptiveEngine     │   │
-                    │  │  • SPSA Optimizer           │   │
-                    │  │  • Telemetry Ingestion      │   │
-                    │  └─────────────────────────────┘   │
-                    │  ┌─────────────────────────────┐   │
-                    │  │  Tier 1: SafetyExecutor     │   │
-                    │  │  • Guardrails & Rollback    │   │
-                    │  │  • Audit Queue (lock-free)  │   │
-                    │  └─────────────────────────────┘   │
-                    └─────────────────────────────────────┘
-```
-
-## Constitution
-
-ArqonHPO is developed under a **Constitution** - a living document that codifies invariants, contracts, and quality standards. Key principles:
-
-- **Hot-Path Enforcement (VIII.3)**: No `HashMap` in Tier 1/2 code
-- **Timing Contracts (VIII.4)**: T1 ≤ 100µs, T2 ≤ 1000µs (p99)
-- **Audit Completeness**: No silent drops, lock-free queuing
-
-See [`.specify/memory/constitution.md`](.specify/memory/constitution.md) for the full document.
+---
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+See `project/CONTRIBUTING.md`.
+
+---
 
 ## License
 
-Apache License 2.0 - see [LICENSE](LICENSE) for details.
+Apache License 2.0 — see `project/LICENSE`.
 
