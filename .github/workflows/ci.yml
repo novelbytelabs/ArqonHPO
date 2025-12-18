@@ -21,7 +21,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        rust: [stable, "1.82"]  # MSRV = 1.82 (backtrace 0.3.76 requires it)
+        rust: [stable, "1.82"] # MSRV = 1.82 (backtrace 0.3.76 requires it)
         exclude:
           # Only test MSRV on Linux to save CI minutes
           - os: macos-latest
@@ -47,8 +47,6 @@ jobs:
         uses: Swatinem/rust-cache@v2
         with:
           key: ${{ matrix.os }}-${{ matrix.rust }}
-
-
 
       - name: Check
         run: cargo check --workspace
@@ -178,7 +176,7 @@ jobs:
           python-version: "3.10"
 
       - name: Install MkDocs
-        run: pip install mkdocs-material mike
+        run: pip install mkdocs-material mike mkdocs-git-revision-date-localized-plugin mkdocs-minify-plugin
 
       - name: Build Docs
         run: cd docs && mkdocs build
