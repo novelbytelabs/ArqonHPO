@@ -1,40 +1,26 @@
 <!--
 Sync Impact Report:
 
-- ArqonHPO Constitution v1.4.0 → v1.4.1 (2025-12-17)
+- ArqonHPO Constitution v1.4.1 → v1.6.0 (2025-12-19)
 
-## Amendment Summary (v1.4.1)
-This amendment strengthens the integrity of VIII.3 with specific normative definitions for the
-Hot Path scope, forbidden types, and enforcement mechanisms. It is a strict tightening of v1.4.0
-adding explicit technical mandates for merge blocking.
+## Amendment Summary (v1.6.0)
+Added comprehensive governance for the **ArqonShip** DevSecOps automation layer. This defines the "Constitution Gap" principles for Codebase Oracle (indexing), Self-Healing CI (LLM safety), Automations, and CLI contracts.
 
-## Added Normative Specifics (PATCH bump - Enforcement Tightening)
-- **Hot Path Definition**: Defined as code within T2_decision / T1_apply timing windows.
-- **Forbidden Types**: Explicitly bans `std::collections::HashMap` and `hashbrown::HashMap`.
-- **ParamVec/DeltaVec**: Defined as dense ordered numeric vectors (SmallVec/Vec).
-- **No Escape Hatches**: Explicit ban on `#[allow(clippy::disallowed_types)]`.
-- **Enforcement**: Mandates `clippy.toml` config and CI `-D warnings`.
-- **Artifact Contract**: Pins exact field names (`seed`, `registry_hash64`, `registry_names`, `param_len`, `params_vec`).
-- **Constructor Rule**: Public APIs must strictly enforce dense types (no named-param backdoors).
-
-## Prior Amendments
-- v1.4.0 (2025-12-17): Hot-Path Parameter Representation (v1.4.0)
-- v1.3.0 (2025-12-16): Tier 1/2/Ω architecture, Variant Catalog, timing contracts
-- v1.2.0: SPSA, Safety Executor, Atomic Config, Telemetry Digest (Adaptive Engine)
+## Added Sections (New Core Principles)
+- **XVI. Codebase Oracle Principles**: Governance for `arqon scan`, graph determinism, and local privacy.
+- **XVII. Self-Healing CI Principles**: Safety rails for `arqon heal`, LLM prompt governance, and jailbreak prevention.
+- **XVIII. CI/CD Automation Principles**: Integrity rules for GitHub Actions and auto-merge.
+- **XIX. ArqonShip CLI Contracts**: Stability guarantees for the ArqonShip CLI and artifacts.
 
 ## Templates Requiring Updates
-- ✅ all templates aligned with v1.4.0 (no template changes needed for this enforcement detail)
-
-## Reference Evidence
-- Branch: 005-adaptive-engine
-- Benchmark proof: T2_decision=210ns, T1_apply=107ns
+- ✅ None immediate (ArqonShip is additive).
 -->
 
 # ArqonHPO Constitution
 
-**Version**: 1.4.1  
+**Version**: 1.6.0  
 **Ratification Date**: 2025-12-13  
-**Last Amended**: 2025-12-17  
+**Last Amended**: 2025-12-19  
 
 This document defines the **non-negotiable principles** that govern how ArqonHPO is designed, evolved, and maintained.
 
@@ -43,7 +29,7 @@ It exists to protect ArqonHPO from accidental bloat, regression, silent breakage
 If a decision conflicts with this constitution, **the decision is wrong**.
 
 > **Spec Kit Note:** This constitution is the hard sandbox for all `/speckit.*` commands.  
-> Specs, plans, and tasks **must not** violate the constraints in Sections II–XI.
+> Specs, plans, and tasks **must not** violate the constraints in Sections II–XIX.
 
 ---
 
@@ -1354,6 +1340,109 @@ When introducing the project, follow: **Company → Product → Category → Eng
 - SDKs (for example, Python) MUST be thin bindings over the same core, not reimplementing solver logic.
 - Artifacts MUST be language-agnostic (JSON) and serve as the compatibility contract between surfaces.
 
-**Version**: 1.5.0  
+**Version**: 1.6.0  
 **Ratified**: 2025-12-17  
-**Last Amended**: 2025-12-17  
+**Last Amended**: 2025-12-19  
+
+---
+
+# XVI. Codebase Oracle Principles (ArqonShip)
+
+ Governance for the `arqon scan` and indexing subsystem.
+
+### 1. Graph Determinism
+- **Immutability:** AST parsing (Tree-sitter) must be deterministic. The same codebase state must ALWAYS produce the exact same graph structure and edge set.
+- **Reproducibility:** Embeddings generation must use pinned model versions. Randomness in embeddings (e.g. dropout during inference) is forbidden.
+- **Verification:** `arqon scan --verify` must hash the generated graph and match against the artifact hash.
+
+### 2. Schema Stability
+- The `.arqon/graph.json` schema is a **public compatibility surface**.
+- Changes to `GraphNode` or `GraphEdge` structures require semantic versioning.
+- Breaking schema changes require a MAJOR version bump of the ArqonShip CLI.
+- All artifacts must include a schema version header.
+
+### 3. Privacy & Local-First
+- **Zero Data Leakage:** All indexing, parsing, and embedding happens LOCALLY.
+- **No Cloud APIs:** It is strictly forbidden for the default configuration to contact external LLM APIs (OpenAI, Anthropic) for indexing.
+- **Embeddings:** Must be generated with local models (e.g., `all-MiniLM-L6-v2` via `ollama` or `rust-bert`).
+
+### 4. Incremental Scan Safety
+- **Atomic Updates:** Partial scans must not corrupt the graph state.
+- **Rollback:** If a scan fails mid-update, the `.arqon/` directory must revert to the previous valid state.
+- **Corruption Detection:** The system must detect corrupted artifacts on startup and trigger a full rebuild.
+
+---
+
+# XVII. Self-Healing CI Principles (ArqonShip)
+
+Safety rails for the `arqon heal` autonomous repair features.
+
+### 1. LLM Governance
+- **Versioned Prompts:** All prompts used for code generation must be version-controlled in the repo.
+- **Pinned Models:** The system must use specific, pinned model versions (e.g., `deepseek-coder:1.3b-Q4_K_M`) to ensure consistent behavior.
+- **Testing:** Prompt templates must include concrete examples in the test suite.
+
+### 2. Healing Safety Guardrails
+- **Attempt Limits:** Max 2 healing attempts per CI run. Infinite loops are strictly forbidden.
+- **Validation Gates:** Generated code must pass: 
+    1. Syntax check
+    2. Lint check (`cargo clippy`, `ruff`)
+    3. The original failing test
+- **Fail Closed:** If the repair logic fails or the 2 attempts are exhausted, the CI job fails explicitly. Silent fallbacks are forbidden.
+
+### 3. Security Constraints
+- **Structured Feed:** Only feed structured error data to the LLM (file, line, error message).
+- **No Raw Test Output:** Raw `stdout`/`stderr` from user tests MUST NOT be fed directly to the LLM prompt to prevent prompt injection/jailbreaking via malicious test output.
+- **Scope Limits:** The LLM is forbidden from modifying CI configuration files (`.github/workflows`), secret files, or version manifests.
+
+### 4. Evidence Requirements
+- **Audit Trails:** Every healing attempt must log the input prompt, the raw LLM output, and the validation result.
+- **Artifacts:** Healing logs must be preserved as CI artifacts for post-mortem analysis.
+
+---
+
+# XVIII. CI/CD Automation Principles (ArqonShip)
+
+Integrity rules for the fully automated pipeline.
+
+### 1. GitHub Actions Integrity
+- **Mandatory Checks:** Automated operations (`arqon ship`, self-healing) must run ALL required checks.
+- **No Bypasses:** The use of `[skip ci]` or bypass flags by the automation is forbidden unless strictly scoped to documentation-only updates.
+- **Token Scope:** The `GITHUB_TOKEN` used by ArqonShip must have the minimal necessary scopes (read repo, contents; write PRs).
+
+### 2. Auto-Merge Safety
+- **Green CI Mandatory:** Auto-merge is only permitted if the CI suite is fully passing.
+- **Label Gating:** Auto-merge must respect `do-not-merge`, `wip`, or `blocked` labels.
+- **Opt-In:** Auto-merge must be an explicit opt-in preference, not the default.
+- **Failure Notification:** If auto-merge fails, the system must notify the user (via PR comment), not retry silently.
+
+### 3. Rate Limiting & Quotas
+- **API Citizenship:** `arqon ship` must implement exponential backoff for all GitHub API calls.
+- **Quota Management:** The system must enforce a rate limit (e.g., max 10 PR status polls per minute) to prevent exhausting the user's API quota.
+
+---
+
+# XIX. ArqonShip CLI Contracts
+
+Stability guarantees for the developer tools.
+
+### 1. Command Stability
+- **Public API:** The CLI commands (`init`, `scan`, `chat`, `verify`, `ship`, `heal`) and their flags are the public API.
+- **SemVer Compliance:** Renaming or removing command flags requires a MAJOR version bump.
+- **Deprecation Policy:** Deprecated commands must show warnings for at least 1 MINOR version before removal.
+
+### 2. Configuration Contract
+- **Schema Versioning:** The `.arqon/config.toml` file must be versioned.
+- **Fail Fast:** Invalid configuration must cause the CLI to exit immediately with a helpful error message.
+- **Automated Migration:** Breaking config changes must be accompanied by an `arqon migrate-config` capability.
+
+### 3. Artifact Lifecycle
+- **Freshness:** `.arqon/graph.json` must be updated on every `arqon scan`.
+- **Garbage Collection:** `.arqon/vectors.lance/` must have a configurable GC policy (e.g., delete vectors older than 30 days) to prevent unrestricted disk usage growth.
+- **Metadata:** All generated artifacts must include: schema version, creation timestamp, and ArqonShip version.
+
+---
+
+**Version**: 1.6.0  
+**Ratified**: 2025-12-17  
+**Last Amended**: 2025-12-19  
