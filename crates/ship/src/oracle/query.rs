@@ -30,7 +30,7 @@ impl QueryEngine {
         })
     }
 
-    pub async fn query(&self, text: &str) -> Result<Vec<QueryResult>> {
+    pub async fn query(&mut self, text: &str) -> Result<Vec<QueryResult>> {
         // 1. Embed query
         let vec = self.model.embed(text)?;
         

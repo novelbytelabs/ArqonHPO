@@ -7313,6 +7313,7 @@ dependencies = [
  "candle-core",
  "candle-nn",
  "candle-transformers",
+ "chrono",
  "clap",
  "hf-hub",
  "ignore",

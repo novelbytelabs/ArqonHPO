@@ -3,21 +3,21 @@ mod parser_py;
 mod graph;
 mod edges;
 mod store;
-mod hash;
+pub mod hash;
 mod embed;
 mod vector_store;
 mod schema;
 
 use anyhow::Result;
-use crate::config::Config;
 use std::path::Path;
 use ignore::WalkBuilder; // Add 'ignore' crate for .gitignore support
 use indicatif::{ProgressBar, ProgressStyle}; // Add 'indicatif'
 
 pub use store::OracleStore;
 pub use vector_store::VectorStore;
+pub mod query;
 
-pub async fn scan_codebase(config: &Config, root: &Path) -> Result<()> {
+pub async fn scan_codebase(root: &Path) -> Result<()> {
     println!("Scanning codebase at {:?}", root);
     
     // 1. Init Stores

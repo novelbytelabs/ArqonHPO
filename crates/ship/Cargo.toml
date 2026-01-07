@@ -10,6 +10,7 @@ arrow-schema = "57.1.0"
 candle-core = "0.9.1"
 candle-nn = "0.9.1"
 candle-transformers = "0.9.1"
+chrono = "0.4.42"
 clap = { workspace = true, features = ["derive"] }
 hf-hub = { version = "0.4.3", features = ["ureq", "rustls-tls"] }
 ignore = "0.4.25"

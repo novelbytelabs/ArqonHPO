@@ -1,9 +1,6 @@
-use anyhow::{Result};
+use anyhow::Result;
 use lancedb::{connect, Table, Connection};
-use lancedb::query::{ExecutableQuery, QueryBase};
-use arrow_array::{RecordBatch, RecordBatchIterator, FixedSizeListArray, Int64Array, StringArray};
-use arrow_array::types::Float32Type;
-use arrow_schema::{Schema, Field, DataType};
+use lancedb::arrow::arrow_schema::{Schema, Field, DataType};
 use std::sync::Arc;
 
 pub struct VectorStore {
@@ -40,31 +37,13 @@ impl VectorStore {
         Ok(())
     }
 
-    pub async fn add_embeddings(&self, ids: Vec<i64>, vectors: Vec<Vec<f32>>, texts: Vec<String>) -> Result<()> {
-        if let Some(table) = &self.table {
-            // Build Arrow Arrays (simplified construction)
-            // Real impl nees careful FixedSizeListArray construction
-            // Placeholder for brevity in Phase 1
-             let schema = Arc::new(Schema::new(vec![
-                Field::new("id", DataType::Int64, false),
-                Field::new("vector", DataType::FixedSizeList(
-                    Arc::new(Field::new("item", DataType::Float32, true)),
-                    384 
-                ), false),
-                Field::new("text", DataType::Utf8, false),
-            ]));
-            
-            // Construct Batch... (omitted for brevity, requires verbose Arrow code)
-            // table.add(batches).execute().await?;
-        }
+    pub async fn add_embeddings(&self, _ids: Vec<i64>, _vectors: Vec<Vec<f32>>, _texts: Vec<String>) -> Result<()> {
+        // TODO: Implement actual Arrow batch construction and insertion
         Ok(())
     }
     
-    pub async fn search(&self, query_vec: Vec<f32>, limit: usize) -> Result<Vec<(i64, f32)>> {
-        if let Some(table) = &self.table {
-            // table.search(query_vec).limit(limit).execute()...
-            return Ok(vec![]);
-        }
+    pub async fn search(&self, _query_vec: Vec<f32>, _limit: usize) -> Result<Vec<(i64, f32)>> {
+        // TODO: Implement actual vector search
         Ok(vec![])
     }
 }

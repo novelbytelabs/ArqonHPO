@@ -8,8 +8,8 @@ pub struct PythonParser {
 impl PythonParser {
     pub fn new() -> Result<Self> {
         let mut parser = Parser::new();
-        let language = tree_sitter_python::LANGUAGE;
-        let language = unsafe { Language::from_raw(language) };
+        // tree-sitter 0.22+ API: LanguageFn into_raw() -> Language
+        let language: Language = tree_sitter_python::LANGUAGE.into();
         parser.set_language(&language)
             .context("Error loading Python grammar")?;
         Ok(Self { parser })

@@ -1,17 +1,13 @@
 mod config;
-
-use clap::{Parser, Subcommand};
-use std::path::{Path, PathBuf};
-use std::fs;
-use anyhow::{Context, Result};
-use config::Config;
+mod oracle;
+mod heal;
+mod ship;
 
 use clap::{Parser, Subcommand, Args};
 use std::path::{Path, PathBuf};
 use std::fs;
 use anyhow::{Context, Result};
 use config::Config;
-mod oracle;
 
 #[derive(Parser)]
 #[command(name = "arqon")]
@@ -34,9 +30,9 @@ enum Commands {
     /// Query the Codebase Oracle
     Chat(ChatArgs),
     /// Autonomous Self-Healing CI
-    Heal,
+    Heal(HealArgs),
     /// Governed Release Pipeline
-    Ship,
+    Ship(ShipArgs),
 }
 
 #[derive(Args)]
@@ -48,6 +44,28 @@ struct ChatArgs {
     /// Use CLI output mode instead of TUI (default for now)
     #[arg(long)]
     cli: bool,
+}
+
+#[derive(Args)]
+struct HealArgs {
+    /// Path to the test output file (cargo test --message-format=json)
+    #[arg(long)]
+    log_file: Option<PathBuf>,
+    
+    /// Maximum healing attempts (default: 2)
+    #[arg(long, default_value = "2")]
+    max_attempts: u32,
+}
+
+#[derive(Args)]
+struct ShipArgs {
+    /// Skip pre-flight checks
+    #[arg(long)]
+    skip_checks: bool,
+    
+    /// Dry run (don't create PR)
+    #[arg(long)]
+    dry_run: bool,
 }
 
 #[tokio::main]
@@ -65,14 +83,14 @@ async fn main() -> Result<()> {
         Commands::Init => handle_init(&cli.config)?,
         Commands::Scan => {
             let root = std::env::current_dir()?;
-            oracle::scan_codebase(&config, &root).await?;
+            oracle::scan_codebase(&root).await?;
         },
         Commands::Chat(args) => {
             let root = std::env::current_dir()?;
             let db_path = root.join(".arqon/graph.db");
             let vector_path = root.join(".arqon/vectors.lance");
             
-            let engine = oracle::query::QueryEngine::new(
+            let mut engine = oracle::query::QueryEngine::new(
                 db_path.to_str().unwrap(),
                 vector_path.to_str().unwrap()
             ).await?;
@@ -82,8 +100,40 @@ async fn main() -> Result<()> {
                 println!("[{}] {} (Score: {})", res.path, res.name, res.score);
             }
         }
-        Commands::Heal => println!("TODO: Implement heal"),
-        Commands::Ship => println!("TODO: Implement ship"),
+        Commands::Heal(args) => {
+            println!("Starting self-healing pipeline...");
+            println!("Max attempts: {}", args.max_attempts);
+            println!("Heal command not yet fully implemented (LLM integration pending)");
+        }
+        Commands::Ship(args) => {
+            let root = std::env::current_dir()?;
+            println!("Starting release pipeline...");
+            
+            if !args.skip_checks {
+                let checker = ship::ConstitutionCheck::new(root.clone());
+                if !checker.run_all()? {
+                    println!("Constitution checks failed. Use --skip-checks to override.");
+                    std::process::exit(1);
+                }
+            }
+            
+            // Parse commits and calculate version
+            let parser = ship::CommitParser::new(root.clone());
+            let commits = parser.get_commits_since_last_tag()?;
+            
+            let current_version = ship::SemVer::parse("0.0.0")?; // TODO: Read from Cargo.toml
+            let next_version = ship::calculate_next_version(&current_version, &commits);
+            let changelog = ship::generate_changelog(&next_version, &commits);
+            
+            println!("Next version: v{}", next_version.to_string());
+            println!("\nChangelog:\n{}", changelog);
+            
+            if args.dry_run {
+                println!("\n[DRY RUN] Would create release PR");
+            } else {
+                println!("\n[INFO] To create PR, set GITHUB_TOKEN and run without --dry-run");
+            }
+        }
     }
 
     Ok(())

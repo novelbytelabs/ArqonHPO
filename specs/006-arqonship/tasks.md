@@ -41,46 +41,46 @@ Goal: Implement `arqon scan` and Query Interface (Graph + Vectors).
 - [x] T016 [US1] Implement `QueryEngine` combining SQL (graph) and Vector search in `crates/ship/src/oracle/query.rs`
 - [x] T017 [US1] Implement `arqon chat --cli` subcommand in `crates/ship/src/main.rs`
 - [x] T018 [US1] Add test: Verify graph extraction on `crates/core/src/lib.rs` (snapshot test)
-- [ ] T019 [US1] Add test: Verify vector search returns relevant snippet for "optimizer"
+- [x] T019 [US1] Add test: Verify vector search returns relevant snippet for "optimizer"
 
 ## Phase 3: [US2] Self-Healing CI
 Goal: Implement `arqon heal` autonomous repair loop.
 
 ### Analysis & Context
-- [ ] T020 [US2] Implement `LogParser` for `cargo test` JSON output in `crates/ship/src/heal/parser_rust.rs`
-- [ ] T021 [US2] Implement `LogParser` for `pytest` XML/text output in `crates/ship/src/heal/parser_py.rs`
-- [ ] T022 [US2] Implement `ContextBuilder` to fetch relevant graph nodes for failing file in `crates/ship/src/heal/context.rs`
+- [x] T020 [US2] Implement `LogParser` for `cargo test` JSON output in `crates/ship/src/heal/parser_rust.rs`
+- [x] T021 [US2] Implement `LogParser` for `pytest` XML/text output in `crates/ship/src/heal/parser_py.rs`
+- [x] T022 [US2] Implement `ContextBuilder` to fetch relevant graph nodes for failing file in `crates/ship/src/heal/context.rs`
 
 ### AI & Code Gen (Local LLM)
-- [ ] T023 [P] [US2] Implement `LlmClient` trait and Candle implementation (DeepSeek-1.3B) in `crates/ship/src/heal/llm.rs`
-- [ ] T024 [US2] Create prompt templates for Rust/Python repair in `crates/ship/src/heal/prompts.rs`
-- [ ] T025 [US2] Implement `HealingLoop` state machine (Analyze -> Prompt -> Gen -> Apply) in `crates/ship/src/heal/loop.rs`
+- [x] T023 [P] [US2] Implement `LlmClient` trait and Candle implementation (DeepSeek-1.3B) in `crates/ship/src/heal/llm.rs`
+- [x] T024 [US2] Create prompt templates for Rust/Python repair in `crates/ship/src/heal/prompts.rs`
+- [x] T025 [US2] Implement `HealingLoop` state machine (Analyze -> Prompt -> Gen -> Apply) in `crates/ship/src/heal/loop.rs`
 
 ### Safety & Governance
-- [ ] T026 [US2] Implement "Whole Block Replacement" logic to apply LLM fixes in `crates/ship/src/heal/apply.rs`
-- [ ] T027 [US2] Implement `VerificationGate` (check compile, lint, test) in `crates/ship/src/heal/verify.rs`
-- [ ] T028 [US2] Implement Audit Logging to `~/.arqon/audit.db` in `crates/ship/src/heal/audit.rs`
-- [ ] T029 [US2] Implement `arqon heal` command in `crates/ship/src/main.rs`
-- [ ] T030 [US2] Add test: Synthetic repair of missing semicolon (Rust)
-- [ ] T031 [US2] Add test: Synthetic repair of type error (Rust)
+- [x] T026 [US2] Implement "Whole Block Replacement" logic to apply LLM fixes in `crates/ship/src/heal/apply.rs`
+- [x] T027 [US2] Implement `VerificationGate` (check compile, lint, test) in `crates/ship/src/heal/verify.rs`
+- [x] T028 [US2] Implement Audit Logging to `~/.arqon/audit.db` in `crates/ship/src/heal/audit.rs`
+- [x] T029 [US2] Implement `arqon heal` command in `crates/ship/src/main.rs`
+- [x] T030 [US2] Add test: Synthetic repair of missing semicolon (Rust)
+- [x] T031 [US2] Add test: Synthetic repair of type error (Rust)
 
 ## Phase 4: [US3] Automated Release
 Goal: Implement `arqon ship` governed pipeline.
 
-- [ ] T032 [US3] Implement `ConstitutionCheck` (Clean git, Passing tests, No debt tags) in `crates/ship/src/ship/checks.rs`
-- [ ] T033 [US3] Implement Conventional Commits parser in `crates/ship/src/ship/commits.rs`
-- [ ] T034 [US3] Implement SemVer calculator and Changelog generator in `crates/ship/src/ship/version.rs`
-- [ ] T035 [US3] Implement GitHub PR creation via `reqwest` in `crates/ship/src/ship/github.rs`
-- [ ] T036 [US3] Implement `arqon ship` command in `crates/ship/src/main.rs`
-- [ ] T037 [US3] Add test: Verify `ship` fails on "TODO" existence without debt tag
+- [x] T032 [US3] Implement `ConstitutionCheck` (Clean git, Passing tests, No debt tags) in `crates/ship/src/ship/checks.rs`
+- [x] T033 [US3] Implement Conventional Commits parser in `crates/ship/src/ship/commits.rs`
+- [x] T034 [US3] Implement SemVer calculator and Changelog generator in `crates/ship/src/ship/version.rs`
+- [x] T035 [US3] Implement GitHub PR creation via `reqwest` in `crates/ship/src/ship/github.rs`
+- [x] T036 [US3] Implement `arqon ship` command in `crates/ship/src/main.rs`
+- [x] T037 [US3] Add test: Verify `ship` fails on "TODO" existence without debt tag
 
 ## Phase 5: Polish & TUI
 Goal: Interactive TUI and final integration.
 
-- [ ] T038 [P] Implement Ratatui-based interactive chat UI in `crates/ship/src/tui/chat.rs`
-- [ ] T039 Implement CI Workflow YAML `arqon-heal.yml` to run `arqon heal` on failure
-- [ ] T040 Performance pass: Ensure `scan` < 10s on ArqonHPO
-- [ ] T041 Write user documentation in `docs/arqon-ship.md`
+- [x] T038 [P] Implement Ratatui-based interactive chat UI in `crates/ship/src/tui/chat.rs`
+- [x] T039 Implement CI Workflow YAML `arqon-heal.yml` to run `arqon heal` on failure
+- [x] T040 Performance pass: Ensure `scan` < 10s on ArqonHPO
+- [x] T041 Write user documentation in `docs/arqon-ship.md`
 
 ## Dependencies
 - Phase 2 (Oracle) is prerequisite for Phase 3 (Heal) context retrieval.

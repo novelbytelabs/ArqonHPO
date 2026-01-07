@@ -96,6 +96,12 @@ nav:
           - Rust Core: documentation/reference/rust.md
           - CLI: documentation/reference/cli.md
       - Cookbook: documentation/cookbook/
+  - ArqonShip:
+      - arqonship/index.md
+      - Architecture: arqonship/architecture.md
+      - CLI Reference: arqonship/cli-reference.md
+      - Configuration: arqonship/configuration.md
+      - Developer Guide: arqonship/developer-guide.md
   - Community: community/index.md
   - Project:
       - About: project/about.md

@@ -36,14 +36,14 @@ impl MiniLM {
         Ok(Self { model, tokenizer, device })
     }
 
-    pub fn embed(&self, text: &str) -> Result<Vec<f32>> {
+    pub fn embed(&mut self, text: &str) -> Result<Vec<f32>> {
         let tokenizer = self.tokenizer.with_padding(None).with_truncation(None).map_err(Error::msg)?;
         let tokens = tokenizer.encode(text, true).map_err(Error::msg)?;
         
         let token_ids = Tensor::new(tokens.get_ids(), &self.device)?.unsqueeze(0)?;
         let token_type_ids = Tensor::new(tokens.get_type_ids(), &self.device)?.unsqueeze(0)?;
         
-        let embeddings = self.model.forward(&token_ids, &token_type_ids)?;
+        let embeddings = self.model.forward(&token_ids, &token_type_ids, None)?;
         
         // Mean pooling
         let (_n_sentence, n_tokens, _hidden_size) = embeddings.dims3()?;
@@ -57,5 +57,5 @@ impl MiniLM {
 
 fn normalize(tensor: &Tensor) -> Result<Tensor> {
     let sum_sq = tensor.sqr()?.sum_all()?.sqrt()?;
-    tensor.broadcast_div(&sum_sq)
+    Ok(tensor.broadcast_div(&sum_sq)?)
 }
