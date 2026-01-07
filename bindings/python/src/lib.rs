@@ -5,7 +5,7 @@
 //! at the hotpath crate boundary.
 #![allow(clippy::disallowed_types)] // Boundary code - HashMap allowed per VIII.3
 #![allow(non_local_definitions)]
-use arqonhpo_core::artifact::EvalTrace;
+use arqonhpo_core::artifact::{EvalTrace, SeedPoint};
 use arqonhpo_core::config::SolverConfig;
 use arqonhpo_core::machine::Solver;
 use pyo3::prelude::*;
@@ -49,6 +49,20 @@ impl ArqonSolver {
 
     fn get_history_len(&self) -> usize {
         self.inner.history.len()
+    }
+
+    /// Seed the solver with historical evaluations.
+    /// Input: JSON array of {"params": {...}, "value": f64, "cost": f64}
+    ///
+    /// Use cases:
+    /// - Warm-starting from previous optimization runs
+    /// - Streaming/online optimization where external systems generate evaluations
+    fn seed(&mut self, seed_json: String) -> PyResult<()> {
+        let seeds: Vec<SeedPoint> = serde_json::from_str(&seed_json).map_err(|e| {
+            PyErr::new::<pyo3::exceptions::PyValueError, _>(format!("Invalid seed data: {}", e))
+        })?;
+        self.inner.seed(seeds);
+        Ok(())
     }
 }
 
