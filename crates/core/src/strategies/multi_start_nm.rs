@@ -42,7 +42,7 @@ enum MultiStartPhase {
 /// Multi-start Nelder-Mead: runs K NM instances from diverse seed points
 pub struct MultiStartNM {
     config: MultiStartConfig,
-    dim: usize,
+    _dim: usize,
     /// All NM instances
     starts: Vec<NelderMead>,
     /// Currently active start index
@@ -115,7 +115,7 @@ impl MultiStartNM {
 
         Self {
             config,
-            dim,
+            _dim: dim,
             starts,
             active_idx: 0,
             best_per_start: vec![f64::INFINITY; num_starts],
@@ -128,18 +128,7 @@ impl MultiStartNM {
         }
     }
 
-    /// Check if we should switch to next start
-    fn should_switch(&self) -> bool {
-        self.stall_counter >= self.config.stall_threshold
-    }
 
-    /// Switch to the next start
-    fn switch_to_next(&mut self) {
-        if self.starts.len() > 1 {
-            self.active_idx = (self.active_idx + 1) % self.starts.len();
-            self.stall_counter = 0;
-        }
-    }
 
     /// Update tracking after an evaluation
     fn update_tracking(&mut self, value: f64) {

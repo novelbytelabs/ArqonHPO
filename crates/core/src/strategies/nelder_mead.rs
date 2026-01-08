@@ -41,19 +41,23 @@ enum NMState {
     },
     /// Waiting for expansion point evaluation
     Expansion {
+        #[allow(dead_code)]
         centroid: Vec<f64>,
         reflection: Vec<f64>,
+        #[allow(dead_code)]
         expansion: Vec<f64>,
         reflection_value: f64,
     },
     /// Waiting for outside contraction point evaluation
     OutsideContraction {
+        #[allow(dead_code)]
         centroid: Vec<f64>,
         contraction: Vec<f64>,
         reflection_value: f64,
     },
     /// Waiting for inside contraction point evaluation  
     InsideContraction {
+        #[allow(dead_code)]
         centroid: Vec<f64>,
         contraction: Vec<f64>,
     },
