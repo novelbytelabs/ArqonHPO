@@ -391,4 +391,49 @@ impl Solver {
             self.history.push(trace);
         }
     }
+
+    /// Ask for exactly ONE candidate configuration for online/real-time optimization.
+    ///
+    /// Unlike `ask()` which returns a full batch for PCR workflow, this method:
+    /// 1. Skips Probe/Classify phases
+    /// 2. Uses TPE strategy directly for incremental learning
+    /// 3. Returns exactly 1 candidate per call
+    ///
+    /// # Usage Pattern (Online Mode)
+    /// ```ignore
+    /// let mut solver = Solver::new(config);
+    /// loop {
+    ///     let candidate = solver.ask_one()?;  // Get ONE config
+    ///     let reward = evaluate(candidate);    // Measure performance
+    ///     solver.seed(vec![SeedPoint { params: candidate, value: reward, cost: 1.0 }]);
+    /// }
+    /// ```
+    #[tracing::instrument(skip(self))]
+    pub fn ask_one(&mut self) -> Option<HashMap<String, f64>> {
+        // Budget check
+        if self.history.len() >= self.config.budget as usize {
+            return None;
+        }
+
+        // Lazy-init TPE strategy for online mode
+        if self.strategy.is_none() {
+            let dim = self.config.bounds.len();
+            self.strategy = Some(Box::new(TPE::new(dim)));
+        }
+
+        // Get one candidate from TPE
+        if let Some(strat) = &mut self.strategy {
+            match strat.step(&self.config, &self.history) {
+                StrategyAction::Evaluate(points) => {
+                    // Return just the first candidate
+                    points.into_iter().next()
+                }
+                StrategyAction::Wait => None,
+                StrategyAction::Converged => None,
+            }
+        } else {
+            None
+        }
+    }
 }
+

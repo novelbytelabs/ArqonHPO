@@ -64,6 +64,27 @@ impl ArqonSolver {
         self.inner.seed(seeds);
         Ok(())
     }
+
+    /// Ask for exactly ONE candidate for online/real-time optimization.
+    ///
+    /// Unlike `ask()` which returns a full batch for PCR workflow, this method:
+    /// 1. Skips Probe/Classify phases
+    /// 2. Uses TPE strategy directly for incremental learning
+    /// 3. Returns exactly 1 candidate per call
+    ///
+    /// Usage pattern (Online Mode):
+    /// ```python
+    /// solver = ArqonSolver(config_json)
+    /// while True:
+    ///     candidate = solver.ask_one()  # Get ONE config
+    ///     if candidate is None:
+    ///         break
+    ///     reward = evaluate(candidate)
+    ///     solver.seed(json.dumps([{"params": candidate, "value": reward, "cost": 1.0}]))
+    /// ```
+    fn ask_one(&mut self) -> PyResult<Option<HashMap<String, f64>>> {
+        Ok(self.inner.ask_one())
+    }
 }
 
 #[pymodule]

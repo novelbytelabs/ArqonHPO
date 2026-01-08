@@ -132,12 +132,17 @@ impl TPE {
 impl Strategy for TPE {
     fn step(&mut self, config: &SolverConfig, history: &[EvalTrace]) -> StrategyAction {
         if history.len() < self.candidates {
-            // Not enough data to build model, fallback to random
-            use crate::probe::Probe;
-            use crate::probe::UniformProbe;
-            let p = UniformProbe;
-            return StrategyAction::Evaluate(p.sample(config).into_iter().take(1).collect());
+            // Not enough data to build model, fallback to random sampling
+            // Use history.len() as part of seed to ensure different samples on each call
+            let mut rng = get_rng(config.seed + history.len() as u64);
+            let mut candidate = HashMap::new();
+            for (name, domain) in &config.bounds {
+                let val = rng.random_range(domain.min..=domain.max);
+                candidate.insert(name.clone(), val);
+            }
+            return StrategyAction::Evaluate(vec![candidate]);
         }
+
 
         let mut rng = get_rng(config.seed + history.len() as u64);
 
