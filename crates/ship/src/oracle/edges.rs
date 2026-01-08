@@ -12,7 +12,7 @@ pub struct GraphEdge {
 
 pub struct EdgeBuilder {
     rust_parser: RustParser,
-    python_parser: PythonParser,
+    _python_parser: PythonParser,
 }
 
 impl EdgeBuilder {

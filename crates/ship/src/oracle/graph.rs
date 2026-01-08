@@ -17,7 +17,7 @@ pub struct GraphNode {
 
 pub struct GraphBuilder {
     rust_parser: RustParser,
-    python_parser: PythonParser,
+    _python_parser: PythonParser,
 }
 
 impl GraphBuilder {
