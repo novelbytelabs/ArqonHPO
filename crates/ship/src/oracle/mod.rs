@@ -39,7 +39,13 @@ pub async fn scan_codebase(root: &Path) -> Result<()> {
     
     let mut graph_builder = graph::GraphBuilder::new()?;
     let mut edge_builder = edges::EdgeBuilder::new()?;
-    // let embedding_model = embed::MiniLM::new()?; // Heavy load
+    let mut embedding_model = embed::MiniLM::new()?;
+
+    // Batch vectors for efficient insertion
+    let mut pending_ids: Vec<i64> = Vec::new();
+    let mut pending_vectors: Vec<Vec<f32>> = Vec::new();
+    let mut pending_texts: Vec<String> = Vec::new();
+    const BATCH_SIZE: usize = 50;
 
     for result in walker {
         match result {
@@ -57,8 +63,30 @@ pub async fn scan_codebase(root: &Path) -> Result<()> {
                             // 3. Extract Nodes
                             let nodes = graph_builder.extract_nodes(&relative_path, &content);
                             for node in &nodes {
-                                store.insert_node(node)?;
-                                // TODO: Embed and insert into LanceDB
+                                let node_id = store.insert_node(node)?;
+                                
+                                // Create text for embedding: name + docstring
+                                let embed_text = if let Some(ref doc) = node.docstring {
+                                    format!("{} {}: {}", node.node_type, node.name, doc)
+                                } else {
+                                    format!("{} {}", node.node_type, node.name)
+                                };
+                                
+                                // Embed and queue for batch insert
+                                if let Ok(vec) = embedding_model.embed(&embed_text) {
+                                    pending_ids.push(node_id);
+                                    pending_vectors.push(vec);
+                                    pending_texts.push(embed_text);
+                                }
+                                
+                                // Flush batch if full
+                                if pending_ids.len() >= BATCH_SIZE {
+                                    vector_store.add_embeddings(
+                                        std::mem::take(&mut pending_ids),
+                                        std::mem::take(&mut pending_vectors),
+                                        std::mem::take(&mut pending_texts),
+                                    ).await?;
+                                }
                             }
                             
                             // 4. Extract Edges
@@ -72,6 +100,11 @@ pub async fn scan_codebase(root: &Path) -> Result<()> {
             }
             Err(err) => eprintln!("Error walking path: {}", err),
         }
+    }
+    
+    // Flush any remaining vectors
+    if !pending_ids.is_empty() {
+        vector_store.add_embeddings(pending_ids, pending_vectors, pending_texts).await?;
     }
     
     pb.finish_with_message("Scan complete.");

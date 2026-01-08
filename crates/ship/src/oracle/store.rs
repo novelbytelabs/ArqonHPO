@@ -74,6 +74,34 @@ impl OracleStore {
             },
         ).ok()
     }
+
+    /// Get function signatures from the same file or nearby lines
+    pub fn get_related_signatures(&self, file_path: &str, near_line: Option<u32>) -> Vec<String> {
+        let line = near_line.unwrap_or(0) as i64;
+        
+        // Query functions/structs in the same file, ordered by proximity to the error line
+        let mut stmt = match self.conn.prepare(
+            "SELECT name, type, start_line, end_line FROM nodes 
+             WHERE path = ?1 AND type IN ('function', 'struct', 'impl')
+             ORDER BY ABS(start_line - ?2) LIMIT 5"
+        ) {
+            Ok(s) => s,
+            Err(_) => return Vec::new(),
+        };
+
+        let results = stmt.query_map(params![file_path, line], |row| {
+            let name: String = row.get(0)?;
+            let node_type: String = row.get(1)?;
+            let start: i64 = row.get(2)?;
+            let end: i64 = row.get(3)?;
+            Ok(format!("{} {} (L{}-L{})", node_type, name, start, end))
+        });
+
+        match results {
+            Ok(iter) => iter.filter_map(|r| r.ok()).collect(),
+            Err(_) => Vec::new(),
+        }
+    }
 }
 
 // Add optional helper trait

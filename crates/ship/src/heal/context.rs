@@ -40,8 +40,11 @@ impl ContextBuilder {
             source.lines().take(50).collect::<Vec<_>>().join("\n")
         };
         
-        // 3. TODO: Query store for related function signatures
-        let related_signatures = Vec::new();
+        // 3. Query store for related function signatures
+        let related_signatures = self.store.get_related_signatures(
+            &failure.file_path, 
+            failure.line
+        );
         
         Ok(HealContext {
             failure: failure.clone(),
