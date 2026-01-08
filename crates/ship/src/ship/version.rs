@@ -8,20 +8,24 @@ pub struct SemVer {
     pub patch: u32,
 }
 
+use std::fmt;
+
+impl fmt::Display for SemVer {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}.{}.{}", self.major, self.minor, self.patch)
+    }
+}
+
 impl SemVer {
     pub fn parse(version_str: &str) -> Result<Self> {
         let clean = version_str.trim_start_matches('v');
         let parts: Vec<&str> = clean.split('.').collect();
         
-        let major = parts.get(0).and_then(|s| s.parse().ok()).unwrap_or(0);
+        let major = parts.first().and_then(|s| s.parse().ok()).unwrap_or(0);
         let minor = parts.get(1).and_then(|s| s.parse().ok()).unwrap_or(0);
         let patch = parts.get(2).and_then(|s| s.parse().ok()).unwrap_or(0);
         
         Ok(Self { major, minor, patch })
-    }
-    
-    pub fn to_string(&self) -> String {
-        format!("{}.{}.{}", self.major, self.minor, self.patch)
     }
     
     pub fn bump_major(&self) -> Self {
