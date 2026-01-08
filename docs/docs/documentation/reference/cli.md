@@ -45,6 +45,12 @@ arqonhpo import --artifact artifact.json --state state.json
 arqonhpo tui --state state.json
 ```
 
+If the `arqonhpo` command is missing, install the Rust CLI binary:
+
+```bash
+cargo install --path crates/cli --bin arqonhpo-cli
+```
+
 ### Dashboard
 
 ```bash

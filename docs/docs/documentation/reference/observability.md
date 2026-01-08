@@ -50,6 +50,12 @@ Launch the dashboard server:
 arqonhpo dashboard --state state.json --addr 127.0.0.1:3030
 ```
 
+If the `arqonhpo` command is missing, install the Rust CLI binary:
+
+```bash
+cargo install --path crates/cli --bin arqonhpo-cli
+```
+
 Optional files:
 
 - `--events audit.jsonl` (audit stream)
