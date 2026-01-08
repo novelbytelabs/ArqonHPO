@@ -25,3 +25,4 @@ We aim to respond within 48 hours and will work with you to understand and addre
 
 Temporary `cargo audit` ignores are documented in `.cargo/audit.toml` and must include an expiry date and rationale.
 Current exception: `RUSTSEC-2023-0071` (rsa timing advisory) is ignored until 2025-06-30 while upstream fixes are pending.
+Informational advisories are suppressed in CI to avoid blocking on unmaintained/unsound notices; revisit as dependencies update.

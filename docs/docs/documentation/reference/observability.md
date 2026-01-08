@@ -54,3 +54,25 @@ Optional files:
 
 - `--events audit.jsonl` (audit stream)
 - `--actions actions.jsonl` (queues control actions)
+
+### Action Payloads
+
+The dashboard posts JSON to `--actions` for human-in-the-loop control. Example payloads:
+
+```json
+{"action":"pause","reason":"Investigating regression"}
+```
+
+```json
+{"action":"resume","reason":"Safe to continue"}
+```
+
+```json
+{"action":"rollback","reason":"Rollback to last stable"}
+```
+
+Each action is stored as JSONL with an added `timestamp_us` field.
+
+### Security Note
+
+The dashboard server is unauthenticated and intended for localhost use only. Run it behind a secured proxy if you need remote access.

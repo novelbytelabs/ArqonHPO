@@ -27,6 +27,7 @@ docs/context/
 # Keep a single checked-in JSON artifact for probe-gating experiment results.
 !dev/probe_gating_experiments/results.json
 !examples/safety_presets/*.json
+!examples/actions/*.jsonl
 
 # *.md
 *.bak
