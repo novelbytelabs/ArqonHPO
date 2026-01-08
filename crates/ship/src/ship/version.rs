@@ -102,6 +102,35 @@ impl SemVer {
             "No version found in Cargo.toml or workspace"
         ))
     }
+
+    /// Write version to a Cargo.toml file
+    pub fn write_to_cargo_toml(&self, path: &std::path::Path) -> Result<()> {
+        let content = std::fs::read_to_string(path)
+            .map_err(|e| anyhow::anyhow!("Failed to read Cargo.toml: {}", e))?;
+
+        let mut parsed: toml_edit::DocumentMut = content
+            .parse()
+            .map_err(|e| anyhow::anyhow!("Failed to parse Cargo.toml for editing: {}", e))?;
+
+        let version_str = self.to_string();
+
+        if let Some(package) = parsed.get_mut("package") {
+            if let Some(v) = package.get_mut("version") {
+                *v = toml_edit::value(version_str.clone());
+            }
+        } else if let Some(workspace) = parsed.get_mut("workspace") {
+            if let Some(package) = workspace.get_mut("package") {
+                if let Some(v) = package.get_mut("version") {
+                    *v = toml_edit::value(version_str);
+                }
+            }
+        }
+
+        std::fs::write(path, parsed.to_string())
+            .map_err(|e| anyhow::anyhow!("Failed to write Cargo.toml: {}", e))?;
+
+        Ok(())
+    }
 }
 
 /// Calculate next version based on conventional commits

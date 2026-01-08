@@ -45,6 +45,12 @@ arqonhpo import --artifact artifact.json --state state.json
 arqonhpo tui --state state.json
 ```
 
+### Dashboard
+
+```bash
+arqonhpo dashboard --state state.json --addr 127.0.0.1:3030
+```
+
 ## Global Options
 
 - `--log-format` (`pretty` or `json`)

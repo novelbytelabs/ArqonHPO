@@ -176,8 +176,15 @@ async fn main() -> Result<()> {
             println!("\nChangelog:\n{}", changelog);
 
             if args.dry_run {
-                println!("\n[DRY RUN] Would create release PR");
+                println!(
+                    "\n[DRY RUN] Would update root Cargo.toml to v{}",
+                    next_version
+                );
+                println!("[DRY RUN] Would create release PR");
             } else {
+                next_version.write_to_cargo_toml(&root.join("Cargo.toml"))?;
+                println!("[SUCCESS] Updated root Cargo.toml to v{}", next_version);
+
                 use ship::git::parse_git_remote;
                 use ship::github::GitHubClient;
 

@@ -41,3 +41,16 @@ arqonhpo tui --state state.json
 ```
 
 Quit with `q` or `Esc`.
+
+## Web Dashboard
+
+Launch the dashboard server:
+
+```bash
+arqonhpo dashboard --state state.json --addr 127.0.0.1:3030
+```
+
+Optional files:
+
+- `--events audit.jsonl` (audit stream)
+- `--actions actions.jsonl` (queues control actions)

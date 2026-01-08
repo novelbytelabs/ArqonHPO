@@ -28,6 +28,10 @@ use std::thread;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tiny_http::{Response, Server};
 
+const DASHBOARD_HTML: &str = include_str!("../assets/dashboard.html");
+const DASHBOARD_CSS: &str = include_str!("../assets/dashboard.css");
+const DASHBOARD_JS: &str = include_str!("../assets/dashboard.js");
+
 #[derive(Parser)]
 #[command(name = "arqonhpo", version, about = "ArqonHPO CLI")]
 struct Cli {
@@ -98,6 +102,16 @@ enum Commands {
         events: Option<PathBuf>,
         #[arg(long, default_value_t = 500)]
         refresh_ms: u64,
+    },
+    Dashboard {
+        #[arg(long)]
+        state: PathBuf,
+        #[arg(long)]
+        events: Option<PathBuf>,
+        #[arg(long)]
+        actions: Option<PathBuf>,
+        #[arg(long, default_value = "127.0.0.1:3030")]
+        addr: String,
     },
     Validate {
         #[arg(long)]
@@ -284,6 +298,12 @@ fn main() -> Result<()> {
             events,
             refresh_ms,
         } => tui_command(&state, events.as_ref(), refresh_ms, &metrics),
+        Commands::Dashboard {
+            state,
+            events,
+            actions,
+            addr,
+        } => dashboard_command(&state, events.as_ref(), actions.as_ref(), &addr, &metrics),
         Commands::Validate { config } => validate_command(&config),
     }
 }
@@ -568,6 +588,43 @@ fn tui_command(
     Ok(())
 }
 
+fn dashboard_command(
+    state_path: &Path,
+    events_path: Option<&PathBuf>,
+    actions_path: Option<&PathBuf>,
+    addr: &str,
+    metrics: &Metrics,
+) -> Result<()> {
+    tracing::info!(command = "dashboard", state = %state_path.display(), addr = %addr);
+    let server = Server::http(addr)
+        .map_err(|e| miette::miette!("Failed to bind dashboard server to {}: {}", addr, e))?;
+    println!("Dashboard running at http://{addr}");
+
+    for mut request in server.incoming_requests() {
+        let url: &str = request.url();
+        let (path, query) = split_query(url);
+        let response = match (request.method().as_str(), path) {
+            ("GET", "/") => plain_response(DASHBOARD_HTML, "text/html"),
+            ("GET", "/assets/dashboard.css") => plain_response(DASHBOARD_CSS, "text/css"),
+            ("GET", "/assets/dashboard.js") => plain_response(DASHBOARD_JS, "text/javascript"),
+            ("GET", "/api/state") => json_response(load_state_json(state_path, metrics)),
+            ("GET", "/api/summary") => json_response(load_summary_json(state_path)),
+            ("GET", "/api/events") => {
+                let params = parse_query(query);
+                json_response(load_events_json(events_path, &params))
+            }
+            ("GET", "/api/actions") => {
+                let params = parse_query(query);
+                json_response(load_actions_json(actions_path, &params))
+            }
+            ("POST", "/api/actions") => json_response(store_action(&mut request, actions_path)),
+            _ => Response::from_string("Not found").with_status_code(404),
+        };
+        let _ = request.respond(response);
+    }
+    Ok(())
+}
+
 fn draw_tui(frame: &mut Frame, state: Option<&SolverState>, events: &[String]) {
     let layout = Layout::default()
         .direction(Direction::Vertical)
@@ -710,6 +767,210 @@ fn read_json<T: DeserializeOwned>(path: &Path) -> Result<T> {
     serde_json::from_str(&contents)
         .into_diagnostic()
         .with_context(|| format!("Invalid JSON in {}", path.display()))
+}
+
+fn split_query(url: &str) -> (&str, Option<&str>) {
+    if let Some((path, query)) = url.split_once('?') {
+        (path, Some(query))
+    } else {
+        (url, None)
+    }
+}
+
+fn parse_query(query: Option<&str>) -> HashMap<String, String> {
+    let mut params = HashMap::new();
+    let Some(query) = query else {
+        return params;
+    };
+    for pair in query.split('&') {
+        let mut iter = pair.splitn(2, '=');
+        if let Some(key) = iter.next() {
+            if key.is_empty() {
+                continue;
+            }
+            let value = iter.next().unwrap_or("");
+            params.insert(key.to_string(), value.to_string());
+        }
+    }
+    params
+}
+
+fn plain_response(body: &str, content_type: &str) -> Response<std::io::Cursor<Vec<u8>>> {
+    Response::from_data(body.as_bytes().to_vec())
+        .with_header(tiny_http::Header::from_bytes(&b"Content-Type"[..], content_type).unwrap())
+}
+
+fn json_response(result: Result<serde_json::Value>) -> Response<std::io::Cursor<Vec<u8>>> {
+    match result {
+        Ok(value) => {
+            let data = serde_json::to_vec(&value).unwrap_or_default();
+            Response::from_data(data).with_header(
+                tiny_http::Header::from_bytes(&b"Content-Type"[..], "application/json").unwrap(),
+            )
+        }
+        Err(err) => Response::from_string(err.to_string()).with_status_code(500),
+    }
+}
+
+fn load_state_json(state_path: &Path, metrics: &Metrics) -> Result<serde_json::Value> {
+    let state = load_state(state_path)?;
+    metrics.set_history_len(state.history.len());
+    Ok(serde_json::to_value(state).into_diagnostic()?)
+}
+
+fn load_summary_json(state_path: &Path) -> Result<serde_json::Value> {
+    let state = load_state(state_path)?;
+    let best = state
+        .history
+        .iter()
+        .map(|entry| entry.value)
+        .min_by(|left, right| left.partial_cmp(right).unwrap());
+    let latest = state.history.last().map(|entry| entry.value);
+    let summary = serde_json::json!({
+        "run_id": state.run_id,
+        "budget": state.config.budget,
+        "history_len": state.history.len(),
+        "best": best,
+        "latest": latest,
+    });
+    Ok(summary)
+}
+
+fn load_events_json(
+    events_path: Option<&PathBuf>,
+    params: &HashMap<String, String>,
+) -> Result<serde_json::Value> {
+    let limit = params
+        .get("limit")
+        .and_then(|value| value.parse::<usize>().ok())
+        .unwrap_or(100);
+    let filter = params.get("event").map(String::as_str);
+    let search = params.get("q").map(String::as_str);
+    let events = if let Some(path) = events_path {
+        read_event_values(path, filter, search, limit)?
+    } else {
+        Vec::new()
+    };
+    Ok(serde_json::json!({ "events": events }))
+}
+
+fn load_actions_json(
+    actions_path: Option<&PathBuf>,
+    params: &HashMap<String, String>,
+) -> Result<serde_json::Value> {
+    let limit = params
+        .get("limit")
+        .and_then(|value| value.parse::<usize>().ok())
+        .unwrap_or(50);
+    let actions = if let Some(path) = actions_path {
+        read_jsonl_values(path, limit)?
+    } else {
+        Vec::new()
+    };
+    Ok(serde_json::json!({ "actions": actions }))
+}
+
+fn store_action(
+    request: &mut tiny_http::Request,
+    actions_path: Option<&PathBuf>,
+) -> Result<serde_json::Value> {
+    let Some(path) = actions_path else {
+        return Err(miette::miette!("Actions path not configured"));
+    };
+    let mut body = String::new();
+    request
+        .as_reader()
+        .read_to_string(&mut body)
+        .into_diagnostic()?;
+    let mut value: serde_json::Value = serde_json::from_str(&body)
+        .into_diagnostic()
+        .with_context(|| "Invalid JSON body")?;
+    let timestamp = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_micros() as u64;
+    if let serde_json::Value::Object(ref mut map) = value {
+        map.entry("timestamp_us".to_string())
+            .or_insert(serde_json::Value::Number(timestamp.into()));
+    }
+    let line = serde_json::to_string(&value).into_diagnostic()?;
+    append_line(path, &line)?;
+    Ok(serde_json::json!({ "ok": true }))
+}
+
+fn append_line(path: &Path, line: &str) -> Result<()> {
+    let mut file = fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(path)
+        .into_diagnostic()
+        .with_context(|| format!("Failed to open {}", path.display()))?;
+    writeln!(file, "{}", line).into_diagnostic()?;
+    Ok(())
+}
+
+fn read_event_values(
+    path: &Path,
+    filter: Option<&str>,
+    search: Option<&str>,
+    limit: usize,
+) -> Result<Vec<serde_json::Value>> {
+    let contents = fs::read_to_string(path)
+        .into_diagnostic()
+        .with_context(|| format!("Failed to read events file {}", path.display()))?;
+    let mut values = Vec::new();
+    for line in contents.lines().rev() {
+        if line.trim().is_empty() {
+            continue;
+        }
+        if let Some(search) = search {
+            if !line.contains(search) {
+                continue;
+            }
+        }
+        let value: serde_json::Value = match serde_json::from_str(line) {
+            Ok(value) => value,
+            Err(_) => continue,
+        };
+        if let Some(filter) = filter {
+            let event_type = value
+                .get("event")
+                .or_else(|| value.get("event_type"))
+                .and_then(|field| field.as_str())
+                .unwrap_or("");
+            if event_type != filter {
+                continue;
+            }
+        }
+        values.push(value);
+        if values.len() >= limit {
+            break;
+        }
+    }
+    values.reverse();
+    Ok(values)
+}
+
+fn read_jsonl_values(path: &Path, limit: usize) -> Result<Vec<serde_json::Value>> {
+    let contents = fs::read_to_string(path)
+        .into_diagnostic()
+        .with_context(|| format!("Failed to read actions file {}", path.display()))?;
+    let mut values = Vec::new();
+    for line in contents.lines().rev() {
+        if line.trim().is_empty() {
+            continue;
+        }
+        let value: serde_json::Value = match serde_json::from_str(line) {
+            Ok(value) => value,
+            Err(_) => continue,
+        };
+        values.push(value);
+        if values.len() >= limit {
+            break;
+        }
+    }
+    values.reverse();
+    Ok(values)
 }
 
 fn validate_command(config_path: &Path) -> Result<()> {
