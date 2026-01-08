@@ -24,7 +24,7 @@ impl QueryEngine {
         let model = MiniLM::new()?;
         
         Ok(Self {
-            store,
+            _store: store,
             vector_store,
             model,
         })
