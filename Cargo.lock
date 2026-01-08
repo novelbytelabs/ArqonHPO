@@ -7266,6 +7266,7 @@ dependencies = [
  "candle-transformers",
  "chrono",
  "clap",
+ "futures",
  "hf-hub",
  "ignore",
  "indicatif 0.18.3",
