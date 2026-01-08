@@ -11,10 +11,7 @@ pub struct VectorStore {
 impl VectorStore {
     pub async fn new(uri: &str) -> Result<Self> {
         let conn = connect(uri).execute().await?;
-        let table = match conn.open_table("code_vectors").execute().await {
-            Ok(t) => Some(t),
-            Err(_) => None, // Table might not exist yet
-        };
+        let table = conn.open_table("code_vectors").execute().await.ok();
         Ok(Self { conn, table })
     }
 

@@ -4,7 +4,7 @@ use crate::oracle::vector_store::VectorStore;
 use crate::oracle::embed::MiniLM;
 
 pub struct QueryEngine {
-    store: OracleStore,
+    _store: OracleStore,
     vector_store: VectorStore,
     model: MiniLM,
 }
