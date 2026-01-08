@@ -19,7 +19,7 @@ impl EdgeBuilder {
     pub fn new() -> Result<Self> {
         Ok(Self {
             rust_parser: RustParser::new()?,
-            python_parser: PythonParser::new()?,
+            _python_parser: PythonParser::new()?,
         })
     }
 
