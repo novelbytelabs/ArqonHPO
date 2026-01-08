@@ -1,7 +1,8 @@
 pub mod checks;
 pub mod commits;
-pub mod version;
+pub mod git;
 pub mod github;
+pub mod version;
 
 pub use checks::ConstitutionCheck;
 pub use commits::CommitParser;

@@ -66,28 +66,34 @@ impl CommitParser {
         // Parse conventional commit: type(scope)!: description
         let is_breaking = message.contains("BREAKING CHANGE") || message.contains("!:");
         
-        // Simple parser: just extract type
-        let commit_type = if message.starts_with("feat") {
-            "feat"
-        } else if message.starts_with("fix") {
-            "fix"
-        } else if message.starts_with("chore") {
-            "chore"
-        } else if message.starts_with("docs") {
-            "docs"
-        } else if message.starts_with("refactor") {
-            "refactor"
-        } else if message.starts_with("test") {
-            "test"
+        // Extract type and scope using pattern matching
+        // Format: type(scope): description OR type: description
+        let (commit_type, scope, description) = if let Some(colon_pos) = message.find(':') {
+            let prefix = &message[..colon_pos];
+            let desc = message[colon_pos + 1..].trim().to_string();
+            
+            // Check for scope: type(scope) or type(scope)!
+            if let Some(paren_start) = prefix.find('(') {
+                if let Some(paren_end) = prefix.find(')') {
+                    let ctype = prefix[..paren_start].to_string();
+                    let scope = prefix[paren_start + 1..paren_end].to_string();
+                    (ctype, Some(scope), desc)
+                } else {
+                    (prefix.trim_end_matches('!').to_string(), None, desc)
+                }
+            } else {
+                (prefix.trim_end_matches('!').to_string(), None, desc)
+            }
         } else {
-            "other"
+            // No colon, treat whole message as description with "other" type
+            ("other".to_string(), None, message.to_string())
         };
         
         Some(Commit {
             hash,
-            commit_type: commit_type.to_string(),
-            scope: None, // TODO: Extract scope
-            description: message.to_string(),
+            commit_type,
+            scope,
+            description,
             is_breaking,
         })
     }

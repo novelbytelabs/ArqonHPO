@@ -67,6 +67,14 @@ struct ShipArgs {
     /// Dry run (don't create PR)
     #[arg(long)]
     dry_run: bool,
+    
+    /// Source branch for the release PR (default: current branch)
+    #[arg(long, default_value = "dev")]
+    head_branch: String,
+    
+    /// Target branch for the release PR (default: main)
+    #[arg(long, default_value = "main")]
+    base_branch: String,
 }
 
 #[tokio::main]
@@ -150,7 +158,7 @@ async fn main() -> Result<()> {
             let parser = ship::CommitParser::new(root.clone());
             let commits = parser.get_commits_since_last_tag()?;
             
-            let current_version = ship::SemVer::parse("0.1.0")?; // TODO: Read from Cargo.toml logic
+            let current_version = ship::SemVer::from_cargo_toml(&root.join("Cargo.toml"))?;
             let next_version = ship::calculate_next_version(&current_version, &commits);
             let changelog = ship::generate_changelog(&next_version, &commits);
             
@@ -161,20 +169,20 @@ async fn main() -> Result<()> {
                 println!("\n[DRY RUN] Would create release PR");
             } else {
                 use ship::github::GitHubClient;
+                use ship::git::parse_git_remote;
                 
-                // Try to guess owner/repo from git config or use defaults
-                let owner = "novelbytelabs"; // Hardcoded for now, ideal: git remote parsing
-                let repo = "ArqonHPO";
+                // Auto-detect owner/repo from git remote
+                let repo_info = parse_git_remote(&root)?;
                 
-                let client = GitHubClient::new(owner, repo)?;
+                let client = GitHubClient::new(&repo_info.owner, &repo_info.repo)?;
                 let title = format!("chore: release v{}", next_version);
                 let body = format!("## Release v{}\n\n{}", next_version, changelog);
                 
                 let url = client.create_release_pr(
                     &title,
                     &body,
-                    "dev", // assuming flow is dev -> main
-                    "main"
+                    &args.head_branch,
+                    &args.base_branch
                 )?;
                 
                 println!("\n[SUCCESS] Created Release PR: {}", url);

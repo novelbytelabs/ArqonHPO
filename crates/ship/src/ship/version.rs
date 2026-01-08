@@ -39,6 +39,42 @@ impl SemVer {
     pub fn bump_patch(&self) -> Self {
         Self { major: self.major, minor: self.minor, patch: self.patch + 1 }
     }
+
+    /// Read version from a Cargo.toml file
+    /// 
+    /// Handles both regular packages and workspace roots:
+    /// - Checks `package.version` first (regular package)
+    /// - Falls back to `workspace.package.version` (workspace with shared version)  
+    /// - Falls back to `crates/core/Cargo.toml` (workspace without shared version)
+    pub fn from_cargo_toml(path: &std::path::Path) -> Result<Self> {
+        let content = std::fs::read_to_string(path)
+            .map_err(|e| anyhow::anyhow!("Failed to read Cargo.toml: {}", e))?;
+        
+        let parsed: toml::Value = toml::from_str(&content)
+            .map_err(|e| anyhow::anyhow!("Failed to parse Cargo.toml: {}", e))?;
+        
+        // Try package.version first (regular package)
+        if let Some(version) = parsed.get("package").and_then(|p| p.get("version")).and_then(|v| v.as_str()) {
+            return Self::parse(version);
+        }
+        
+        // Try workspace.package.version (workspace with shared version)
+        if let Some(version) = parsed.get("workspace").and_then(|w| w.get("package")).and_then(|p| p.get("version")).and_then(|v| v.as_str()) {
+            return Self::parse(version);
+        }
+        
+        // Fallback: if this is a workspace root, try crates/core/Cargo.toml
+        if parsed.get("workspace").is_some() {
+            if let Some(parent) = path.parent() {
+                let core_path = parent.join("crates").join("core").join("Cargo.toml");
+                if core_path.exists() {
+                    return Self::from_cargo_toml(&core_path);
+                }
+            }
+        }
+        
+        Err(anyhow::anyhow!("No version found in Cargo.toml or workspace"))
+    }
 }
 
 /// Calculate next version based on conventional commits
