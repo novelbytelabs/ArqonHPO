@@ -95,6 +95,7 @@ nav:
           - Python API: documentation/reference/python.md
           - Rust Core: documentation/reference/rust.md
           - CLI: documentation/reference/cli.md
+          - Observability: documentation/reference/observability.md
       - Cookbook: documentation/cookbook/
   - ArqonShip:
       - arqonship/index.md

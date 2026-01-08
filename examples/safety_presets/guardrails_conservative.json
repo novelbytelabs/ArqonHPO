@@ -1,0 +1,9 @@
+{
+  "max_delta_per_step": 0.05,
+  "max_updates_per_second": 2.0,
+  "min_interval_us": 500000,
+  "direction_flip_limit": 2,
+  "cooldown_after_flip_us": 60000000,
+  "max_cumulative_delta_per_minute": 0.25,
+  "regression_count_limit": 3
+}

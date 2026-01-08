@@ -101,6 +101,77 @@ impl Default for Guardrails {
     }
 }
 
+impl Guardrails {
+    pub fn preset_conservative() -> Self {
+        Self {
+            max_delta_per_step: 0.05,
+            max_updates_per_second: 2.0,
+            min_interval_us: 500_000,
+            direction_flip_limit: 2,
+            cooldown_after_flip_us: 60_000_000,
+            max_cumulative_delta_per_minute: 0.25,
+            regression_count_limit: 3,
+            bounds: None,
+        }
+    }
+
+    pub fn preset_balanced() -> Self {
+        Self::default()
+    }
+
+    pub fn preset_aggressive() -> Self {
+        Self {
+            max_delta_per_step: 0.2,
+            max_updates_per_second: 20.0,
+            min_interval_us: 50_000,
+            direction_flip_limit: 5,
+            cooldown_after_flip_us: 10_000_000,
+            max_cumulative_delta_per_minute: 1.0,
+            regression_count_limit: 8,
+            bounds: None,
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct RollbackPolicy {
+    pub max_consecutive_regressions: u32,
+    pub max_rollbacks_per_hour: u32,
+    pub min_stable_time_us: u64,
+}
+
+impl Default for RollbackPolicy {
+    fn default() -> Self {
+        Self {
+            max_consecutive_regressions: 3,
+            max_rollbacks_per_hour: 4,
+            min_stable_time_us: 5_000_000,
+        }
+    }
+}
+
+impl RollbackPolicy {
+    pub fn preset_conservative() -> Self {
+        Self {
+            max_consecutive_regressions: 2,
+            max_rollbacks_per_hour: 2,
+            min_stable_time_us: 30_000_000,
+        }
+    }
+
+    pub fn preset_balanced() -> Self {
+        Self::default()
+    }
+
+    pub fn preset_aggressive() -> Self {
+        Self {
+            max_consecutive_regressions: 5,
+            max_rollbacks_per_hour: 10,
+            min_stable_time_us: 1_000_000,
+        }
+    }
+}
+
 /// Tier 1 safe executor.
 ///
 /// Constitution: II.17 - Safety Executor Contract

@@ -1,10 +1,13 @@
 use serde::{Deserialize, Serialize};
 
+use crate::config::SolverConfig;
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RunArtifact {
     pub run_id: String,
     pub seed: u64,
     pub budget: u64,
+    pub config: SolverConfig,
     pub history: Vec<EvalTrace>,
     // Future: classification results, environment fingerprint
 }

@@ -1,9 +1,9 @@
 # CLI Reference
 
-ArqonHPO provides a command-line interface for batch optimization and interactive ask/tell flows.
+ArqonHPO provides a command-line interface for batch optimization, interactive ask/tell flows, and observability.
 
-!!! note "Phase 1 MVP Scope"
-    The CLI described here is the Phase 1 MVP plan and may evolve as the implementation lands.
+!!! note "Phase 2 MVP Scope"
+    The CLI described here tracks Phase 2 deliverables and may evolve as implementation lands.
 
 ## Commands
 
@@ -31,6 +31,25 @@ arqonhpo interactive --config config.json --state state.json
 ```bash
 arqonhpo validate --config config.json
 ```
+
+### Export/Import
+
+```bash
+arqonhpo export --state state.json --output artifact.json
+arqonhpo import --artifact artifact.json --state state.json
+```
+
+### TUI
+
+```bash
+arqonhpo tui --state state.json
+```
+
+## Global Options
+
+- `--log-format` (`pretty` or `json`)
+- `--log-level` (e.g. `info`, `debug`)
+- `--metrics-addr` (Prometheus endpoint, e.g. `127.0.0.1:9898`)
 
 ## Config File
 
@@ -118,3 +137,7 @@ The interactive mode is JSONL over stdin/stdout:
 ## State File
 
 Use `--state state.json` to persist solver state between `ask` and `tell` calls.
+
+## Exported Artifact
+
+`export` writes a `RunArtifact` JSON file containing `config`, `history`, and identifiers for replay.
