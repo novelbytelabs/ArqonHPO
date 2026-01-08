@@ -31,6 +31,11 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      - name: Install Protoc
+        uses: arduino/setup-protoc@v3
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
       # PyO3 0.24.2 requires Python <= 3.13. macOS runners have 3.14.
       - name: Setup Python 3.12
         uses: actions/setup-python@v5
@@ -91,6 +96,11 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      - name: Install Protoc
+        uses: arduino/setup-protoc@v3
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
       # PyO3 requires Python dev headers for linking
       - name: Setup Python 3.12
         uses: actions/setup-python@v5
@@ -127,6 +137,11 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      - name: Install Protoc
+        uses: arduino/setup-protoc@v3
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
 
@@ -154,6 +169,11 @@ jobs:
         python-version: ["3.10", "3.11", "3.12"]
     steps:
       - uses: actions/checkout@v6
+
+      - name: Install Protoc
+        uses: arduino/setup-protoc@v3
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
