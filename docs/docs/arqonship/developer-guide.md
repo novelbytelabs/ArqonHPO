@@ -230,3 +230,68 @@ db = lancedb.connect(".arqon/vectors.lance")
 table = db.open_table("code_vectors")
 print(table.head())
 ```
+
+## CLI Usage Examples
+
+### Codebase Oracle
+
+```bash
+# Index the entire codebase
+arqon index
+
+# Incremental update (only changed files)
+arqon index --incremental
+
+# Query for code
+arqon chat -q "find the healing loop implementation"
+arqon chat -q "where is the version bumping logic"
+```
+
+### Self-Healing CI
+
+```bash
+# Generate test output JSON
+cargo test --message-format=json > test_output.json
+
+# Run healing with defaults
+arqon heal --log-file test_output.json
+
+# Verbose mode with max attempts
+arqon heal --log-file test_output.json --verbose --max-attempts 5
+
+# Check audit log
+sqlite3 .arqon/heal_audit.db "SELECT * FROM healing_attempts ORDER BY timestamp DESC LIMIT 5"
+```
+
+### Governed Release Pipeline
+
+```bash
+# Preview release (dry run)
+arqon ship --dry-run
+
+# Create release PR
+arqon ship
+
+# With custom branches
+arqon ship --head-branch feature-xyz --base-branch develop
+
+# Skip pre-flight checks (for testing)
+arqon ship --skip-checks --dry-run
+```
+
+## Running Benchmarks
+
+```bash
+# Run oracle benchmarks
+cargo run -p ship --example oracle_bench
+
+# Expected output:
+# Rust Parsing:
+#   Per parse: ~50 µs
+#   Throughput: ~20,000 parses/sec
+#
+# Python Parsing:
+#   Per parse: ~20 µs
+#   Throughput: ~50,000 parses/sec
+```
+

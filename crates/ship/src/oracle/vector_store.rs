@@ -34,13 +34,40 @@ impl VectorStore {
         Ok(())
     }
 
-    pub async fn add_embeddings(&self, _ids: Vec<i64>, _vectors: Vec<Vec<f32>>, _texts: Vec<String>) -> Result<()> {
-        // TODO: Implement actual Arrow batch construction and insertion
+    /// Add embeddings to the vector store
+    /// 
+    /// Note: Full implementation requires arrow-array and lance-arrow crates.
+    /// This is a stub that logs the operation.
+    pub async fn add_embeddings(&mut self, ids: Vec<i64>, _vectors: Vec<Vec<f32>>, texts: Vec<String>) -> Result<()> {
+        self.create_table_if_not_exists().await?;
+        
+        // Log for debugging
+        eprintln!(
+            "VectorStore::add_embeddings: {} ids, {} texts (stub)",
+            ids.len(), texts.len()
+        );
+        
+        // TODO: Implement Arrow batch construction using lance_arrow crate
+        // This requires: cargo add lance-arrow futures
+        // See: https://docs.rs/lance-arrow/latest/lance_arrow/
+        
         Ok(())
     }
     
-    pub async fn search(&self, _query_vec: Vec<f32>, _limit: usize) -> Result<Vec<(i64, f32)>> {
-        // TODO: Implement actual vector search
+    /// Search vectors by similarity
+    /// 
+    /// Note: Full implementation requires QueryBase trait and streaming.
+    /// This is a stub that returns empty results.
+    pub async fn search(&self, _query_vec: Vec<f32>, limit: usize) -> Result<Vec<(i64, f32)>> {
+        if self.table.is_none() {
+            return Ok(vec![]);
+        }
+        
+        eprintln!("VectorStore::search: limit={} (stub)", limit);
+        
+        // TODO: Implement vector search using QueryBase trait
+        // This requires the full lancedb query API
+        
         Ok(vec![])
     }
 }

@@ -55,6 +55,25 @@ impl OracleStore {
         }
         Ok(())
     }
+
+    /// Get a node by its ID
+    pub fn get_node_by_id(&self, id: i64) -> Option<GraphNode> {
+        self.conn.query_row(
+            "SELECT path, type, name, start_line, end_line, signature_hash, docstring FROM nodes WHERE id = ?1",
+            params![id],
+            |row| {
+                Ok(GraphNode {
+                    path: row.get(0)?,
+                    node_type: row.get(1)?,
+                    name: row.get(2)?,
+                    start_line: row.get(3)?,
+                    end_line: row.get(4)?,
+                    signature_hash: row.get(5)?,
+                    docstring: row.get(6)?,
+                })
+            },
+        ).ok()
+    }
 }
 
 // Add optional helper trait

@@ -2,11 +2,13 @@ use anyhow::Result;
 use crate::oracle::store::OracleStore;
 use crate::oracle::vector_store::VectorStore;
 use crate::oracle::embed::MiniLM;
+use std::fs;
 
 pub struct QueryEngine {
-    _store: OracleStore,
+    store: OracleStore,
     vector_store: VectorStore,
     model: MiniLM,
+    root: std::path::PathBuf,
 }
 
 #[derive(Debug)]
@@ -22,11 +24,13 @@ impl QueryEngine {
         let store = OracleStore::open(db_path)?;
         let vector_store = VectorStore::new(vector_uri).await?;
         let model = MiniLM::new()?;
+        let root = std::env::current_dir()?;
         
         Ok(Self {
-            _store: store,
+            store,
             vector_store,
             model,
+            root,
         })
     }
 
@@ -35,13 +39,36 @@ impl QueryEngine {
         let vec = self.model.embed(text)?;
         
         // 2. Vector Search
-        let _hits = self.vector_store.search(vec, 5).await?;
+        let hits = self.vector_store.search(vec, 5).await?;
         
         // 3. Enrich with Graph Data
-        let results = Vec::new();
-        // TODO: Map ID back to node details via store.
-        // For MVP skeleton: return empty or mock
+        let mut results = Vec::new();
+        for (id, score) in hits {
+            if let Some(node) = self.store.get_node_by_id(id) {
+                // Read snippet from file
+                let snippet = self.get_snippet(&node.path, node.start_line, node.end_line);
+                
+                results.push(QueryResult {
+                    name: node.name,
+                    path: node.path,
+                    score,
+                    snippet,
+                });
+            }
+        }
         
         Ok(results)
+    }
+
+    fn get_snippet(&self, path: &str, start: usize, end: usize) -> String {
+        let file_path = self.root.join(path);
+        if let Ok(content) = fs::read_to_string(&file_path) {
+            let lines: Vec<&str> = content.lines().collect();
+            let start = start.min(lines.len());
+            let end = end.min(lines.len());
+            lines[start..=end.min(start + 10)].join("\n")
+        } else {
+            String::new()
+        }
     }
 }
