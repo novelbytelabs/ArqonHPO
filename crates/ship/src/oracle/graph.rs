@@ -80,7 +80,7 @@ impl GraphBuilder {
         }
     }
 
-    fn extract_python(&mut self, path: &str, content: &str) -> Vec<GraphNode> {
+    fn extract_python(&mut self, _path: &str, _content: &str) -> Vec<GraphNode> {
         // Todo: Implement Python node extraction similar to Rust
         vec![] 
     }

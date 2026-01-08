@@ -1,7 +1,7 @@
 use anyhow::Result;
-use crate::heal::parser_rust::{RustLogParser, TestFailure};
-use crate::heal::context::{ContextBuilder, HealContext};
-use crate::heal::llm::{LlmClient, CandleLlm};
+use crate::heal::parser_rust::TestFailure;
+use crate::heal::context::ContextBuilder;
+use crate::heal::llm::{LlmClient, RemoteLlm};
 use crate::heal::prompts::PromptTemplates;
 use crate::heal::apply::apply_fix;
 use crate::heal::verify::VerificationGate;
@@ -10,7 +10,7 @@ use std::path::PathBuf;
 
 pub struct HealingLoop {
     context_builder: ContextBuilder,
-    llm: CandleLlm,
+    llm: RemoteLlm,
     max_attempts: u32,
     root: PathBuf,
 }
@@ -27,7 +27,7 @@ pub enum HealOutcome {
 impl HealingLoop {
     pub fn new(store: OracleStore, root: PathBuf, max_attempts: u32) -> Result<Self> {
         let context_builder = ContextBuilder::new(store, root.clone());
-        let llm = CandleLlm::new()?;
+        let llm = RemoteLlm::new()?;
         
         Ok(Self {
             context_builder,

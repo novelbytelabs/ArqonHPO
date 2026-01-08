@@ -1,12 +1,12 @@
-mod parser;
-mod parser_py;
-mod graph;
-mod edges;
-mod store;
+pub mod parser;
+pub mod parser_py;
+pub mod graph;
+pub mod edges;
+pub mod store;
 pub mod hash;
-mod embed;
-mod vector_store;
-mod schema;
+pub mod embed;
+pub mod vector_store;
+pub mod schema;
 
 use anyhow::Result;
 use std::path::Path;

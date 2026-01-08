@@ -8,7 +8,7 @@ async fn test_vector_search() {
     let uri = dir.path().to_str().unwrap();
     
     // 1. Init
-    let mut store = VectorStore::new(uri).await.expect("Failed to init store");
+    let mut store: VectorStore = VectorStore::new(uri).await.expect("Failed to init store");
     store.create_table_if_not_exists().await.expect("Failed to create table");
     
     // 2. Embed (Mocking the values for speed, bypassing MiniLM download in CI if likely to fail)

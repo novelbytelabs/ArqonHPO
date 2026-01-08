@@ -93,8 +93,24 @@ version_scheme = "semver"
 | Variable | Description | Required |
 |----------|-------------|----------|
 | `GITHUB_TOKEN` | GitHub API token for PR creation | For `arqon ship` |
+| `ARQON_LLM_URL` | LLM API endpoint (OpenAI/Ollama compatible) | For `arqon heal` |
+| `ARQON_LLM_MODEL` | Model name (default: `deepseek-coder:1.3b`) | No |
+| `ARQON_LLM_KEY` | API key for LLM endpoint | If required by API |
 | `ARQON_CONFIG` | Override config file path | No |
 | `ARQON_MODEL_CACHE` | Override model cache directory | No |
+
+### Example LLM Configuration
+
+```bash
+# For local Ollama
+export ARQON_LLM_URL="http://localhost:11434/v1"
+export ARQON_LLM_MODEL="deepseek-coder:1.3b"
+
+# For OpenAI
+export ARQON_LLM_URL="https://api.openai.com/v1"
+export ARQON_LLM_MODEL="gpt-4o-mini"
+export ARQON_LLM_KEY="sk-..."
+```
 
 ## Data Directories
 

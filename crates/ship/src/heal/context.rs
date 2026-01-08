@@ -2,7 +2,6 @@ use anyhow::Result;
 use crate::heal::parser_rust::TestFailure;
 use crate::oracle::OracleStore;
 use std::fs;
-use std::path::Path;
 
 pub struct ContextBuilder {
     store: OracleStore,

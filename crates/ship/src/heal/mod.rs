@@ -8,5 +8,3 @@ pub mod apply;
 pub mod verify;
 pub mod audit;
 
-pub use parser_rust::{RustLogParser, TestFailure};
-pub use r#loop::{HealingLoop, HealOutcome};

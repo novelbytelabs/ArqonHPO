@@ -16,7 +16,7 @@ impl MiniLM {
         
         // Load model and tokenizer from HuggingFace Hub (or local cache)
         let model_id = "sentence-transformers/all-MiniLM-L6-v2".to_string();
-        let repo = candle_core::utils::cuda_is_available(); // Only used to trigger download really
+        let _repo = candle_core::utils::cuda_is_available(); // Only used to trigger download really
         
         let api = hf_hub::api::sync::Api::new()?;
         let repo = api.model(model_id);

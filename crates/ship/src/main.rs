@@ -73,7 +73,7 @@ async fn main() -> Result<()> {
     let cli = Cli::parse();
     
     // Load config (except for Init)
-    let config = if let Commands::Init = &cli.command {
+    let _config = if let Commands::Init = &cli.command {
         Config::default() // Dummy
     } else {
         Config::load_from_file(&cli.config).unwrap_or_default()
@@ -97,13 +97,41 @@ async fn main() -> Result<()> {
             
             let results = engine.query(&args.query).await?;
             for res in results {
-                println!("[{}] {} (Score: {})", res.path, res.name, res.score);
+                println!("[{}] {} (Score: {:.3})", res.path, res.name, res.score);
             }
         }
         Commands::Heal(args) => {
+            let root = std::env::current_dir()?;
             println!("Starting self-healing pipeline...");
-            println!("Max attempts: {}", args.max_attempts);
-            println!("Heal command not yet fully implemented (LLM integration pending)");
+            
+            let log_path = args.log_file.clone().unwrap_or_else(|| PathBuf::from("test_output.json"));
+            if !log_path.exists() {
+                println!("No test log file found at {:?}. Run: cargo test --message-format=json > test_output.json", log_path);
+                return Ok(());
+            }
+            
+            // Parse failure
+            use heal::parser_rust::RustLogParser;
+            use heal::r#loop::HealingLoop;
+            use oracle::OracleStore;
+            
+            let failure = RustLogParser::parse_file(&log_path)?
+                .ok_or_else(|| anyhow::anyhow!("No test failures found in log"))?;
+                
+            println!("Detected failure in: {}", failure.file_path);
+            
+            // Open Oracle
+            let db_path = root.join(".arqon/graph.db");
+            // Vector store not used by healing context yet
+            let store = OracleStore::open(
+                db_path.to_str().unwrap()
+            )?;
+            
+            // Run Loop
+            let mut healing_loop = HealingLoop::new(store, root, args.max_attempts)?;
+            let outcome = healing_loop.run(&failure)?;
+            
+            println!("Heal outcome: {:?}", outcome);
         }
         Commands::Ship(args) => {
             let root = std::env::current_dir()?;
@@ -121,7 +149,7 @@ async fn main() -> Result<()> {
             let parser = ship::CommitParser::new(root.clone());
             let commits = parser.get_commits_since_last_tag()?;
             
-            let current_version = ship::SemVer::parse("0.0.0")?; // TODO: Read from Cargo.toml
+            let current_version = ship::SemVer::parse("0.1.0")?; // TODO: Read from Cargo.toml logic
             let next_version = ship::calculate_next_version(&current_version, &commits);
             let changelog = ship::generate_changelog(&next_version, &commits);
             
@@ -131,7 +159,24 @@ async fn main() -> Result<()> {
             if args.dry_run {
                 println!("\n[DRY RUN] Would create release PR");
             } else {
-                println!("\n[INFO] To create PR, set GITHUB_TOKEN and run without --dry-run");
+                use ship::github::GitHubClient;
+                
+                // Try to guess owner/repo from git config or use defaults
+                let owner = "novelbytelabs"; // Hardcoded for now, ideal: git remote parsing
+                let repo = "ArqonHPO";
+                
+                let client = GitHubClient::new(owner, repo)?;
+                let title = format!("chore: release v{}", next_version.to_string());
+                let body = format!("## Release v{}\n\n{}", next_version.to_string(), changelog);
+                
+                let url = client.create_release_pr(
+                    &title,
+                    &body,
+                    "dev", // assuming flow is dev -> main
+                    "main"
+                )?;
+                
+                println!("\n[SUCCESS] Created Release PR: {}", url);
             }
         }
     }

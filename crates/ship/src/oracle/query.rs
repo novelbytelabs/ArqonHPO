@@ -35,10 +35,10 @@ impl QueryEngine {
         let vec = self.model.embed(text)?;
         
         // 2. Vector Search
-        let hits = self.vector_store.search(vec, 5).await?;
+        let _hits = self.vector_store.search(vec, 5).await?;
         
         // 3. Enrich with Graph Data
-        let mut results = Vec::new();
+        let results = Vec::new();
         // TODO: Map ID back to node details via store.
         // For MVP skeleton: return empty or mock
         
