@@ -154,7 +154,7 @@ async fn main() -> Result<()> {
             let next_version = ship::calculate_next_version(&current_version, &commits);
             let changelog = ship::generate_changelog(&next_version, &commits);
             
-            println!("Next version: v{}", next_version.to_string());
+            println!("Next version: v{}", next_version);
             println!("\nChangelog:\n{}", changelog);
             
             if args.dry_run {
@@ -167,8 +167,8 @@ async fn main() -> Result<()> {
                 let repo = "ArqonHPO";
                 
                 let client = GitHubClient::new(owner, repo)?;
-                let title = format!("chore: release v{}", next_version.to_string());
-                let body = format!("## Release v{}\n\n{}", next_version.to_string(), changelog);
+                let title = format!("chore: release v{}", next_version);
+                let body = format!("## Release v{}\n\n{}", next_version, changelog);
                 
                 let url = client.create_release_pr(
                     &title,

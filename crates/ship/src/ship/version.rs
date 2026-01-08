@@ -57,7 +57,7 @@ pub fn calculate_next_version(current: &SemVer, commits: &[Commit]) -> SemVer {
 
 /// Generate changelog from commits
 pub fn generate_changelog(version: &SemVer, commits: &[Commit]) -> String {
-    let mut changelog = format!("## v{}\n\n", version.to_string());
+    let mut changelog = format!("## v{}\n\n", version);
     
     // Group by type
     let features: Vec<_> = commits.iter().filter(|c| c.commit_type == "feat").collect();
