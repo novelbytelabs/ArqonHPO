@@ -213,8 +213,8 @@ fn handle_init(config_path: &Path) -> Result<()> {
     }
 
     let default_config = Config::default();
-    let toml_string = toml::to_string_pretty(&default_config)
-        .context("Failed to serialize default config")?;
+    let toml_string =
+        toml::to_string_pretty(&default_config).context("Failed to serialize default config")?;
 
     fs::write(config_path, toml_string)
         .with_context(|| format!("Failed to write config file to {:?}", config_path))?;
