@@ -4,9 +4,9 @@ mod heal;
 mod oracle;
 mod ship;
 
-use anyhow::{Context, Result};
 use clap::{Args, Parser, Subcommand};
 use config::Config;
+use miette::{Context, IntoDiagnostic, Result};
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -99,11 +99,13 @@ async fn main() -> Result<()> {
     match &cli.command {
         Commands::Init => handle_init(&cli.config)?,
         Commands::Scan => {
-            let root = std::env::current_dir()?;
-            oracle::scan_codebase(&root).await?;
+            let root = std::env::current_dir().into_diagnostic()?;
+            oracle::scan_codebase(&root)
+                .await
+                .map_err(|e| miette::miette!("{:?}", e))?;
         }
         Commands::Chat(args) => {
-            let root = std::env::current_dir()?;
+            let root = std::env::current_dir().into_diagnostic()?;
             let db_path = root.join(".arqon/graph.db");
             let vector_path = root.join(".arqon/vectors.lance");
 
@@ -111,15 +113,19 @@ async fn main() -> Result<()> {
                 db_path.to_str().unwrap(),
                 vector_path.to_str().unwrap(),
             )
-            .await?;
+            .await
+            .map_err(|e| miette::miette!("{:?}", e))?;
 
-            let results = engine.query(&args.query).await?;
+            let results = engine
+                .query(&args.query)
+                .await
+                .map_err(|e| miette::miette!("{:?}", e))?;
             for res in results {
                 println!("[{}] {} (Score: {:.3})", res.path, res.name, res.score);
             }
         }
         Commands::Heal(args) => {
-            let root = std::env::current_dir()?;
+            let root = std::env::current_dir().into_diagnostic()?;
             println!("Starting self-healing pipeline...");
 
             let log_path = args
@@ -136,29 +142,34 @@ async fn main() -> Result<()> {
             use heal::r#loop::HealingLoop;
             use oracle::OracleStore;
 
-            let failure = RustLogParser::parse_file(&log_path)?
-                .ok_or_else(|| anyhow::anyhow!("No test failures found in log"))?;
+            let failure = RustLogParser::parse_file(&log_path)
+                .map_err(|e| miette::miette!("{:?}", e))?
+                .ok_or_else(|| miette::miette!("No test failures found in log"))?;
 
             println!("Detected failure in: {}", failure.file_path);
 
             // Open Oracle
             let db_path = root.join(".arqon/graph.db");
             // Vector store not used by healing context yet
-            let store = OracleStore::open(db_path.to_str().unwrap())?;
+            let store = OracleStore::open(db_path.to_str().unwrap())
+                .map_err(|e| miette::miette!("{:?}", e))?;
 
             // Run Loop
-            let mut healing_loop = HealingLoop::new(store, root, args.max_attempts)?;
-            let outcome = healing_loop.run(&failure)?;
+            let mut healing_loop = HealingLoop::new(store, root, args.max_attempts)
+                .map_err(|e| miette::miette!("{:?}", e))?;
+            let outcome = healing_loop
+                .run(&failure)
+                .map_err(|e| miette::miette!("{:?}", e))?;
 
             println!("Heal outcome: {:?}", outcome);
         }
         Commands::Ship(args) => {
-            let root = std::env::current_dir()?;
+            let root = std::env::current_dir().into_diagnostic()?;
             println!("Starting release pipeline...");
 
             if !args.skip_checks {
                 let checker = ship::ConstitutionCheck::new(root.clone());
-                if !checker.run_all()? {
+                if !checker.run_all().map_err(|e| miette::miette!("{:?}", e))? {
                     println!("Constitution checks failed. Use --skip-checks to override.");
                     std::process::exit(1);
                 }
@@ -166,7 +177,9 @@ async fn main() -> Result<()> {
 
             // Parse commits and calculate version
             let parser = ship::CommitParser::new(root.clone());
-            let commits = parser.get_commits_since_last_tag()?;
+            let commits = parser
+                .get_commits_since_last_tag()
+                .map_err(|e| miette::miette!("{:?}", e))?;
 
             let current_version = ship::SemVer::from_cargo_toml(&root.join("Cargo.toml"))?;
             let next_version = ship::calculate_next_version(&current_version, &commits);
@@ -189,18 +202,16 @@ async fn main() -> Result<()> {
                 use ship::github::GitHubClient;
 
                 // Auto-detect owner/repo from git remote
-                let repo_info = parse_git_remote(&root)?;
+                let repo_info = parse_git_remote(&root).map_err(|e| miette::miette!("{:?}", e))?;
 
-                let client = GitHubClient::new(&repo_info.owner, &repo_info.repo)?;
+                let client = GitHubClient::new(&repo_info.owner, &repo_info.repo)
+                    .map_err(|e| miette::miette!("{:?}", e))?;
                 let title = format!("chore: release v{}", next_version);
                 let body = format!("## Release v{}\n\n{}", next_version, changelog);
 
-                let url = client.create_release_pr(
-                    &title,
-                    &body,
-                    &args.head_branch,
-                    &args.base_branch,
-                )?;
+                let url = client
+                    .create_release_pr(&title, &body, &args.head_branch, &args.base_branch)
+                    .map_err(|e| miette::miette!("{:?}", e))?;
 
                 println!("\n[SUCCESS] Created Release PR: {}", url);
             }
@@ -218,14 +229,17 @@ fn handle_init(config_path: &Path) -> Result<()> {
 
     if let Some(parent) = config_path.parent() {
         fs::create_dir_all(parent)
+            .into_diagnostic()
             .with_context(|| format!("Failed to create config directory: {:?}", parent))?;
     }
 
     let default_config = Config::default();
-    let toml_string =
-        toml::to_string_pretty(&default_config).context("Failed to serialize default config")?;
+    let toml_string = toml::to_string_pretty(&default_config)
+        .into_diagnostic()
+        .context("Failed to serialize default config")?;
 
     fs::write(config_path, toml_string)
+        .into_diagnostic()
         .with_context(|| format!("Failed to write config file to {:?}", config_path))?;
 
     println!("Initialized ArqonShip configuration at {:?}", config_path);

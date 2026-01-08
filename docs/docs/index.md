@@ -327,9 +327,9 @@ hide:
     <p style="color: #cbd5e1; font-size: 1.1rem; line-height: 1.6;">ArqonHPO makes self-optimization cheap enough to run continuously—so resilience becomes a default property, not an ops project.</p>
 </div>
 
-<!-- 3. The 3 Proofs -->
+<!-- 3. The 4 Proofs -->
 <div style="margin: 6rem 0;">
-    <h2 style="text-align: center; font-size: 2.5rem; margin-bottom: 3rem;">3 Proofs of the New Paradigm</h2>
+    <h2 style="text-align: center; font-size: 2.5rem; margin-bottom: 3rem;">4 Proofs of the New Paradigm</h2>
     <div class="grid-4">
         <div class="card">
             <div style="color: #f59e0b; font-weight: 700; font-size: 0.9rem; margin-bottom: 0.5rem;">PROOF A: DRFT</div>
@@ -345,6 +345,11 @@ hide:
             <div style="color: #f59e0b; font-weight: 700; font-size: 0.9rem; margin-bottom: 0.5rem;">PROOF C: ANYWHERE</div>
             <h3>Everywhere</h3>
             <p>One primitive. Rust server, Python script, Browser WASM, Edge device. Same API, same safety guarantees.</p>
+        </div>
+        <div class="card" style="border-color: #6366f1;">
+            <div style="color: #818cf8; font-weight: 700; font-size: 0.9rem; margin-bottom: 0.5rem;">PROOF D: ORGANISM</div>
+            <h3>Organism Capabilities</h3>
+            <p>Apply to every knob. The system evolves from a machine into an <strong>organism</strong> with its own self-regulating metabolism.</p>
         </div>
     </div>
     <div style="text-align: center; margin-top: 2rem;">

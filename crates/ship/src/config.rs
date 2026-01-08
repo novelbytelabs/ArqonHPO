@@ -1,4 +1,4 @@
-use anyhow::{Context, Result};
+use miette::{Context, IntoDiagnostic, Result};
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::Path;
@@ -66,13 +66,15 @@ impl Config {
     pub fn load_from_file<P: AsRef<Path>>(path: P) -> Result<Self> {
         let path = path.as_ref();
         if !path.exists() {
-            anyhow::bail!("Config file not found at {:?}", path);
+            miette::bail!("Config file not found at {:?}", path);
         }
         let content = fs::read_to_string(path)
+            .into_diagnostic()
             .with_context(|| format!("Failed to read config file at {:?}", path))?;
 
-        let config: Config =
-            toml::from_str(&content).with_context(|| "Failed to parse config TOML")?;
+        let config: Config = toml::from_str(&content)
+            .into_diagnostic()
+            .context("Failed to parse config TOML")?;
 
         Ok(config)
     }

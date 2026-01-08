@@ -8,8 +8,8 @@ edit_uri: edit/main/docs/docs/
 
 theme:
   name: material
-  logo: assets/logo.svg
-  favicon: assets/favicon.svg
+  logo: assets/logo.png
+  favicon: assets/favicon.ico
   features:
     - navigation.tabs
     - navigation.sections
@@ -90,7 +90,9 @@ nav:
   - Docs:
       - documentation/index.md
       - Quickstart: documentation/quickstart.md
-      - Concepts: documentation/concepts/
+      - Concepts:
+          - Metabolic Architecture: documentation/concepts/metabolic_architecture.md
+          - PCR Algorithm: documentation/concepts/pcr_algorithm.md
       - Reference:
           - Python API: documentation/reference/python.md
           - Rust Core: documentation/reference/rust.md

@@ -1,5 +1,8 @@
 use crate::ship::commits::Commit;
-use anyhow::Result;
+use miette::{IntoDiagnostic, Result, WrapErr};
+use std::fmt;
+use std::path::Path;
+use toml_edit::{value, DocumentMut};
 
 #[derive(Debug, Clone)]
 pub struct SemVer {
@@ -7,8 +10,6 @@ pub struct SemVer {
     pub minor: u32,
     pub patch: u32,
 }
-
-use std::fmt;
 
 impl fmt::Display for SemVer {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -64,10 +65,12 @@ impl SemVer {
     /// - Falls back to `crates/core/Cargo.toml` (workspace without shared version)
     pub fn from_cargo_toml(path: &std::path::Path) -> Result<Self> {
         let content = std::fs::read_to_string(path)
-            .map_err(|e| anyhow::anyhow!("Failed to read Cargo.toml: {}", e))?;
+            .into_diagnostic()
+            .wrap_err_with(|| format!("Failed to read Cargo.toml: {:?}", path))?;
 
         let parsed: toml::Value = toml::from_str(&content)
-            .map_err(|e| anyhow::anyhow!("Failed to parse Cargo.toml: {}", e))?;
+            .into_diagnostic()
+            .wrap_err("Failed to parse Cargo.toml")?;
 
         // Try package.version first (regular package)
         if let Some(version) = parsed
@@ -98,36 +101,87 @@ impl SemVer {
             }
         }
 
-        Err(anyhow::anyhow!(
+        Err(miette::miette!(
             "No version found in Cargo.toml or workspace"
         ))
     }
 
     /// Write version to a Cargo.toml file
-    pub fn write_to_cargo_toml(&self, path: &std::path::Path) -> Result<()> {
+    pub fn write_to_cargo_toml(&self, path: &Path) -> Result<()> {
         let content = std::fs::read_to_string(path)
-            .map_err(|e| anyhow::anyhow!("Failed to read Cargo.toml: {}", e))?;
+            .into_diagnostic()
+            .wrap_err_with(|| format!("Failed to read Cargo.toml at {:?}", path))?;
 
-        let mut parsed: toml_edit::DocumentMut = content
-            .parse()
-            .map_err(|e| anyhow::anyhow!("Failed to parse Cargo.toml for editing: {}", e))?;
+        let mut doc = content
+            .parse::<DocumentMut>()
+            .into_diagnostic()
+            .wrap_err("Failed to parse Cargo.toml")?;
 
-        let version_str = self.to_string();
-
-        if let Some(package) = parsed.get_mut("package") {
-            if let Some(v) = package.get_mut("version") {
-                *v = toml_edit::value(version_str.clone());
+        if let Some(package) = doc.get_mut("package") {
+            if let Some(item) = package.get_mut("version") {
+                *item = value(self.to_string());
             }
-        } else if let Some(workspace) = parsed.get_mut("workspace") {
+        } else if let Some(workspace) = doc.get_mut("workspace") {
             if let Some(package) = workspace.get_mut("package") {
-                if let Some(v) = package.get_mut("version") {
-                    *v = toml_edit::value(version_str);
+                if let Some(item) = package.get_mut("version") {
+                    *item = value(self.to_string());
                 }
             }
         }
 
-        std::fs::write(path, parsed.to_string())
-            .map_err(|e| anyhow::anyhow!("Failed to write Cargo.toml: {}", e))?;
+        std::fs::write(path, doc.to_string())
+            .into_diagnostic()
+            .wrap_err("Failed to write Cargo.toml")?;
+
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs;
+
+    #[test]
+    fn test_write_to_cargo_toml() -> Result<()> {
+        let dir = tempfile::tempdir().into_diagnostic()?;
+        let path = dir.path().join("Cargo.toml");
+
+        // 1. Setup basic Cargo.toml
+        fs::write(
+            &path,
+            r#"
+[package]
+name = "test"
+version = "0.1.0"
+"#,
+        )
+        .into_diagnostic()?;
+
+        // 2. Write update
+        let v = SemVer {
+            major: 1,
+            minor: 2,
+            patch: 3,
+        };
+        v.write_to_cargo_toml(&path)?;
+
+        let content = fs::read_to_string(&path).into_diagnostic()?;
+        assert!(content.contains("version = \"1.2.3\""));
+
+        // 3. Test workspace format
+        fs::write(
+            &path,
+            r#"
+[workspace.package]
+version = "0.0.0"
+"#,
+        )
+        .into_diagnostic()?;
+
+        v.write_to_cargo_toml(&path)?;
+        let content = fs::read_to_string(&path).into_diagnostic()?;
+        assert!(content.contains("version = \"1.2.3\""));
 
         Ok(())
     }
