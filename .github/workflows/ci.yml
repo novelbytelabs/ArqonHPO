@@ -48,10 +48,20 @@ jobs:
         with:
           key: ${{ matrix.os }}-${{ matrix.rust }}
 
-      - name: Check
+      - name: Check (MSRV)
+        if: matrix.rust == '1.82'
+        run: cargo check --workspace --exclude ship
+
+      - name: Check (Full)
+        if: matrix.rust != '1.82'
         run: cargo check --workspace
 
-      - name: Clippy
+      - name: Clippy (MSRV)
+        if: matrix.rust == '1.82'
+        run: cargo clippy --workspace --exclude ship -- -D warnings
+
+      - name: Clippy (Full)
+        if: matrix.rust != '1.82'
         run: cargo clippy --workspace -- -D warnings
 
       - name: Format
@@ -59,7 +69,12 @@ jobs:
         # Only check format on stable (rustfmt may differ between versions)
         if: matrix.rust == 'stable'
 
-      - name: Test
+      - name: Test (MSRV)
+        if: matrix.rust == '1.82'
+        run: cargo test --workspace --exclude ship
+
+      - name: Test (Full)
+        if: matrix.rust != '1.82'
         run: cargo test --workspace
 
       - name: Audit
