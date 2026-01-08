@@ -16,3 +16,12 @@ pub struct EvalTrace {
     pub value: f64,
     pub cost: f64,
 }
+
+/// A simplified input for seeding (no eval_id required from user).
+/// Used for warm-starting the solver with historical evaluations.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SeedPoint {
+    pub params: std::collections::HashMap<String, f64>,
+    pub value: f64,
+    pub cost: f64,
+}
