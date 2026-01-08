@@ -3,7 +3,7 @@ members = [
     "crates/core",
     "crates/cli",
     "crates/ffi",
-    "bindings/python", "crates/hotpath",
+    "bindings/python", "crates/hotpath", "crates/ship",
 ]
 resolver = "2"
 

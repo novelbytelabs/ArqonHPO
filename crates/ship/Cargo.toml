@@ -1,0 +1,36 @@
+[package]
+name = "ship"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+anyhow = "1.0.100"
+arrow-array = "57.1.0"
+arrow-schema = "57.1.0"
+candle-core = "0.9.1"
+candle-nn = "0.9.1"
+candle-transformers = "0.9.1"
+chrono = "0.4.42"
+clap = { workspace = true, features = ["derive"] }
+hf-hub = { version = "0.4.3", features = ["ureq", "rustls-tls"] }
+ignore = "0.4.25"
+indicatif = "0.18.3"
+lancedb = "0.23.0"
+ratatui = "0.29.0"
+reqwest = { version = "0.12.26", features = ["blocking", "json"] }
+rusqlite = "0.37.0"
+serde = { workspace = true, features = ["derive"] }
+serde_json.workspace = true
+sha2 = "0.10.9"
+thiserror.workspace = true
+tokenizers = "0.22.2"
+tokio = { version = "1.48.0", features = ["full"] }
+toml = "0.9.10"
+tree-sitter = "0.26.3"
+tree-sitter-python = "0.25.0"
+tree-sitter-rust = "0.24.0"
+uuid = { version = "1.19.0", features = ["v4", "fast-rng"] }
+
+[dev-dependencies]
+insta = "1.45.0"
+tempfile = "3.23.0"

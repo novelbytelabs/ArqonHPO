@@ -1,4 +1,4 @@
-use crate::artifact::EvalTrace;
+use crate::artifact::{EvalTrace, SeedPoint};
 use crate::classify::{Classify, Landscape, ResidualDecayClassifier, VarianceClassifier};
 use crate::config::SolverConfig;
 use crate::probe::{PrimeSqrtSlopesRotConfig, PrimeSqrtSlopesRotProbe, Probe, UniformProbe};
@@ -353,5 +353,42 @@ impl Solver {
     #[tracing::instrument(skip(self, eval_results))]
     pub fn tell(&mut self, eval_results: Vec<EvalTrace>) {
         self.history.extend(eval_results);
+    }
+
+    /// Get the next available evaluation ID.
+    fn next_eval_id(&self) -> u64 {
+        self.history.iter().map(|t| t.eval_id).max().unwrap_or(0) + 1
+    }
+
+    /// Inject historical evaluations into the model.
+    /// These are treated as if ask() had been called and tell() received the results.
+    /// The solver assigns internal eval_ids automatically.
+    ///
+    /// # Use Cases
+    /// - Warm-starting from previous optimization runs
+    /// - Streaming/online optimization where external systems generate evaluations
+    ///
+    /// # Example
+    /// ```ignore
+    /// let mut solver = Solver::new(config);
+    /// solver.seed(vec![
+    ///     SeedPoint { params: params1, value: 1.0, cost: 1.0 },
+    ///     SeedPoint { params: params2, value: 2.0, cost: 1.0 },
+    /// ]);
+    /// // Next ask() will be informed by seeded data
+    /// let batch = solver.ask();
+    /// ```
+    #[tracing::instrument(skip(self, evaluations))]
+    pub fn seed(&mut self, evaluations: Vec<SeedPoint>) {
+        for eval in evaluations {
+            let internal_id = self.next_eval_id();
+            let trace = EvalTrace {
+                eval_id: internal_id,
+                params: eval.params,
+                value: eval.value,
+                cost: eval.cost,
+            };
+            self.history.push(trace);
+        }
     }
 }
