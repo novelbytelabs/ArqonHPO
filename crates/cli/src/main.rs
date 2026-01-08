@@ -1,3 +1,5 @@
+#![allow(clippy::disallowed_types)]
+
 use arqonhpo_core::artifact::{EvalTrace, RunArtifact, SeedPoint};
 use arqonhpo_core::config::SolverConfig;
 use arqonhpo_core::machine::Solver;
@@ -815,7 +817,7 @@ fn json_response(result: Result<serde_json::Value>) -> Response<std::io::Cursor<
 fn load_state_json(state_path: &Path, metrics: &Metrics) -> Result<serde_json::Value> {
     let state = load_state(state_path)?;
     metrics.set_history_len(state.history.len());
-    Ok(serde_json::to_value(state).into_diagnostic()?)
+    serde_json::to_value(state).into_diagnostic()
 }
 
 fn load_summary_json(state_path: &Path) -> Result<serde_json::Value> {
