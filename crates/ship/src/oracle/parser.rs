@@ -1,5 +1,5 @@
-use tree_sitter::{Parser, Tree, Language};
-use anyhow::{Result, Context};
+use anyhow::{Context, Result};
+use tree_sitter::{Language, Parser, Tree};
 
 pub struct RustParser {
     parser: Parser,
@@ -10,7 +10,9 @@ impl RustParser {
         let mut parser = Parser::new();
         // tree-sitter 0.22+ API: LanguageFn into_raw() -> Language
         let language: Language = tree_sitter_rust::LANGUAGE.into();
-        parser.set_language(&language).context("Error loading Rust grammar")?;
+        parser
+            .set_language(&language)
+            .context("Error loading Rust grammar")?;
         Ok(Self { parser })
     }
 

@@ -124,9 +124,9 @@ fn test_nelder_mead_expansion() {
     let nm = NelderMead::new(dim, vec![false; dim]);
     let centroid = vec![1.0, 1.0];
     let reflection = vec![2.0, 2.0];
-    
+
     let expansion = nm.compute_expansion(&centroid, &reflection);
-    
+
     // e = [1,1] + 2.0*([2,2] - [1,1]) = [1,1] + [2,2] = [3, 3]
     assert_eq!(expansion, vec![3.0, 3.0]);
 }
@@ -139,9 +139,9 @@ fn test_nelder_mead_outside_contraction() {
     let nm = NelderMead::new(dim, vec![false; dim]);
     let centroid = vec![1.0, 1.0];
     let reflection = vec![2.0, 2.0];
-    
+
     let contraction = nm.compute_outside_contraction(&centroid, &reflection);
-    
+
     // c_o = [1,1] + 0.5*([2,2] - [1,1]) = [1,1] + [0.5,0.5] = [1.5, 1.5]
     assert_eq!(contraction, vec![1.5, 1.5]);
 }
@@ -154,9 +154,9 @@ fn test_nelder_mead_inside_contraction() {
     let nm = NelderMead::new(dim, vec![false; dim]);
     let centroid = vec![1.0, 1.0];
     let worst = vec![0.0, 0.0];
-    
+
     let contraction = nm.compute_inside_contraction(&centroid, &worst);
-    
+
     // c_i = [1,1] + 0.5*([0,0] - [1,1]) = [1,1] + [-0.5,-0.5] = [0.5, 0.5]
     assert_eq!(contraction, vec![0.5, 0.5]);
 }
@@ -172,9 +172,9 @@ fn test_nelder_mead_shrink_calculation() {
         (2.0, vec![2.0, 0.0]), // Second
         (3.0, vec![0.0, 2.0]), // Worst
     ];
-    
+
     let shrunk = nm.compute_shrunk_points();
-    
+
     // shrunk[0] = [0,0] + 0.5*([2,0] - [0,0]) = [1, 0]
     // shrunk[1] = [0,0] + 0.5*([0,2] - [0,0]) = [0, 1]
     assert_eq!(shrunk.len(), 2);
@@ -188,15 +188,18 @@ fn test_nelder_mead_convergence_detection() {
     let dim = 2;
     let mut nm = NelderMead::new(dim, vec![false; dim]);
     nm.tolerance = 1e-6;
-    
+
     // Simplex with diameter < tolerance
     nm.simplex = vec![
         (1.0, vec![0.5, 0.5]),
         (1.0, vec![0.5 + 1e-8, 0.5]),
         (1.0, vec![0.5, 0.5 + 1e-8]),
     ];
-    
-    assert!(nm.check_convergence(), "Should detect convergence for tight simplex");
+
+    assert!(
+        nm.check_convergence(),
+        "Should detect convergence for tight simplex"
+    );
 }
 
 #[test]
@@ -205,15 +208,18 @@ fn test_nelder_mead_no_convergence_when_spread() {
     let dim = 2;
     let mut nm = NelderMead::new(dim, vec![false; dim]);
     nm.tolerance = 1e-6;
-    
+
     // Simplex with large diameter
     nm.simplex = vec![
         (1.0, vec![0.0, 0.0]),
         (2.0, vec![1.0, 0.0]),
         (3.0, vec![0.0, 1.0]),
     ];
-    
-    assert!(!nm.check_convergence(), "Should not converge for spread simplex");
+
+    assert!(
+        !nm.check_convergence(),
+        "Should not converge for spread simplex"
+    );
 }
 
 #[test]
@@ -225,9 +231,9 @@ fn test_nelder_mead_seeded_from_probe_points() {
         (2.0, vec![0.2, 0.2]),
         (3.0, vec![0.3, 0.3]),
     ];
-    
+
     let nm = NelderMead::with_seed_points(dim, seeds.clone(), vec![false; dim]);
-    
+
     assert_eq!(nm.simplex.len(), 3);
     assert_eq!(nm.simplex[0], seeds[0]);
     assert_eq!(nm.simplex[1], seeds[1]);

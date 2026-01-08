@@ -1,11 +1,14 @@
 use anyhow::Result;
-use lancedb::{connect, Table, Connection};
-use lancedb::arrow::arrow_schema::{Schema, Field, DataType};
-use lancedb::query::{QueryBase, ExecutableQuery};
-use arrow_array::{Int64Array, StringArray, FixedSizeListArray, Float32Array, RecordBatch, RecordBatchIterator, ArrayRef};
+use arrow_array::{
+    ArrayRef, FixedSizeListArray, Float32Array, Int64Array, RecordBatch, RecordBatchIterator,
+    StringArray,
+};
 use arrow_schema::FieldRef;
-use std::sync::Arc;
 use futures::StreamExt;
+use lancedb::arrow::arrow_schema::{DataType, Field, Schema};
+use lancedb::query::{ExecutableQuery, QueryBase};
+use lancedb::{connect, Connection, Table};
+use std::sync::Arc;
 
 /// Vector dimension for MiniLM embeddings
 const VECTOR_DIM: i32 = 384;
@@ -25,10 +28,14 @@ impl VectorStore {
     fn schema() -> Arc<Schema> {
         Arc::new(Schema::new(vec![
             Field::new("id", DataType::Int64, false),
-            Field::new("vector", DataType::FixedSizeList(
-                Arc::new(Field::new("item", DataType::Float32, true)),
-                VECTOR_DIM
-            ), false),
+            Field::new(
+                "vector",
+                DataType::FixedSizeList(
+                    Arc::new(Field::new("item", DataType::Float32, true)),
+                    VECTOR_DIM,
+                ),
+                false,
+            ),
             Field::new("text", DataType::Utf8, false),
         ]))
     }
@@ -38,22 +45,34 @@ impl VectorStore {
             return Ok(());
         }
 
-        let table = self.conn.create_empty_table("code_vectors", Self::schema()).execute().await?;
+        let table = self
+            .conn
+            .create_empty_table("code_vectors", Self::schema())
+            .execute()
+            .await?;
         self.table = Some(table);
         Ok(())
     }
 
     /// Add embeddings to the vector store
-    /// 
+    ///
     /// # Arguments
     /// * `ids` - Node IDs from the graph database
     /// * `vectors` - 384-dimensional embedding vectors
     /// * `texts` - Source text for each vector
-    pub async fn add_embeddings(&mut self, ids: Vec<i64>, vectors: Vec<Vec<f32>>, texts: Vec<String>) -> Result<()> {
+    pub async fn add_embeddings(
+        &mut self,
+        ids: Vec<i64>,
+        vectors: Vec<Vec<f32>>,
+        texts: Vec<String>,
+    ) -> Result<()> {
         self.create_table_if_not_exists().await?;
-        
-        let table = self.table.as_ref().ok_or_else(|| anyhow::anyhow!("Table not initialized"))?;
-        
+
+        let table = self
+            .table
+            .as_ref()
+            .ok_or_else(|| anyhow::anyhow!("Table not initialized"))?;
+
         if ids.is_empty() {
             return Ok(());
         }
@@ -61,62 +80,68 @@ impl VectorStore {
         // Build Arrow arrays
         let id_array: ArrayRef = Arc::new(Int64Array::from(ids));
         let text_array: ArrayRef = Arc::new(StringArray::from(texts));
-        
+
         // Build FixedSizeListArray for vectors
         // Flatten all vectors into a single Float32Array
         let flat_values: Vec<f32> = vectors.iter().flatten().copied().collect();
         let values_array = Float32Array::from(flat_values);
-        
+
         // Create the list field
         let list_field: FieldRef = Arc::new(Field::new("item", DataType::Float32, true));
-        let vector_array: ArrayRef = Arc::new(
-            FixedSizeListArray::new(list_field, VECTOR_DIM, Arc::new(values_array), None)
-        );
-        
+        let vector_array: ArrayRef = Arc::new(FixedSizeListArray::new(
+            list_field,
+            VECTOR_DIM,
+            Arc::new(values_array),
+            None,
+        ));
+
         // Create RecordBatch
         let schema = Self::schema();
         let batch = RecordBatch::try_new(schema.clone(), vec![id_array, vector_array, text_array])?;
-        
+
         // Insert via RecordBatchIterator
         let batches = RecordBatchIterator::new(vec![Ok(batch)], schema);
         table.add(batches).execute().await?;
-        
+
         Ok(())
     }
-    
+
     /// Search for similar vectors
-    /// 
+    ///
     /// # Arguments
     /// * `query_vec` - 384-dimensional query vector
     /// * `limit` - Maximum number of results
-    /// 
+    ///
     /// # Returns
     /// Vector of (id, similarity_score) tuples
     pub async fn search(&self, query_vec: Vec<f32>, limit: usize) -> Result<Vec<(i64, f32)>> {
-        let table = self.table.as_ref().ok_or_else(|| anyhow::anyhow!("Table not initialized"))?;
-        
+        let table = self
+            .table
+            .as_ref()
+            .ok_or_else(|| anyhow::anyhow!("Table not initialized"))?;
+
         // Perform vector search
         let mut results = table
             .vector_search(query_vec)?
             .limit(limit)
             .execute()
             .await?;
-        
+
         // Extract IDs and distances
         let mut hits = Vec::new();
-        
+
         while let Some(batch_result) = results.next().await {
             let batch: RecordBatch = batch_result?;
-            
+
             // Get the ID column
             if let Some(id_col) = batch.column_by_name("id") {
                 if let Some(id_array) = id_col.as_any().downcast_ref::<Int64Array>() {
                     // LanceDB returns _distance column for L2 distance
                     let dist_col = batch.column_by_name("_distance");
-                    
+
                     for i in 0..id_array.len() {
                         let id = id_array.value(i);
-                        
+
                         // Convert distance to similarity score
                         // L2 distance: lower is better, so we use 1/(1+d)
                         let score = if let Some(d) = &dist_col {
@@ -129,13 +154,13 @@ impl VectorStore {
                         } else {
                             0.0
                         };
-                        
+
                         hits.push((id, score));
                     }
                 }
             }
         }
-        
+
         Ok(hits)
     }
 }

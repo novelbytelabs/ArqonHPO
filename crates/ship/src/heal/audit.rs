@@ -1,10 +1,10 @@
-use anyhow::Result;
-use rusqlite::{Connection, params};
 use crate::heal::parser_rust::TestFailure;
 use crate::heal::r#loop::HealOutcome;
 use crate::oracle::hash::compute_hash;
-use uuid::Uuid;
+use anyhow::Result;
 use chrono::Utc;
+use rusqlite::{params, Connection};
+use uuid::Uuid;
 
 pub struct AuditLog {
     conn: Connection,
@@ -17,7 +17,7 @@ impl AuditLog {
         audit.init_db()?;
         Ok(audit)
     }
-    
+
     /// Initialize the healing_attempts table if it doesn't exist
     fn init_db(&self) -> Result<()> {
         self.conn.execute(
@@ -35,7 +35,7 @@ impl AuditLog {
         )?;
         Ok(())
     }
-    
+
     pub fn log_attempt(
         &self,
         failure: &TestFailure,
@@ -48,7 +48,7 @@ impl AuditLog {
         let prompt_hash = compute_hash(prompt);
         let diff_hash = compute_hash(fix);
         let outcome_str = format!("{:?}", outcome);
-        
+
         self.conn.execute(
             "INSERT INTO healing_attempts (run_id, timestamp, file_path, error_msg, prompt_hash, diff_hash, outcome)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
@@ -62,7 +62,7 @@ impl AuditLog {
                 outcome_str
             ],
         )?;
-        
+
         Ok(())
     }
 }

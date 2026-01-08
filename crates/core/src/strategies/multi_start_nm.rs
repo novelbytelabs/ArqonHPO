@@ -128,8 +128,6 @@ impl MultiStartNM {
         }
     }
 
-
-
     /// Update tracking after an evaluation
     fn update_tracking(&mut self, value: f64) {
         // Update per-start best

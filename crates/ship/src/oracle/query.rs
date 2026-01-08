@@ -1,7 +1,7 @@
-use anyhow::Result;
+use crate::oracle::embed::MiniLM;
 use crate::oracle::store::OracleStore;
 use crate::oracle::vector_store::VectorStore;
-use crate::oracle::embed::MiniLM;
+use anyhow::Result;
 use std::fs;
 
 pub struct QueryEngine {
@@ -25,7 +25,7 @@ impl QueryEngine {
         let vector_store = VectorStore::new(vector_uri).await?;
         let model = MiniLM::new()?;
         let root = std::env::current_dir()?;
-        
+
         Ok(Self {
             store,
             vector_store,
@@ -37,17 +37,17 @@ impl QueryEngine {
     pub async fn query(&mut self, text: &str) -> Result<Vec<QueryResult>> {
         // 1. Embed query
         let vec = self.model.embed(text)?;
-        
+
         // 2. Vector Search
         let hits = self.vector_store.search(vec, 5).await?;
-        
+
         // 3. Enrich with Graph Data
         let mut results = Vec::new();
         for (id, score) in hits {
             if let Some(node) = self.store.get_node_by_id(id) {
                 // Read snippet from file
                 let snippet = self.get_snippet(&node.path, node.start_line, node.end_line);
-                
+
                 results.push(QueryResult {
                     name: node.name,
                     path: node.path,
@@ -56,7 +56,7 @@ impl QueryEngine {
                 });
             }
         }
-        
+
         Ok(results)
     }
 

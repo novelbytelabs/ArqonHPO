@@ -1,5 +1,5 @@
-use anyhow::Result;
 use crate::heal::parser_rust::TestFailure;
+use anyhow::Result;
 
 pub struct PythonLogParser;
 
@@ -10,7 +10,7 @@ impl PythonLogParser {
         let mut current_test: Option<String> = None;
         let mut current_error = String::new();
         let mut in_failure = false;
-        
+
         for line in text_output.lines() {
             // Detect test failure start (FAILED test_name.py::test_func)
             if line.starts_with("FAILED ") {
@@ -32,7 +32,7 @@ impl PythonLogParser {
                     let parts: Vec<&str> = test_name.split("::").collect();
                     let file_path = parts.first().unwrap_or(&"").to_string();
                     let func_name = parts.get(1).unwrap_or(&"").to_string();
-                    
+
                     failures.push(TestFailure {
                         file_path,
                         line: None, // Pytest doesn't always give line in plain output
@@ -43,7 +43,7 @@ impl PythonLogParser {
                 in_failure = false;
             }
         }
-        
+
         Ok(failures)
     }
 }

@@ -1,4 +1,4 @@
-use anyhow::{Result, Context};
+use anyhow::{Context, Result};
 use reqwest::blocking::Client;
 use serde_json::json;
 use std::env;
@@ -22,8 +22,10 @@ pub struct RemoteLlm {
 
 impl RemoteLlm {
     pub fn new() -> Result<Self> {
-        let base_url = env::var("ARQON_LLM_URL").unwrap_or_else(|_| "http://localhost:11434/v1".to_string());
-        let model = env::var("ARQON_LLM_MODEL").unwrap_or_else(|_| "deepseek-coder:1.3b".to_string());
+        let base_url =
+            env::var("ARQON_LLM_URL").unwrap_or_else(|_| "http://localhost:11434/v1".to_string());
+        let model =
+            env::var("ARQON_LLM_MODEL").unwrap_or_else(|_| "deepseek-coder:1.3b".to_string());
         let api_key = env::var("ARQON_LLM_KEY").unwrap_or_else(|_| "ollama".to_string());
 
         Ok(Self {
@@ -37,10 +39,10 @@ impl RemoteLlm {
             base_delay_ms: 1000,
         })
     }
-    
+
     fn request_with_retry(&self, prompt: &str) -> Result<String> {
         let url = format!("{}/chat/completions", self.base_url);
-        
+
         let body = json!({
             "model": self.model,
             "messages": [
@@ -51,15 +53,21 @@ impl RemoteLlm {
         });
 
         let mut last_error = None;
-        
+
         for attempt in 0..self.max_retries {
             if attempt > 0 {
                 let delay = self.base_delay_ms * 2u64.pow(attempt - 1);
-                println!("  Retrying in {}ms (attempt {}/{})", delay, attempt + 1, self.max_retries);
+                println!(
+                    "  Retrying in {}ms (attempt {}/{})",
+                    delay,
+                    attempt + 1,
+                    self.max_retries
+                );
                 thread::sleep(Duration::from_millis(delay));
             }
-            
-            match self.client
+
+            match self
+                .client
                 .post(&url)
                 .header("Authorization", format!("Bearer {}", self.api_key))
                 .header("Content-Type", "application/json")
@@ -68,29 +76,29 @@ impl RemoteLlm {
             {
                 Ok(response) => {
                     let status = response.status();
-                    
+
                     // Handle rate limiting
                     if status.as_u16() == 429 {
                         last_error = Some(anyhow::anyhow!("Rate limited (429)"));
                         continue;
                     }
-                    
+
                     // Handle server errors (5xx) - retry
                     if status.is_server_error() {
                         last_error = Some(anyhow::anyhow!("Server error: {}", status));
                         continue;
                     }
-                    
+
                     // Handle client errors (4xx except 429) - don't retry
                     if status.is_client_error() {
                         let error_text = response.text().unwrap_or_default();
                         return Err(anyhow::anyhow!("Client error {}: {}", status, error_text));
                     }
-                    
+
                     // Success
-                    let json: serde_json::Value = response.json()
-                        .context("Failed to parse LLM response")?;
-                    
+                    let json: serde_json::Value =
+                        response.json().context("Failed to parse LLM response")?;
+
                     let content = json["choices"][0]["message"]["content"]
                         .as_str()
                         .ok_or_else(|| anyhow::anyhow!("Invalid response format"))?;
@@ -111,7 +119,7 @@ impl RemoteLlm {
                 }
             }
         }
-        
+
         Err(last_error.unwrap_or_else(|| anyhow::anyhow!("Max retries exceeded")))
     }
 }
@@ -121,4 +129,3 @@ impl LlmClient for RemoteLlm {
         self.request_with_retry(prompt)
     }
 }
-

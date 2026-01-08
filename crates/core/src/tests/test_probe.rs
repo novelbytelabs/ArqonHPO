@@ -86,7 +86,7 @@ fn test_uniform_probe_sample_count() {
 fn test_prime_sequence_generation() {
     // Should generate correct prime sequence: 2, 3, 5, 7, 11, 13, ...
     use crate::probe::PrimeIndexProbe;
-    
+
     let primes = PrimeIndexProbe::sieve_of_eratosthenes(30);
     assert_eq!(primes, vec![2, 3, 5, 7, 11, 13, 17, 19, 23, 29]);
 }
@@ -95,18 +95,21 @@ fn test_prime_sequence_generation() {
 fn test_prime_index_probe_deterministic_integration() {
     // Same seed should produce same prime-indexed samples
     use crate::probe::PrimeIndexProbe;
-    
+
     let config = test_config();
     let probe = PrimeIndexProbe::new();
-    
+
     let samples1 = probe.sample(&config);
     let samples2 = probe.sample(&config);
-    
+
     assert_eq!(samples1.len(), samples2.len());
     for (s1, s2) in samples1.iter().zip(samples2.iter()) {
         let x1 = s1.get("x").unwrap();
         let x2 = s2.get("x").unwrap();
-        assert!((x1 - x2).abs() < 1e-10, "Same seed should produce same samples");
+        assert!(
+            (x1 - x2).abs() < 1e-10,
+            "Same seed should produce same samples"
+        );
     }
 }
 
@@ -114,28 +117,31 @@ fn test_prime_index_probe_deterministic_integration() {
 fn test_prime_index_probe_multi_scale() {
     // Prime ratios should provide multi-scale coverage
     use crate::probe::PrimeIndexProbe;
-    
+
     let config = test_config();
     let probe = PrimeIndexProbe::new();
-    
+
     let samples = probe.sample(&config);
     let values: Vec<f64> = samples.iter().map(|s| *s.get("x").unwrap()).collect();
-    
+
     // Check samples cover multiple regions (at least 50% of range)
     let min_val = values.iter().cloned().fold(f64::INFINITY, f64::min);
     let max_val = values.iter().cloned().fold(f64::NEG_INFINITY, f64::max);
     let coverage = (max_val - min_val) / 10.0;
-    assert!(coverage > 0.5, "Prime samples should cover at least 50% of range");
+    assert!(
+        coverage > 0.5,
+        "Prime samples should cover at least 50% of range"
+    );
 }
 
 #[test]
 fn test_prime_index_probe_respects_bounds_integration() {
     // All samples should be within configured bounds
     use crate::probe::PrimeIndexProbe;
-    
+
     let config = test_config();
     let probe = PrimeIndexProbe::new();
-    
+
     let samples = probe.sample(&config);
     for sample in samples {
         let x = sample.get("x").unwrap();

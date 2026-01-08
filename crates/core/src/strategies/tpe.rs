@@ -143,7 +143,6 @@ impl Strategy for TPE {
             return StrategyAction::Evaluate(vec![candidate]);
         }
 
-
         let mut rng = get_rng(config.seed + history.len() as u64);
 
         // 1. Sort by value

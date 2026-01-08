@@ -1,9 +1,9 @@
-use anyhow::{Result, Context};
-use std::path::Path;
+use anyhow::{Context, Result};
 use std::fs;
+use std::path::Path;
 
 /// Apply a fix by replacing the entire file content
-/// 
+///
 /// This is the "Whole Block Replacement" strategy per Constitution XVII.
 /// In MVP, we replace the entire file. Future versions may do surgical edits.
 pub fn apply_fix(file_path: &Path, fix_content: &str) -> Result<()> {
@@ -13,11 +13,11 @@ pub fn apply_fix(file_path: &Path, fix_content: &str) -> Result<()> {
         fs::copy(file_path, &backup_path)
             .with_context(|| format!("Failed to create backup at {:?}", backup_path))?;
     }
-    
+
     // Write fix
     fs::write(file_path, fix_content)
         .with_context(|| format!("Failed to write fix to {:?}", file_path))?;
-    
+
     Ok(())
 }
 

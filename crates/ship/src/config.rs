@@ -1,7 +1,7 @@
-use serde::{Deserialize, Serialize};
-use std::path::Path;
-use std::fs;
 use anyhow::{Context, Result};
+use serde::{Deserialize, Serialize};
+use std::fs;
+use std::path::Path;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
@@ -39,12 +39,14 @@ pub struct ShipConfig {
 impl Default for Config {
     fn default() -> Self {
         Self {
-            meta: MetaConfig {
-                config_version: 1,
-            },
+            meta: MetaConfig { config_version: 1 },
             oracle: OracleConfig {
                 include_globs: vec!["src/**/*.rs".to_string(), "src/**/*.py".to_string()],
-                exclude_globs: vec!["target/".to_string(), "venv/".to_string(), ".git/".to_string()],
+                exclude_globs: vec![
+                    "target/".to_string(),
+                    "venv/".to_string(),
+                    ".git/".to_string(),
+                ],
                 model_path: "~/.arqon/models/".to_string(),
             },
             heal: HealConfig {
@@ -68,10 +70,10 @@ impl Config {
         }
         let content = fs::read_to_string(path)
             .with_context(|| format!("Failed to read config file at {:?}", path))?;
-        
-        let config: Config = toml::from_str(&content)
-            .with_context(|| "Failed to parse config TOML")?;
-            
+
+        let config: Config =
+            toml::from_str(&content).with_context(|| "Failed to parse config TOML")?;
+
         Ok(config)
     }
 

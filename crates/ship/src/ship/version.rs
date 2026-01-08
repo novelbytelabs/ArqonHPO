@@ -1,5 +1,5 @@
-use anyhow::Result;
 use crate::ship::commits::Commit;
+use anyhow::Result;
 
 #[derive(Debug, Clone)]
 pub struct SemVer {
@@ -20,28 +20,44 @@ impl SemVer {
     pub fn parse(version_str: &str) -> Result<Self> {
         let clean = version_str.trim_start_matches('v');
         let parts: Vec<&str> = clean.split('.').collect();
-        
+
         let major = parts.first().and_then(|s| s.parse().ok()).unwrap_or(0);
         let minor = parts.get(1).and_then(|s| s.parse().ok()).unwrap_or(0);
         let patch = parts.get(2).and_then(|s| s.parse().ok()).unwrap_or(0);
-        
-        Ok(Self { major, minor, patch })
+
+        Ok(Self {
+            major,
+            minor,
+            patch,
+        })
     }
-    
+
     pub fn bump_major(&self) -> Self {
-        Self { major: self.major + 1, minor: 0, patch: 0 }
+        Self {
+            major: self.major + 1,
+            minor: 0,
+            patch: 0,
+        }
     }
-    
+
     pub fn bump_minor(&self) -> Self {
-        Self { major: self.major, minor: self.minor + 1, patch: 0 }
+        Self {
+            major: self.major,
+            minor: self.minor + 1,
+            patch: 0,
+        }
     }
-    
+
     pub fn bump_patch(&self) -> Self {
-        Self { major: self.major, minor: self.minor, patch: self.patch + 1 }
+        Self {
+            major: self.major,
+            minor: self.minor,
+            patch: self.patch + 1,
+        }
     }
 
     /// Read version from a Cargo.toml file
-    /// 
+    ///
     /// Handles both regular packages and workspace roots:
     /// - Checks `package.version` first (regular package)
     /// - Falls back to `workspace.package.version` (workspace with shared version)  
@@ -49,20 +65,29 @@ impl SemVer {
     pub fn from_cargo_toml(path: &std::path::Path) -> Result<Self> {
         let content = std::fs::read_to_string(path)
             .map_err(|e| anyhow::anyhow!("Failed to read Cargo.toml: {}", e))?;
-        
+
         let parsed: toml::Value = toml::from_str(&content)
             .map_err(|e| anyhow::anyhow!("Failed to parse Cargo.toml: {}", e))?;
-        
+
         // Try package.version first (regular package)
-        if let Some(version) = parsed.get("package").and_then(|p| p.get("version")).and_then(|v| v.as_str()) {
+        if let Some(version) = parsed
+            .get("package")
+            .and_then(|p| p.get("version"))
+            .and_then(|v| v.as_str())
+        {
             return Self::parse(version);
         }
-        
+
         // Try workspace.package.version (workspace with shared version)
-        if let Some(version) = parsed.get("workspace").and_then(|w| w.get("package")).and_then(|p| p.get("version")).and_then(|v| v.as_str()) {
+        if let Some(version) = parsed
+            .get("workspace")
+            .and_then(|w| w.get("package"))
+            .and_then(|p| p.get("version"))
+            .and_then(|v| v.as_str())
+        {
             return Self::parse(version);
         }
-        
+
         // Fallback: if this is a workspace root, try crates/core/Cargo.toml
         if parsed.get("workspace").is_some() {
             if let Some(parent) = path.parent() {
@@ -72,8 +97,10 @@ impl SemVer {
                 }
             }
         }
-        
-        Err(anyhow::anyhow!("No version found in Cargo.toml or workspace"))
+
+        Err(anyhow::anyhow!(
+            "No version found in Cargo.toml or workspace"
+        ))
     }
 }
 
@@ -81,7 +108,7 @@ impl SemVer {
 pub fn calculate_next_version(current: &SemVer, commits: &[Commit]) -> SemVer {
     let has_breaking = commits.iter().any(|c| c.is_breaking);
     let has_feat = commits.iter().any(|c| c.commit_type == "feat");
-    
+
     if has_breaking {
         current.bump_major()
     } else if has_feat {
@@ -94,14 +121,15 @@ pub fn calculate_next_version(current: &SemVer, commits: &[Commit]) -> SemVer {
 /// Generate changelog from commits
 pub fn generate_changelog(version: &SemVer, commits: &[Commit]) -> String {
     let mut changelog = format!("## v{}\n\n", version);
-    
+
     // Group by type
     let features: Vec<_> = commits.iter().filter(|c| c.commit_type == "feat").collect();
     let fixes: Vec<_> = commits.iter().filter(|c| c.commit_type == "fix").collect();
-    let others: Vec<_> = commits.iter()
+    let others: Vec<_> = commits
+        .iter()
         .filter(|c| c.commit_type != "feat" && c.commit_type != "fix")
         .collect();
-    
+
     if !features.is_empty() {
         changelog.push_str("### Features\n\n");
         for commit in features {
@@ -109,7 +137,7 @@ pub fn generate_changelog(version: &SemVer, commits: &[Commit]) -> String {
         }
         changelog.push('\n');
     }
-    
+
     if !fixes.is_empty() {
         changelog.push_str("### Bug Fixes\n\n");
         for commit in fixes {
@@ -117,7 +145,7 @@ pub fn generate_changelog(version: &SemVer, commits: &[Commit]) -> String {
         }
         changelog.push('\n');
     }
-    
+
     if !others.is_empty() {
         changelog.push_str("### Other Changes\n\n");
         for commit in others {
@@ -125,6 +153,6 @@ pub fn generate_changelog(version: &SemVer, commits: &[Commit]) -> String {
         }
         changelog.push('\n');
     }
-    
+
     changelog
 }

@@ -1,4 +1,4 @@
-use anyhow::{Result, anyhow};
+use anyhow::{anyhow, Result};
 use std::path::Path;
 use std::process::Command;
 
@@ -10,7 +10,7 @@ pub struct RepoInfo {
 }
 
 /// Parse owner/repo from git remote URL
-/// 
+///
 /// Supports:
 /// - HTTPS: `https://github.com/owner/repo.git`
 /// - SSH: `git@github.com:owner/repo.git`
@@ -19,11 +19,13 @@ pub fn parse_git_remote(root: &Path) -> Result<RepoInfo> {
         .args(["remote", "get-url", "origin"])
         .current_dir(root)
         .output()?;
-    
+
     if !output.status.success() {
-        return Err(anyhow!("Failed to get git remote URL. Is this a git repository?"));
+        return Err(anyhow!(
+            "Failed to get git remote URL. Is this a git repository?"
+        ));
     }
-    
+
     let url = String::from_utf8_lossy(&output.stdout).trim().to_string();
     parse_remote_url(&url)
 }
@@ -37,7 +39,7 @@ fn parse_remote_url(url: &str) -> Result<RepoInfo> {
             return parse_path_segment(parts[1]);
         }
     }
-    
+
     // Handle HTTPS format: https://github.com/owner/repo.git
     if url.starts_with("https://") || url.starts_with("http://") {
         // Extract path after host
@@ -50,7 +52,7 @@ fn parse_remote_url(url: &str) -> Result<RepoInfo> {
             return parse_path_segment(path);
         }
     }
-    
+
     Err(anyhow!("Could not parse git remote URL: {}", url))
 }
 
@@ -58,7 +60,7 @@ fn parse_remote_url(url: &str) -> Result<RepoInfo> {
 fn parse_path_segment(path: &str) -> Result<RepoInfo> {
     let clean = path.trim_end_matches(".git").trim_end_matches('/');
     let parts: Vec<&str> = clean.split('/').collect();
-    
+
     if parts.len() >= 2 {
         Ok(RepoInfo {
             owner: parts[0].to_string(),

@@ -310,8 +310,6 @@ impl PrimeSqrtSlopesRotProbe {
         }
     }
 
-
-
     /// Prepare geometry (primes, slopes, rotations, sorted keys) for the given config
     fn prepare_geometry(
         &self,

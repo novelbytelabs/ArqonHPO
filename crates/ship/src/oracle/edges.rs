@@ -1,7 +1,7 @@
-use tree_sitter::{Node, TreeCursor};
-use anyhow::Result;
 use crate::oracle::parser::RustParser;
 use crate::oracle::parser_py::PythonParser;
+use anyhow::Result;
+use tree_sitter::{Node, TreeCursor};
 
 #[derive(Debug, Clone)]
 pub struct GraphEdge {
@@ -40,32 +40,38 @@ impl EdgeBuilder {
         edges
     }
 
-    fn visit_rust_node(&self, cursor: &mut TreeCursor, content: &str, edges: &mut Vec<GraphEdge>, current_scope: Option<String>) {
+    fn visit_rust_node(
+        &self,
+        cursor: &mut TreeCursor,
+        content: &str,
+        edges: &mut Vec<GraphEdge>,
+        current_scope: Option<String>,
+    ) {
         let node = cursor.node();
         let kind = node.kind();
-        
+
         // Track current function scope
         let mut new_scope = current_scope.clone();
         if kind == "function_item" {
-             if let Some(name_node) = node.child_by_field_name("name") {
-                 new_scope = Some(extract_text(name_node, content));
-             }
+            if let Some(name_node) = node.child_by_field_name("name") {
+                new_scope = Some(extract_text(name_node, content));
+            }
         }
 
         // Find calls
         if kind == "call_expression" {
-             if let Some(scope) = &current_scope {
-                 // Try to find the function being called
-                 // In Rust AST: call_expression -> function: identifier
-                 if let Some(func_node) = node.child_by_field_name("function") {
-                     let called_name = extract_text(func_node, content);
-                     edges.push(GraphEdge {
-                         source_node_name: scope.clone(),
-                         target_node_name: called_name,
-                         edge_type: "calls".to_string(),
-                     });
-                 }
-             }
+            if let Some(scope) = &current_scope {
+                // Try to find the function being called
+                // In Rust AST: call_expression -> function: identifier
+                if let Some(func_node) = node.child_by_field_name("function") {
+                    let called_name = extract_text(func_node, content);
+                    edges.push(GraphEdge {
+                        source_node_name: scope.clone(),
+                        target_node_name: called_name,
+                        edge_type: "calls".to_string(),
+                    });
+                }
+            }
         }
 
         if cursor.goto_first_child() {

@@ -1,7 +1,7 @@
-use rusqlite::{Connection, Result, params};
-use crate::oracle::graph::GraphNode;
 use crate::oracle::edges::GraphEdge;
+use crate::oracle::graph::GraphNode;
 use crate::oracle::schema::init_db;
+use rusqlite::{params, Connection, Result};
 use std::path::Path;
 
 pub struct OracleStore {
@@ -23,8 +23,13 @@ impl OracleStore {
              ON CONFLICT(path, type, name, start_line) DO UPDATE SET
              signature_hash=excluded.signature_hash, end_line=excluded.end_line",
             params![
-                node.path, node.node_type, node.name, 
-                node.start_line, node.end_line, node.signature_hash, node.docstring
+                node.path,
+                node.node_type,
+                node.name,
+                node.start_line,
+                node.end_line,
+                node.signature_hash,
+                node.docstring
             ],
         )?;
         let id = tx.last_insert_rowid();
@@ -35,17 +40,23 @@ impl OracleStore {
     pub fn insert_edge(&mut self, edge: &GraphEdge) -> Result<()> {
         // Find IDs first (simplified logic: assumes uniqueness by name for MVP)
         // In reality, would need path resolution.
-        let source_id: Option<i64> = self.conn.query_row(
-            "SELECT id FROM nodes WHERE name = ?1 LIMIT 1",
-            params![edge.source_node_name],
-            |row| row.get(0),
-        ).optional()?;
+        let source_id: Option<i64> = self
+            .conn
+            .query_row(
+                "SELECT id FROM nodes WHERE name = ?1 LIMIT 1",
+                params![edge.source_node_name],
+                |row| row.get(0),
+            )
+            .optional()?;
 
-        let target_id: Option<i64> = self.conn.query_row(
-            "SELECT id FROM nodes WHERE name = ?1 LIMIT 1",
-            params![edge.target_node_name],
-            |row| row.get(0),
-        ).optional()?;
+        let target_id: Option<i64> = self
+            .conn
+            .query_row(
+                "SELECT id FROM nodes WHERE name = ?1 LIMIT 1",
+                params![edge.target_node_name],
+                |row| row.get(0),
+            )
+            .optional()?;
 
         if let (Some(sid), Some(tid)) = (source_id, target_id) {
             self.conn.execute(
@@ -78,12 +89,12 @@ impl OracleStore {
     /// Get function signatures from the same file or nearby lines
     pub fn get_related_signatures(&self, file_path: &str, near_line: Option<u32>) -> Vec<String> {
         let line = near_line.unwrap_or(0) as i64;
-        
+
         // Query functions/structs in the same file, ordered by proximity to the error line
         let mut stmt = match self.conn.prepare(
             "SELECT name, type, start_line, end_line FROM nodes 
              WHERE path = ?1 AND type IN ('function', 'struct', 'impl')
-             ORDER BY ABS(start_line - ?2) LIMIT 5"
+             ORDER BY ABS(start_line - ?2) LIMIT 5",
         ) {
             Ok(s) => s,
             Err(_) => return Vec::new(),

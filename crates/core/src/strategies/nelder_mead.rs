@@ -238,7 +238,11 @@ impl NelderMead {
     }
 
     /// Compute outside contraction: c_o = c + ρ*(r - c)
-    pub(crate) fn compute_outside_contraction(&self, centroid: &[f64], reflection: &[f64]) -> Vec<f64> {
+    pub(crate) fn compute_outside_contraction(
+        &self,
+        centroid: &[f64],
+        reflection: &[f64],
+    ) -> Vec<f64> {
         centroid
             .iter()
             .zip(reflection.iter())

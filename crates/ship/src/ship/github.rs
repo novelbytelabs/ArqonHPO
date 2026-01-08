@@ -1,4 +1,4 @@
-use anyhow::{Result, anyhow};
+use anyhow::{anyhow, Result};
 use reqwest::blocking::Client;
 use serde::{Deserialize, Serialize};
 use std::env;
@@ -28,9 +28,9 @@ impl GitHubClient {
     pub fn new(owner: &str, repo: &str) -> Result<Self> {
         let token = env::var("GITHUB_TOKEN")
             .map_err(|_| anyhow!("GITHUB_TOKEN environment variable not set"))?;
-        
+
         let client = Client::new();
-        
+
         Ok(Self {
             client,
             token,
@@ -38,7 +38,7 @@ impl GitHubClient {
             repo: repo.to_string(),
         })
     }
-    
+
     pub fn create_release_pr(
         &self,
         title: &str,
@@ -50,22 +50,23 @@ impl GitHubClient {
             "https://api.github.com/repos/{}/{}/pulls",
             self.owner, self.repo
         );
-        
+
         let request_body = CreatePRRequest {
             title: title.to_string(),
             body: body.to_string(),
             head: head_branch.to_string(),
             base: base_branch.to_string(),
         };
-        
-        let response = self.client
+
+        let response = self
+            .client
             .post(&url)
             .header("Authorization", format!("token {}", self.token))
             .header("User-Agent", "arqon-ship")
             .header("Accept", "application/vnd.github.v3+json")
             .json(&request_body)
             .send()?;
-        
+
         if response.status().is_success() {
             let pr: CreatePRResponse = response.json()?;
             Ok(pr.html_url)

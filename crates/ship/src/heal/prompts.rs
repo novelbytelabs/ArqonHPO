@@ -28,7 +28,10 @@ Message: {}
 ```rust
 "#,
             ctx.failure.file_path,
-            ctx.failure.line.map(|l| l.to_string()).unwrap_or_else(|| "unknown".to_string()),
+            ctx.failure
+                .line
+                .map(|l| l.to_string())
+                .unwrap_or_else(|| "unknown".to_string()),
             ctx.failure.error_message,
             ctx.source_snippet
         )

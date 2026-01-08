@@ -1,5 +1,5 @@
-use ship::oracle::graph::GraphBuilder;
 use insta::assert_debug_snapshot;
+use ship::oracle::graph::GraphBuilder;
 
 #[test]
 fn test_rust_extraction() {
@@ -17,9 +17,9 @@ fn test_rust_extraction() {
 
     let mut builder = GraphBuilder::new().expect("Failed to init builder");
     let nodes = builder.extract_nodes("test.rs", code);
-    
+
     // Sort nodes to ensure consistent order for snapshot
     // But extraction order is usually tree-order traversal which is deterministic.
-    
+
     assert_debug_snapshot!(nodes);
 }

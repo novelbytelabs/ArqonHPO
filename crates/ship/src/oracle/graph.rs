@@ -1,8 +1,8 @@
-use tree_sitter::{Node, TreeCursor};
-use anyhow::Result;
 use crate::oracle::parser::RustParser;
 use crate::oracle::parser_py::PythonParser;
-use sha2::{Sha256, Digest};
+use anyhow::Result;
+use sha2::{Digest, Sha256};
+use tree_sitter::{Node, TreeCursor};
 
 #[derive(Debug, Clone)]
 pub struct GraphNode {
@@ -47,19 +47,25 @@ impl GraphBuilder {
         nodes
     }
 
-    fn visit_rust_node(&self, cursor: &mut TreeCursor, path: &str, content: &str, nodes: &mut Vec<GraphNode>) {
+    fn visit_rust_node(
+        &self,
+        cursor: &mut TreeCursor,
+        path: &str,
+        content: &str,
+        nodes: &mut Vec<GraphNode>,
+    ) {
         let node = cursor.node();
         let kind = node.kind();
-        
+
         if kind == "function_item" || kind == "struct_item" || kind == "impl_item" {
-             if let Some(name_node) = node.child_by_field_name("name") {
+            if let Some(name_node) = node.child_by_field_name("name") {
                 let name = extract_text(name_node, content);
                 let signature = extract_text(node, content); // Simplified: full text as signature hash source
                 let hash = compute_hash(&signature);
-                
+
                 // Extract doc comments (/// or //!)
                 let docstring = self.extract_rust_docstring(&node, content);
-                
+
                 nodes.push(GraphNode {
                     path: path.to_string(),
                     node_type: kind.replace("_item", ""), // "function", "struct", "impl"
@@ -69,7 +75,7 @@ impl GraphBuilder {
                     signature_hash: hash,
                     docstring,
                 });
-             }
+            }
         }
 
         if cursor.goto_first_child() {
@@ -87,14 +93,14 @@ impl GraphBuilder {
         // Look for preceding sibling line_comment nodes that start with /// or //!
         let lines: Vec<&str> = content.lines().collect();
         let start_line = node.start_position().row;
-        
+
         if start_line == 0 {
             return None;
         }
-        
+
         let mut doc_lines = Vec::new();
         let mut line_idx = start_line.saturating_sub(1);
-        
+
         // Collect doc comments going backwards
         loop {
             if line_idx >= lines.len() {
@@ -115,7 +121,7 @@ impl GraphBuilder {
             }
             line_idx -= 1;
         }
-        
+
         if doc_lines.is_empty() {
             None
         } else {
@@ -133,23 +139,34 @@ impl GraphBuilder {
         nodes
     }
 
-    fn visit_python_node(&self, cursor: &mut TreeCursor, path: &str, content: &str, nodes: &mut Vec<GraphNode>) {
+    fn visit_python_node(
+        &self,
+        cursor: &mut TreeCursor,
+        path: &str,
+        content: &str,
+        nodes: &mut Vec<GraphNode>,
+    ) {
         let node = cursor.node();
         let kind = node.kind();
-        
+
         // Extract functions and classes
         if kind == "function_definition" || kind == "class_definition" {
             if let Some(name_node) = node.child_by_field_name("name") {
                 let name = extract_text(name_node, content);
                 let signature = extract_text(node, content);
                 let hash = compute_hash(&signature);
-                
+
                 // Try to extract docstring (first statement if it's a string)
                 let docstring = self.extract_python_docstring(&node, content);
-                
+
                 nodes.push(GraphNode {
                     path: path.to_string(),
-                    node_type: if kind == "function_definition" { "function" } else { "class" }.to_string(),
+                    node_type: if kind == "function_definition" {
+                        "function"
+                    } else {
+                        "class"
+                    }
+                    .to_string(),
                     name,
                     start_line: node.start_position().row,
                     end_line: node.end_position().row,
