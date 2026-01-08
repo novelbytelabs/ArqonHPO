@@ -94,7 +94,7 @@ pub struct NelderMead {
     dim: usize,
     state: NMState,
     /// Simplex: (value, params_vector)
-    simplex: Vec<(f64, Vec<f64>)>,
+    pub(crate) simplex: Vec<(f64, Vec<f64>)>,
     /// Coefficients for NM operations
     coeffs: NMCoefficients,
     /// Convergence tolerance (simplex diameter)
@@ -199,7 +199,7 @@ impl NelderMead {
     }
 
     /// Compute reflection point: r = c + α*(c - worst)
-    fn compute_reflection(&self, centroid: &[f64], worst: &[f64]) -> Vec<f64> {
+    pub(crate) fn compute_reflection(&self, centroid: &[f64], worst: &[f64]) -> Vec<f64> {
         centroid
             .iter()
             .zip(worst.iter())
@@ -217,7 +217,7 @@ impl NelderMead {
     }
 
     /// Compute expansion point: e = c + γ*(r - c)
-    fn compute_expansion(&self, centroid: &[f64], reflection: &[f64]) -> Vec<f64> {
+    pub(crate) fn compute_expansion(&self, centroid: &[f64], reflection: &[f64]) -> Vec<f64> {
         centroid
             .iter()
             .zip(reflection.iter())
@@ -234,7 +234,7 @@ impl NelderMead {
     }
 
     /// Compute outside contraction: c_o = c + ρ*(r - c)
-    fn compute_outside_contraction(&self, centroid: &[f64], reflection: &[f64]) -> Vec<f64> {
+    pub(crate) fn compute_outside_contraction(&self, centroid: &[f64], reflection: &[f64]) -> Vec<f64> {
         centroid
             .iter()
             .zip(reflection.iter())
@@ -251,7 +251,7 @@ impl NelderMead {
     }
 
     /// Compute inside contraction: c_i = c + ρ*(worst - c)
-    fn compute_inside_contraction(&self, centroid: &[f64], worst: &[f64]) -> Vec<f64> {
+    pub(crate) fn compute_inside_contraction(&self, centroid: &[f64], worst: &[f64]) -> Vec<f64> {
         centroid
             .iter()
             .zip(worst.iter())
@@ -268,7 +268,7 @@ impl NelderMead {
     }
 
     /// Compute shrunk points: x_i = x_best + σ*(x_i - x_best)
-    fn compute_shrunk_points(&self) -> Vec<Vec<f64>> {
+    pub(crate) fn compute_shrunk_points(&self) -> Vec<Vec<f64>> {
         let best = &self.simplex[0].1;
         self.simplex
             .iter()
@@ -291,7 +291,7 @@ impl NelderMead {
     }
 
     /// Check if simplex has converged (diameter < tolerance)
-    fn check_convergence(&self) -> bool {
+    pub(crate) fn check_convergence(&self) -> bool {
         if self.simplex.len() < 2 {
             return false;
         }
