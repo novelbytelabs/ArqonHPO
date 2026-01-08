@@ -3,8 +3,9 @@ use crate::heal::parser_rust::TestFailure;
 use crate::heal::context::ContextBuilder;
 use crate::heal::llm::{LlmClient, RemoteLlm};
 use crate::heal::prompts::PromptTemplates;
-use crate::heal::apply::apply_fix;
+use crate::heal::apply::{apply_fix, restore_backup};
 use crate::heal::verify::VerificationGate;
+use crate::heal::audit::AuditLog;
 use crate::oracle::OracleStore;
 use std::path::PathBuf;
 
@@ -13,9 +14,10 @@ pub struct HealingLoop {
     llm: RemoteLlm,
     max_attempts: u32,
     root: PathBuf,
+    audit: Option<AuditLog>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum HealOutcome {
     Success,
     CompileFailed,
@@ -29,11 +31,21 @@ impl HealingLoop {
         let context_builder = ContextBuilder::new(store, root.clone());
         let llm = RemoteLlm::new()?;
         
+        // Initialize audit log
+        let audit_path = root.join(".arqon/heal_audit.db");
+        let audit = if let Some(parent) = audit_path.parent() {
+            std::fs::create_dir_all(parent).ok();
+            AuditLog::open(audit_path.to_str().unwrap_or(".arqon/heal_audit.db")).ok()
+        } else {
+            None
+        };
+        
         Ok(Self {
             context_builder,
             llm,
             max_attempts,
             root,
+            audit,
         })
     }
     
@@ -55,7 +67,9 @@ impl HealingLoop {
             let fix = self.llm.generate_fix(&prompt)?;
             if fix.is_empty() {
                 println!("LLM generated no fix");
-                return Ok(HealOutcome::NoFixGenerated);
+                let outcome = HealOutcome::NoFixGenerated;
+                self.log_attempt(failure, &prompt, &fix, &outcome);
+                return Ok(outcome);
             }
             
             // 4. Apply fix
@@ -65,10 +79,27 @@ impl HealingLoop {
             // 5. Verify
             let gate = VerificationGate::new(self.root.clone());
             if gate.check_compile()? && gate.check_lint()? && gate.check_tests()? {
-                return Ok(HealOutcome::Success);
+                let outcome = HealOutcome::Success;
+                self.log_attempt(failure, &prompt, &fix, &outcome);
+                return Ok(outcome);
             }
+            
+            // 6. Rollback on failure - restore original before next attempt
+            println!("Verification failed, rolling back...");
+            restore_backup(&file_path)?;
+            
+            // Log unsuccessful attempt
+            self.log_attempt(failure, &prompt, &fix, &HealOutcome::TestFailed);
         }
         
         Ok(HealOutcome::MaxAttemptsExceeded)
+    }
+    
+    fn log_attempt(&self, failure: &TestFailure, prompt: &str, fix: &str, outcome: &HealOutcome) {
+        if let Some(ref audit) = self.audit {
+            if let Err(e) = audit.log_attempt(failure, prompt, fix, outcome) {
+                eprintln!("Warning: Failed to log audit entry: {}", e);
+            }
+        }
     }
 }

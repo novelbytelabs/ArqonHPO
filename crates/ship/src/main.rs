@@ -56,6 +56,14 @@ struct HealArgs {
     /// Maximum healing attempts (default: 2)
     #[arg(long, default_value = "2")]
     max_attempts: u32,
+    
+    /// Target file or crate to heal (optional, heals first failure if not specified)
+    #[arg(long, short)]
+    target: Option<String>,
+    
+    /// Enable verbose output with detailed progress
+    #[arg(long, short)]
+    verbose: bool,
 }
 
 #[derive(Args)]

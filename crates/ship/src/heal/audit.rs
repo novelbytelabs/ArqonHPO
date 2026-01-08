@@ -13,7 +13,27 @@ pub struct AuditLog {
 impl AuditLog {
     pub fn open(db_path: &str) -> Result<Self> {
         let conn = Connection::open(db_path)?;
-        Ok(Self { conn })
+        let audit = Self { conn };
+        audit.init_db()?;
+        Ok(audit)
+    }
+    
+    /// Initialize the healing_attempts table if it doesn't exist
+    fn init_db(&self) -> Result<()> {
+        self.conn.execute(
+            "CREATE TABLE IF NOT EXISTS healing_attempts (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                run_id TEXT NOT NULL,
+                timestamp TEXT NOT NULL,
+                file_path TEXT NOT NULL,
+                error_msg TEXT NOT NULL,
+                prompt_hash TEXT NOT NULL,
+                diff_hash TEXT NOT NULL,
+                outcome TEXT NOT NULL
+            )",
+            [],
+        )?;
+        Ok(())
     }
     
     pub fn log_attempt(
