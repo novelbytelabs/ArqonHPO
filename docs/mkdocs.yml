@@ -8,8 +8,8 @@ edit_uri: edit/main/docs/docs/
 
 theme:
   name: material
-  logo: assets/logo.svg
-  favicon: assets/favicon.svg
+  logo: assets/logo.png
+  favicon: assets/favicon.ico
   features:
     - navigation.tabs
     - navigation.sections
@@ -90,12 +90,21 @@ nav:
   - Docs:
       - documentation/index.md
       - Quickstart: documentation/quickstart.md
-      - Concepts: documentation/concepts/
+      - Concepts:
+          - Metabolic Architecture: documentation/concepts/metabolic_architecture.md
+          - PCR Algorithm: documentation/concepts/pcr_algorithm.md
       - Reference:
           - Python API: documentation/reference/python.md
           - Rust Core: documentation/reference/rust.md
           - CLI: documentation/reference/cli.md
+          - Observability: documentation/reference/observability.md
       - Cookbook: documentation/cookbook/
+  - ArqonShip:
+      - arqonship/index.md
+      - Architecture: arqonship/architecture.md
+      - CLI Reference: arqonship/cli-reference.md
+      - Configuration: arqonship/configuration.md
+      - Developer Guide: arqonship/developer-guide.md
   - Community: community/index.md
   - Project:
       - About: project/about.md
@@ -103,4 +112,6 @@ nav:
       - Changelog: project/changelog.md
       - Contributing: project/contributing.md
       - License: project/LICENSE
+      - CI/CD Runbook: project/ci_cd.md
+      - Test Coverage: project/test_coverage.md
       - Constitution: project/constitution.md

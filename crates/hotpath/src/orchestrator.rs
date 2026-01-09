@@ -184,3 +184,160 @@ impl AdaptiveEngine {
         self.proposer.spsa_state()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::telemetry::TelemetryDigest;
+
+    fn default_digest(objective_value: f64) -> TelemetryDigest {
+        TelemetryDigest::new(1000, objective_value, 1)
+    }
+
+    #[test]
+    fn test_adaptive_engine_config_default() {
+        let config = AdaptiveEngineConfig::default();
+        assert_eq!(config.seed, 42);
+        assert_eq!(config.learning_rate, 0.1);
+        assert_eq!(config.perturbation_scale, 0.01);
+    }
+
+    #[test]
+    fn test_spsa_proposer_new() {
+        let spsa = Spsa::new(42, 2, 0.1, 0.01, SpsaConfig::default());
+        let proposer = SpsaProposer::new(spsa);
+        assert!(proposer.current_perturbation().is_none());
+        assert_eq!(proposer.iteration(), 0);
+    }
+
+    #[test]
+    fn test_spsa_proposer_observe_ready_state() {
+        let spsa = Spsa::new(42, 2, 0.1, 0.01, SpsaConfig::default());
+        let mut proposer = SpsaProposer::new(spsa);
+
+        let digest = default_digest(1.0);
+        let result = proposer.observe(digest);
+
+        assert!(result.is_ok());
+        match result.unwrap() {
+            Proposal::ApplyPlus {
+                perturbation_id,
+                delta,
+            } => {
+                assert!(perturbation_id > 0);
+                assert_eq!(delta.len(), 2);
+            }
+            _ => panic!("Expected ApplyPlus proposal"),
+        }
+    }
+
+    #[test]
+    fn test_spsa_proposer_state_inspection() {
+        let spsa = Spsa::new(42, 2, 0.1, 0.01, SpsaConfig::default());
+        let proposer = SpsaProposer::new(spsa);
+
+        // Initial state should be Ready
+        match proposer.spsa_state() {
+            SpsaState::Ready => {}
+            _ => panic!("Expected Ready state"),
+        }
+    }
+
+    #[test]
+    fn test_adaptive_engine_new() {
+        let config = AdaptiveEngineConfig::default();
+        let initial_params = ParamVec::from_slice(&[0.5, 0.5]);
+        let engine = AdaptiveEngine::new(config, initial_params);
+
+        let snapshot = engine.snapshot();
+        assert_eq!(snapshot.params.len(), 2);
+    }
+
+    #[test]
+    fn test_adaptive_engine_snapshot() {
+        let config = AdaptiveEngineConfig::default();
+        let initial_params = ParamVec::from_slice(&[0.3, 0.7]);
+        let engine = AdaptiveEngine::new(config, initial_params);
+
+        let snapshot = engine.snapshot();
+        assert_eq!(snapshot.params[0], 0.3);
+        assert_eq!(snapshot.params[1], 0.7);
+    }
+
+    #[test]
+    fn test_adaptive_engine_observe() {
+        let config = AdaptiveEngineConfig::default();
+        let initial_params = ParamVec::from_slice(&[0.5, 0.5]);
+        let mut engine = AdaptiveEngine::new(config, initial_params);
+
+        let digest = default_digest(1.0);
+        let result = engine.observe(digest);
+
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_adaptive_engine_spsa_state() {
+        let config = AdaptiveEngineConfig::default();
+        let initial_params = ParamVec::from_slice(&[0.5, 0.5]);
+        let engine = AdaptiveEngine::new(config, initial_params);
+
+        // Should be in Ready state initially
+        match engine.spsa_state() {
+            SpsaState::Ready => {}
+            _ => panic!("Expected Ready state"),
+        }
+    }
+
+    #[test]
+    fn test_spsa_proposer_current_perturbation_after_observe() {
+        let spsa = Spsa::new(42, 2, 0.1, 0.01, SpsaConfig::default());
+        let mut proposer = SpsaProposer::new(spsa);
+
+        let digest = default_digest(1.0);
+        let _ = proposer.observe(digest);
+
+        // After observing in Ready state, should have a perturbation
+        let perturbation = proposer.current_perturbation();
+        assert!(perturbation.is_some());
+        let (id, delta) = perturbation.unwrap();
+        assert!(id > 0);
+        assert_eq!(delta.len(), 2);
+    }
+
+    #[test]
+    fn test_spsa_proposer_waiting_plus_no_samples() {
+        let spsa = Spsa::new(42, 2, 0.1, 0.01, SpsaConfig::default());
+        let mut proposer = SpsaProposer::new(spsa);
+
+        // First observe transitions to WaitingPlus
+        let _ = proposer.observe(default_digest(1.0));
+
+        // Second observe in WaitingPlus without enough samples
+        let result = proposer.observe(default_digest(0.9));
+        assert!(result.is_ok());
+        match result.unwrap() {
+            Proposal::NoChange { reason } => {
+                assert!(matches!(reason, NoChangeReason::EvalTimeout));
+            }
+            Proposal::ApplyMinus { .. } => {} // Also valid if samples reached
+            _ => panic!("Expected NoChange or ApplyMinus"),
+        }
+    }
+
+    #[test]
+    fn test_adaptive_engine_apply() {
+        let config = AdaptiveEngineConfig::default();
+        let initial_params = ParamVec::from_slice(&[0.5, 0.5]);
+        let mut engine = AdaptiveEngine::new(config, initial_params);
+
+        // Create a simple proposal
+        let proposal = Proposal::NoChange {
+            reason: NoChangeReason::EvalTimeout,
+        };
+        let result = engine.apply(proposal);
+
+        // NoChange should be applied successfully
+        assert!(result.is_ok());
+    }
+}

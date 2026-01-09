@@ -220,4 +220,84 @@ mod tests {
         let timestamps: Vec<u64> = buf.iter().map(|d| d.timestamp_us).collect();
         assert_eq!(timestamps, vec![2, 3, 4]);
     }
+
+    #[test]
+    fn test_ring_buffer_clear() {
+        let mut buf = TelemetryRingBuffer::new(3);
+        buf.push(TelemetryDigest::new(1, 0.1, 1));
+        buf.push(TelemetryDigest::new(2, 0.2, 1));
+        assert_eq!(buf.len(), 2);
+
+        buf.clear();
+        assert_eq!(buf.len(), 0);
+        assert!(buf.is_empty());
+    }
+
+    #[test]
+    fn test_ring_buffer_is_empty() {
+        let buf = TelemetryRingBuffer::new(3);
+        assert!(buf.is_empty());
+        assert_eq!(buf.len(), 0);
+    }
+
+    #[test]
+    fn test_digest_validation_too_old() {
+        let digest = TelemetryDigest::new(1000, 0.5, 1);
+
+        // Digest is too old
+        assert_eq!(
+            digest.validate(1, 500, 100, 500, 2000),
+            DigestValidity::TooOld
+        );
+    }
+
+    #[test]
+    fn test_collect_valid_filters() {
+        let mut buf = TelemetryRingBuffer::new(5);
+        buf.push(TelemetryDigest::new(1000, 0.1, 1)); // Valid
+        buf.push(TelemetryDigest::new(1100, 0.2, 2)); // Wrong generation
+        buf.push(TelemetryDigest::new(1200, 0.3, 1)); // Valid
+        buf.push(TelemetryDigest::new(1300, 0.4, 1)); // Valid
+
+        let valid = buf.collect_valid(1, 500, 100, 10000, 1500);
+        assert_eq!(valid.len(), 3); // Only gen 1 digests
+    }
+
+    #[test]
+    fn test_collect_valid_empty_buffer() {
+        let buf = TelemetryRingBuffer::new(5);
+        let valid = buf.collect_valid(1, 500, 100, 10000, 1500);
+        assert!(valid.is_empty());
+    }
+
+    #[test]
+    fn test_digest_with_optional_fields() {
+        let mut digest = TelemetryDigest::new(1000, 0.5, 1);
+        digest.latency_p99_us = Some(5000);
+        digest.throughput_rps = Some(100.0);
+        digest.error_rate = Some(0.01);
+        digest.constraint_margin = Some(0.5);
+
+        assert_eq!(digest.latency_p99_us, Some(5000));
+        assert_eq!(digest.throughput_rps, Some(100.0));
+    }
+
+    #[test]
+    fn test_ring_buffer_iter() {
+        let mut buf = TelemetryRingBuffer::new(3);
+        buf.push(TelemetryDigest::new(1, 0.1, 1));
+        buf.push(TelemetryDigest::new(2, 0.2, 1));
+
+        let values: Vec<f64> = buf.iter().map(|d| d.objective_value).collect();
+        assert_eq!(values, vec![0.1, 0.2]);
+    }
+
+    #[test]
+    fn test_digest_default() {
+        let digest = TelemetryDigest::default();
+        assert_eq!(digest.timestamp_us, 0);
+        assert_eq!(digest.objective_value, 0.0);
+        assert_eq!(digest.config_generation, 0);
+        assert!(digest.latency_p99_us.is_none());
+    }
 }

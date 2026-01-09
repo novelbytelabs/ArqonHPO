@@ -310,44 +310,6 @@ impl PrimeSqrtSlopesRotProbe {
         }
     }
 
-    /// Compute the unit-cube coordinate for sample i, dimension d.
-    ///
-    /// Uses: x_{i,d} = frac(i * sqrt(p_{d+prime_offset}) + frac(p_{d+rot_offset} * rot_alpha) + seed_rot)
-    /// Compute the unit-cube coordinate for sample i, dimension d.
-    ///
-    /// Uses: x_{i,d} = frac(i * sqrt(p_{d+prime_offset}) + frac(p_{d+rot_offset} * rot_alpha) + seed_rot)
-    fn unit_value(&self, i: usize, dim: usize, primes: &[usize]) -> f64 {
-        let slope_prime_idx = self.config.prime_offset + dim;
-        let rot_prime_idx = self.config.rot_offset + dim;
-
-        // Guard against index out of bounds (should not happen with proper prime generation)
-        let slope_prime = primes
-            .get(slope_prime_idx)
-            .copied()
-            .unwrap_or(primes.last().copied().unwrap_or(2));
-        let rot_prime = primes
-            .get(rot_prime_idx)
-            .copied()
-            .unwrap_or(primes.last().copied().unwrap_or(2));
-
-        // Irrational slope from sqrt(prime)
-        let slope = (slope_prime as f64).sqrt();
-
-        // Prime-based rotation term
-        let rot = (rot_prime as f64 * self.config.rot_alpha) % 1.0;
-
-        // Final position: i * slope + rotation + seed_rotation (mod 1)
-        // Using i+1 to avoid origin degeneracy at i=0
-        let pos = ((i + 1) as f64 * slope + rot + self.seed_rotation) % 1.0;
-
-        // Ensure non-negative (mod can be negative for negative inputs, but we're safe here)
-        if pos < 0.0 {
-            pos + 1.0
-        } else {
-            pos
-        }
-    }
-
     /// Prepare geometry (primes, slopes, rotations, sorted keys) for the given config
     fn prepare_geometry(
         &self,

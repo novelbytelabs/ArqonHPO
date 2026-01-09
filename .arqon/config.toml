@@ -1,0 +1,23 @@
+[meta]
+config_version = 1
+
+[oracle]
+include_globs = [
+    "src/**/*.rs",
+    "src/**/*.py",
+]
+exclude_globs = [
+    "target/",
+    "venv/",
+    ".git/",
+]
+model_path = "~/.arqon/models/"
+
+[heal]
+max_attempts = 2
+model_id = "deepseek-coder-1.3b-instruct"
+enabled = true
+
+[ship]
+require_branches = ["main"]
+version_scheme = "semver"

@@ -1,0 +1,5 @@
+{
+  "max_consecutive_regressions": 3,
+  "max_rollbacks_per_hour": 4,
+  "min_stable_time_us": 5000000
+}

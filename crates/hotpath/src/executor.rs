@@ -101,6 +101,77 @@ impl Default for Guardrails {
     }
 }
 
+impl Guardrails {
+    pub fn preset_conservative() -> Self {
+        Self {
+            max_delta_per_step: 0.05,
+            max_updates_per_second: 2.0,
+            min_interval_us: 500_000,
+            direction_flip_limit: 2,
+            cooldown_after_flip_us: 60_000_000,
+            max_cumulative_delta_per_minute: 0.25,
+            regression_count_limit: 3,
+            bounds: None,
+        }
+    }
+
+    pub fn preset_balanced() -> Self {
+        Self::default()
+    }
+
+    pub fn preset_aggressive() -> Self {
+        Self {
+            max_delta_per_step: 0.2,
+            max_updates_per_second: 20.0,
+            min_interval_us: 50_000,
+            direction_flip_limit: 5,
+            cooldown_after_flip_us: 10_000_000,
+            max_cumulative_delta_per_minute: 1.0,
+            regression_count_limit: 8,
+            bounds: None,
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct RollbackPolicy {
+    pub max_consecutive_regressions: u32,
+    pub max_rollbacks_per_hour: u32,
+    pub min_stable_time_us: u64,
+}
+
+impl Default for RollbackPolicy {
+    fn default() -> Self {
+        Self {
+            max_consecutive_regressions: 3,
+            max_rollbacks_per_hour: 4,
+            min_stable_time_us: 5_000_000,
+        }
+    }
+}
+
+impl RollbackPolicy {
+    pub fn preset_conservative() -> Self {
+        Self {
+            max_consecutive_regressions: 2,
+            max_rollbacks_per_hour: 2,
+            min_stable_time_us: 30_000_000,
+        }
+    }
+
+    pub fn preset_balanced() -> Self {
+        Self::default()
+    }
+
+    pub fn preset_aggressive() -> Self {
+        Self {
+            max_consecutive_regressions: 5,
+            max_rollbacks_per_hour: 10,
+            min_stable_time_us: 1_000_000,
+        }
+    }
+}
+
 /// Tier 1 safe executor.
 ///
 /// Constitution: II.17 - Safety Executor Contract
@@ -311,6 +382,113 @@ mod tests {
         let current = ParamVec::from_slice(&[0.5, 0.5]);
 
         let result = executor.validate_delta(&delta, &current);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_guardrails_preset_conservative() {
+        let g = Guardrails::preset_conservative();
+        assert_eq!(g.max_delta_per_step, 0.05);
+        assert_eq!(g.max_updates_per_second, 2.0);
+        assert_eq!(g.direction_flip_limit, 2);
+    }
+
+    #[test]
+    fn test_guardrails_preset_balanced() {
+        let g = Guardrails::preset_balanced();
+        assert_eq!(g.max_delta_per_step, 0.1);
+        assert_eq!(g.max_updates_per_second, 10.0);
+    }
+
+    #[test]
+    fn test_guardrails_preset_aggressive() {
+        let g = Guardrails::preset_aggressive();
+        assert_eq!(g.max_delta_per_step, 0.2);
+        assert_eq!(g.max_updates_per_second, 20.0);
+        assert_eq!(g.direction_flip_limit, 5);
+    }
+
+    #[test]
+    fn test_rollback_policy_default() {
+        let p = RollbackPolicy::default();
+        assert_eq!(p.max_consecutive_regressions, 3);
+        assert_eq!(p.max_rollbacks_per_hour, 4);
+    }
+
+    #[test]
+    fn test_rollback_policy_presets() {
+        let conservative = RollbackPolicy::preset_conservative();
+        assert_eq!(conservative.max_consecutive_regressions, 2);
+
+        let balanced = RollbackPolicy::preset_balanced();
+        assert_eq!(balanced.max_consecutive_regressions, 3);
+
+        let aggressive = RollbackPolicy::preset_aggressive();
+        assert_eq!(aggressive.max_consecutive_regressions, 5);
+    }
+
+    #[test]
+    fn test_clamp_to_bounds() {
+        let mut guardrails = Guardrails::default();
+        guardrails.bounds = Some(vec![(0.0, 1.0), (0.2, 0.8)]);
+
+        let config = Arc::new(AtomicConfig::new(ParamVec::from_slice(&[0.5, 0.5])));
+        let executor = SafetyExecutor::new(config, guardrails);
+
+        let mut params = ParamVec::from_slice(&[-0.5, 1.5]); // Out of bounds
+        executor.clamp_to_bounds(&mut params);
+
+        assert_eq!(params[0], 0.0); // Clamped to min
+        assert_eq!(params[1], 0.8); // Clamped to max
+    }
+
+    #[test]
+    fn test_validate_delta_out_of_bounds() {
+        let mut guardrails = Guardrails::default();
+        guardrails.bounds = Some(vec![(0.0, 1.0), (0.0, 1.0)]);
+
+        let config = Arc::new(AtomicConfig::new(ParamVec::from_slice(&[0.9, 0.5])));
+        let executor = SafetyExecutor::new(config, guardrails);
+
+        let delta = ParamVec::from_slice(&[0.05, 0.0]); // Would push to 0.95
+        let current = ParamVec::from_slice(&[0.9, 0.5]);
+        assert!(executor.validate_delta(&delta, &current).is_ok());
+
+        let delta_bad = ParamVec::from_slice(&[0.05, 0.0]); // Test at 0.96, should be OK
+        let current_edge = ParamVec::from_slice(&[0.96, 0.5]); // 0.96 + 0.05 = 1.01 > 1.0
+        let result = executor.validate_delta(&delta_bad, &current_edge);
+        assert!(matches!(result, Err(Violation::OutOfBounds { .. })));
+    }
+
+    #[test]
+    fn test_snapshot_returns_current_config() {
+        let config = Arc::new(AtomicConfig::new(ParamVec::from_slice(&[0.3, 0.7])));
+        let executor = SafetyExecutor::new(config, Guardrails::default());
+
+        let snapshot = executor.snapshot();
+        assert_eq!(snapshot.params.len(), 2);
+        assert_eq!(snapshot.params[0], 0.3);
+        assert_eq!(snapshot.params[1], 0.7);
+    }
+
+    #[test]
+    fn test_rollback_no_baseline() {
+        let config = Arc::new(AtomicConfig::new(ParamVec::from_slice(&[0.5, 0.5])));
+        let mut executor = SafetyExecutor::new(config, Guardrails::default());
+
+        let result = executor.rollback();
+        assert!(matches!(result, Err(Violation::NoBaseline)));
+    }
+
+    #[test]
+    fn test_set_baseline_and_rollback() {
+        let config = Arc::new(AtomicConfig::new(ParamVec::from_slice(&[0.5, 0.5])));
+        let mut executor = SafetyExecutor::new(config, Guardrails::default());
+
+        executor.set_baseline();
+
+        // Rollback should now succeed
+        let result = executor.rollback();
         assert!(result.is_ok());
     }
 }

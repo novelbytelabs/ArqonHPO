@@ -18,7 +18,8 @@ pub use config_atomic::{
 };
 pub use control_safety::{ControlSafety, SafeMode, SafeModeExit, SafeModeReason};
 pub use executor::{
-    ApplyReceipt, Guardrails, RollbackReceipt, SafeExecutor, SafetyExecutor, Violation,
+    ApplyReceipt, Guardrails, RollbackPolicy, RollbackReceipt, SafeExecutor, SafetyExecutor,
+    Violation,
 };
 pub use orchestrator::{AdaptiveEngine, AdaptiveEngineConfig};
 pub use proposer::{AdaptiveProposer, NoChangeReason, Proposal, ProposalResult};

@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ArqonHPO Dashboard</title>
+    <link rel="stylesheet" href="/assets/dashboard.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header>
+        <div>
+          <h1>ArqonHPO Control Room</h1>
+          <p class="subtitle">Live optimization observability</p>
+        </div>
+        <div class="status">
+          <span id="status-dot"></span>
+          <span id="status-text">Connecting...</span>
+        </div>
+      </header>
+
+      <section class="grid">
+        <article class="card">
+          <h2>Run Summary</h2>
+          <div class="summary-grid">
+            <div>
+              <label>Run ID</label>
+              <strong id="summary-run">—</strong>
+            </div>
+            <div>
+              <label>Budget</label>
+              <strong id="summary-budget">—</strong>
+            </div>
+            <div>
+              <label>History</label>
+              <strong id="summary-history">—</strong>
+            </div>
+            <div>
+              <label>Best</label>
+              <strong id="summary-best">—</strong>
+            </div>
+            <div>
+              <label>Latest</label>
+              <strong id="summary-latest">—</strong>
+            </div>
+          </div>
+        </article>
+
+        <article class="card chart-card">
+          <h2>Objective Trend</h2>
+          <canvas id="trend-chart" height="140"></canvas>
+        </article>
+
+        <article class="card">
+          <h2>Recent Evaluations</h2>
+          <div id="history-list" class="list"></div>
+        </article>
+
+        <article class="card">
+          <h2>Audit Events</h2>
+          <div class="filters">
+            <input id="filter-event" placeholder="event filter" />
+            <input id="filter-search" placeholder="search" />
+            <button id="filter-apply">Apply</button>
+          </div>
+          <div id="event-list" class="list"></div>
+        </article>
+
+        <article class="card">
+          <h2>Control Actions</h2>
+          <form id="action-form">
+            <input id="action-name" placeholder="action (pause/resume/rollback)" required />
+            <input id="action-reason" placeholder="reason" />
+            <button type="submit">Queue Action</button>
+          </form>
+          <div id="action-list" class="list"></div>
+        </article>
+      </section>
+    </div>
+
+    <script src="/assets/dashboard.js"></script>
+  </body>
+</html>

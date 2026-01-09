@@ -31,6 +31,11 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      - name: Install Protoc
+        uses: arduino/setup-protoc@v3
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
       # PyO3 0.24.2 requires Python <= 3.13. macOS runners have 3.14.
       - name: Setup Python 3.12
         uses: actions/setup-python@v5
@@ -48,10 +53,20 @@ jobs:
         with:
           key: ${{ matrix.os }}-${{ matrix.rust }}
 
-      - name: Check
+      - name: Check (MSRV)
+        if: matrix.rust == '1.82'
+        run: cargo check --workspace --exclude ship
+
+      - name: Check (Full)
+        if: matrix.rust != '1.82'
         run: cargo check --workspace
 
-      - name: Clippy
+      - name: Clippy (MSRV)
+        if: matrix.rust == '1.82'
+        run: cargo clippy --workspace --exclude ship -- -D warnings
+
+      - name: Clippy (Full)
+        if: matrix.rust != '1.82'
         run: cargo clippy --workspace -- -D warnings
 
       - name: Format
@@ -59,7 +74,12 @@ jobs:
         # Only check format on stable (rustfmt may differ between versions)
         if: matrix.rust == 'stable'
 
-      - name: Test
+      - name: Test (MSRV)
+        if: matrix.rust == '1.82'
+        run: cargo test --workspace --exclude ship
+
+      - name: Test (Full)
+        if: matrix.rust != '1.82'
         run: cargo test --workspace
 
       - name: Audit
@@ -75,6 +95,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+
+      - name: Install Protoc
+        uses: arduino/setup-protoc@v3
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
 
       # PyO3 requires Python dev headers for linking
       - name: Setup Python 3.12
@@ -92,7 +117,7 @@ jobs:
         run: cargo install cargo-tarpaulin
 
       - name: Generate Coverage
-        run: cargo tarpaulin --workspace --exclude arqonhpo --out xml --skip-clean
+        run: cargo tarpaulin --workspace --exclude arqonhpo --exclude ship --out xml --skip-clean
         env:
           PYO3_PYTHON: python3.12
 
@@ -111,6 +136,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+
+      - name: Install Protoc
+        uses: arduino/setup-protoc@v3
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
@@ -139,6 +169,11 @@ jobs:
         python-version: ["3.10", "3.11", "3.12"]
     steps:
       - uses: actions/checkout@v6
+
+      - name: Install Protoc
+        uses: arduino/setup-protoc@v3
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5

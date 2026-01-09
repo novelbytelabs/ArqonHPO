@@ -41,19 +41,23 @@ enum NMState {
     },
     /// Waiting for expansion point evaluation
     Expansion {
+        #[allow(dead_code)]
         centroid: Vec<f64>,
         reflection: Vec<f64>,
+        #[allow(dead_code)]
         expansion: Vec<f64>,
         reflection_value: f64,
     },
     /// Waiting for outside contraction point evaluation
     OutsideContraction {
+        #[allow(dead_code)]
         centroid: Vec<f64>,
         contraction: Vec<f64>,
         reflection_value: f64,
     },
     /// Waiting for inside contraction point evaluation  
     InsideContraction {
+        #[allow(dead_code)]
         centroid: Vec<f64>,
         contraction: Vec<f64>,
     },
@@ -94,7 +98,7 @@ pub struct NelderMead {
     dim: usize,
     state: NMState,
     /// Simplex: (value, params_vector)
-    simplex: Vec<(f64, Vec<f64>)>,
+    pub(crate) simplex: Vec<(f64, Vec<f64>)>,
     /// Coefficients for NM operations
     coeffs: NMCoefficients,
     /// Convergence tolerance (simplex diameter)
@@ -199,7 +203,7 @@ impl NelderMead {
     }
 
     /// Compute reflection point: r = c + α*(c - worst)
-    fn compute_reflection(&self, centroid: &[f64], worst: &[f64]) -> Vec<f64> {
+    pub(crate) fn compute_reflection(&self, centroid: &[f64], worst: &[f64]) -> Vec<f64> {
         centroid
             .iter()
             .zip(worst.iter())
@@ -217,7 +221,7 @@ impl NelderMead {
     }
 
     /// Compute expansion point: e = c + γ*(r - c)
-    fn compute_expansion(&self, centroid: &[f64], reflection: &[f64]) -> Vec<f64> {
+    pub(crate) fn compute_expansion(&self, centroid: &[f64], reflection: &[f64]) -> Vec<f64> {
         centroid
             .iter()
             .zip(reflection.iter())
@@ -234,7 +238,11 @@ impl NelderMead {
     }
 
     /// Compute outside contraction: c_o = c + ρ*(r - c)
-    fn compute_outside_contraction(&self, centroid: &[f64], reflection: &[f64]) -> Vec<f64> {
+    pub(crate) fn compute_outside_contraction(
+        &self,
+        centroid: &[f64],
+        reflection: &[f64],
+    ) -> Vec<f64> {
         centroid
             .iter()
             .zip(reflection.iter())
@@ -251,7 +259,7 @@ impl NelderMead {
     }
 
     /// Compute inside contraction: c_i = c + ρ*(worst - c)
-    fn compute_inside_contraction(&self, centroid: &[f64], worst: &[f64]) -> Vec<f64> {
+    pub(crate) fn compute_inside_contraction(&self, centroid: &[f64], worst: &[f64]) -> Vec<f64> {
         centroid
             .iter()
             .zip(worst.iter())
@@ -268,7 +276,7 @@ impl NelderMead {
     }
 
     /// Compute shrunk points: x_i = x_best + σ*(x_i - x_best)
-    fn compute_shrunk_points(&self) -> Vec<Vec<f64>> {
+    pub(crate) fn compute_shrunk_points(&self) -> Vec<Vec<f64>> {
         let best = &self.simplex[0].1;
         self.simplex
             .iter()
@@ -291,7 +299,7 @@ impl NelderMead {
     }
 
     /// Check if simplex has converged (diameter < tolerance)
-    fn check_convergence(&self) -> bool {
+    pub(crate) fn check_convergence(&self) -> bool {
         if self.simplex.len() < 2 {
             return false;
         }
@@ -839,5 +847,242 @@ mod tests {
 
         assert_eq!(nm.simplex.len(), 1);
         assert_eq!(nm.simplex[0].0, 0.5);
+    }
+
+    #[test]
+    fn test_nm_with_coefficients() {
+        let coeffs = NMCoefficients {
+            alpha: 0.5,
+            gamma: 1.5,
+            rho: 0.25,
+            sigma: 0.25,
+        };
+        let nm = NelderMead::with_coefficients(2, coeffs, vec![false; 2]);
+        assert_eq!(nm.coeffs.alpha, 0.5);
+        assert_eq!(nm.coeffs.gamma, 1.5);
+    }
+
+    #[test]
+    fn test_nm_compute_centroid_linear() {
+        let mut nm = NelderMead::new(2, vec![false; 2]);
+        nm.simplex = vec![
+            (1.0, vec![0.0, 0.0]),
+            (2.0, vec![1.0, 0.0]),
+            (3.0, vec![0.0, 1.0]), // worst, excluded
+        ];
+
+        let centroid = nm.compute_centroid();
+        // Centroid of first 2 points: (0+1)/2, (0+0)/2 = (0.5, 0.0)
+        assert!((centroid[0] - 0.5).abs() < 1e-10);
+        assert!((centroid[1] - 0.0).abs() < 1e-10);
+    }
+
+    #[test]
+    fn test_nm_compute_centroid_periodic() {
+        let mut nm = NelderMead::new(2, vec![true; 2]);
+        nm.simplex = vec![
+            (1.0, vec![0.9, 0.1]),
+            (2.0, vec![0.1, 0.9]),
+            (3.0, vec![0.5, 0.5]), // worst, excluded
+        ];
+
+        let centroid = nm.compute_centroid();
+        // Periodic centroid should wrap around - allow for floating point at boundaries
+        assert!(centroid[0] >= 0.0 && centroid[0] <= 1.0);
+        assert!(centroid[1] >= 0.0 && centroid[1] <= 1.0);
+    }
+
+    #[test]
+    fn test_nm_compute_shrunk_points() {
+        let mut nm = NelderMead::new(2, vec![false; 2]);
+        nm.simplex = vec![
+            (1.0, vec![0.0, 0.0]), // best
+            (2.0, vec![2.0, 0.0]),
+            (3.0, vec![0.0, 2.0]),
+        ];
+
+        let shrunk = nm.compute_shrunk_points();
+        // x_i = x_best + σ*(x_i - x_best) = 0 + 0.5*(2 - 0) = 1.0
+        assert_eq!(shrunk.len(), 2);
+        assert!((shrunk[0][0] - 1.0).abs() < 1e-10);
+        assert!((shrunk[1][1] - 1.0).abs() < 1e-10);
+    }
+
+    #[test]
+    fn test_nm_check_convergence_false() {
+        let mut nm = NelderMead::new(2, vec![false; 2]);
+        nm.simplex = vec![(1.0, vec![0.0, 0.0]), (2.0, vec![1.0, 1.0])];
+
+        // Diameter is large, should not converge
+        assert!(!nm.check_convergence());
+    }
+
+    #[test]
+    fn test_nm_check_convergence_true() {
+        let mut nm = NelderMead::new(2, vec![false; 2]);
+        nm.tolerance = 0.0001;
+        nm.simplex = vec![(1.0, vec![0.5, 0.5]), (1.001, vec![0.50001, 0.50001])];
+
+        // Diameter is tiny, should converge
+        assert!(nm.check_convergence());
+    }
+
+    #[test]
+    fn test_nm_check_convergence_single_point() {
+        let mut nm = NelderMead::new(2, vec![false; 2]);
+        nm.simplex = vec![(1.0, vec![0.5, 0.5])];
+
+        // Single point cannot converge
+        assert!(!nm.check_convergence());
+    }
+
+    #[test]
+    fn test_nm_dict_to_vec() {
+        let nm = NelderMead::new(2, vec![false; 2]);
+        let mut params = HashMap::new();
+        params.insert("a".to_string(), 0.5);
+        params.insert("b".to_string(), 0.7);
+
+        let keys = vec!["a".to_string(), "b".to_string()];
+        let vec = nm.dict_to_vec(&params, &keys);
+        assert_eq!(vec, vec![0.5, 0.7]);
+    }
+
+    #[test]
+    fn test_nm_vec_to_dict() {
+        let nm = NelderMead::new(2, vec![false; 2]);
+        let vec = vec![0.5, 0.7];
+        let keys = vec!["x".to_string(), "y".to_string()];
+
+        let dict = nm.vec_to_dict(&vec, &keys);
+        assert_eq!(dict["x"], 0.5);
+        assert_eq!(dict["y"], 0.7);
+    }
+
+    #[test]
+    fn test_nm_sort_simplex() {
+        let mut nm = NelderMead::new(2, vec![false; 2]);
+        nm.simplex = vec![
+            (3.0, vec![0.0, 0.0]),
+            (1.0, vec![1.0, 1.0]),
+            (2.0, vec![0.5, 0.5]),
+        ];
+
+        nm.sort_simplex();
+
+        assert_eq!(nm.simplex[0].0, 1.0);
+        assert_eq!(nm.simplex[1].0, 2.0);
+        assert_eq!(nm.simplex[2].0, 3.0);
+    }
+
+    #[test]
+    fn test_nm_clamp_to_bounds_linear() {
+        let nm = NelderMead::new(1, vec![false]);
+        let mut vec = vec![1.5]; // Out of bounds
+
+        let mut bounds = HashMap::new();
+        bounds.insert(
+            "x".to_string(),
+            crate::config::Domain {
+                min: 0.0,
+                max: 1.0,
+                scale: crate::config::Scale::Linear,
+            },
+        );
+        let config = SolverConfig {
+            seed: 42,
+            budget: 10,
+            bounds,
+            probe_ratio: 0.2,
+            strategy_params: None,
+        };
+
+        nm.clamp_to_bounds(&mut vec, &config, &["x".to_string()]);
+        assert_eq!(vec[0], 1.0);
+    }
+
+    #[test]
+    fn test_nm_clamp_to_bounds_periodic() {
+        let nm = NelderMead::new(1, vec![true]);
+        let mut vec = vec![1.2]; // Out of bounds for periodic
+
+        let mut bounds = HashMap::new();
+        bounds.insert(
+            "x".to_string(),
+            crate::config::Domain {
+                min: 0.0,
+                max: 1.0,
+                scale: crate::config::Scale::Periodic,
+            },
+        );
+        let config = SolverConfig {
+            seed: 42,
+            budget: 10,
+            bounds,
+            probe_ratio: 0.2,
+            strategy_params: None,
+        };
+
+        nm.clamp_to_bounds(&mut vec, &config, &["x".to_string()]);
+        // Periodic should wrap
+        assert!((vec[0] - 0.2).abs() < 1e-10);
+    }
+
+    #[test]
+    fn test_nm_reflection_periodic() {
+        let nm = NelderMead::new(2, vec![true; 2]);
+        let centroid = vec![0.9, 0.1];
+        let worst = vec![0.1, 0.9];
+
+        let reflection = nm.compute_reflection(&centroid, &worst);
+        // Should wrap around [0, 1)
+        assert!(reflection[0] >= 0.0 && reflection[0] < 1.0);
+        assert!(reflection[1] >= 0.0 && reflection[1] < 1.0);
+    }
+
+    #[test]
+    fn test_nm_expansion_periodic() {
+        let nm = NelderMead::new(2, vec![true; 2]);
+        let centroid = vec![0.8, 0.2];
+        let reflection = vec![0.9, 0.1];
+
+        let expansion = nm.compute_expansion(&centroid, &reflection);
+        assert!(expansion[0] >= 0.0 && expansion[0] < 1.0);
+        assert!(expansion[1] >= 0.0 && expansion[1] < 1.0);
+    }
+
+    #[test]
+    fn test_nm_outside_contraction_periodic() {
+        let nm = NelderMead::new(2, vec![true; 2]);
+        let centroid = vec![0.8, 0.2];
+        let reflection = vec![0.9, 0.1];
+
+        let contraction = nm.compute_outside_contraction(&centroid, &reflection);
+        assert!(contraction[0] >= 0.0 && contraction[0] < 1.0);
+        assert!(contraction[1] >= 0.0 && contraction[1] < 1.0);
+    }
+
+    #[test]
+    fn test_nm_inside_contraction_periodic() {
+        let nm = NelderMead::new(2, vec![true; 2]);
+        let centroid = vec![0.8, 0.2];
+        let worst = vec![0.1, 0.9];
+
+        let contraction = nm.compute_inside_contraction(&centroid, &worst);
+        assert!(contraction[0] >= 0.0 && contraction[0] < 1.0);
+        assert!(contraction[1] >= 0.0 && contraction[1] < 1.0);
+    }
+
+    #[test]
+    fn test_nm_shrunk_points_periodic() {
+        let mut nm = NelderMead::new(2, vec![true; 2]);
+        nm.simplex = vec![
+            (1.0, vec![0.1, 0.1]), // best
+            (2.0, vec![0.9, 0.9]),
+        ];
+
+        let shrunk = nm.compute_shrunk_points();
+        assert!(shrunk[0][0] >= 0.0 && shrunk[0][0] < 1.0);
+        assert!(shrunk[0][1] >= 0.0 && shrunk[0][1] < 1.0);
     }
 }

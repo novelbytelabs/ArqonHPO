@@ -5,7 +5,7 @@
 //! at the hotpath crate boundary.
 #![allow(clippy::disallowed_types)] // Boundary code - HashMap allowed per VIII.3
 #![allow(non_local_definitions)]
-use arqonhpo_core::artifact::EvalTrace;
+use arqonhpo_core::artifact::{EvalTrace, SeedPoint};
 use arqonhpo_core::config::SolverConfig;
 use arqonhpo_core::machine::Solver;
 use pyo3::prelude::*;
@@ -49,6 +49,41 @@ impl ArqonSolver {
 
     fn get_history_len(&self) -> usize {
         self.inner.history.len()
+    }
+
+    /// Seed the solver with historical evaluations.
+    /// Input: JSON array of {"params": {...}, "value": f64, "cost": f64}
+    ///
+    /// Use cases:
+    /// - Warm-starting from previous optimization runs
+    /// - Streaming/online optimization where external systems generate evaluations
+    fn seed(&mut self, seed_json: String) -> PyResult<()> {
+        let seeds: Vec<SeedPoint> = serde_json::from_str(&seed_json).map_err(|e| {
+            PyErr::new::<pyo3::exceptions::PyValueError, _>(format!("Invalid seed data: {}", e))
+        })?;
+        self.inner.seed(seeds);
+        Ok(())
+    }
+
+    /// Ask for exactly ONE candidate for online/real-time optimization.
+    ///
+    /// Unlike `ask()` which returns a full batch for PCR workflow, this method:
+    /// 1. Skips Probe/Classify phases
+    /// 2. Uses TPE strategy directly for incremental learning
+    /// 3. Returns exactly 1 candidate per call
+    ///
+    /// Usage pattern (Online Mode):
+    /// ```python
+    /// solver = ArqonSolver(config_json)
+    /// while True:
+    ///     candidate = solver.ask_one()  # Get ONE config
+    ///     if candidate is None:
+    ///         break
+    ///     reward = evaluate(candidate)
+    ///     solver.seed(json.dumps([{"params": candidate, "value": reward, "cost": 1.0}]))
+    /// ```
+    fn ask_one(&mut self) -> PyResult<Option<HashMap<String, f64>>> {
+        Ok(self.inner.ask_one())
     }
 }
 

@@ -42,7 +42,7 @@ enum MultiStartPhase {
 /// Multi-start Nelder-Mead: runs K NM instances from diverse seed points
 pub struct MultiStartNM {
     config: MultiStartConfig,
-    dim: usize,
+    _dim: usize,
     /// All NM instances
     starts: Vec<NelderMead>,
     /// Currently active start index
@@ -115,7 +115,7 @@ impl MultiStartNM {
 
         Self {
             config,
-            dim,
+            _dim: dim,
             starts,
             active_idx: 0,
             best_per_start: vec![f64::INFINITY; num_starts],
@@ -125,19 +125,6 @@ impl MultiStartNM {
             phase: MultiStartPhase::CoordinateDescent,
             triage_evals: vec![0; num_starts],
             best_start_idx: 0,
-        }
-    }
-
-    /// Check if we should switch to next start
-    fn should_switch(&self) -> bool {
-        self.stall_counter >= self.config.stall_threshold
-    }
-
-    /// Switch to the next start
-    fn switch_to_next(&mut self) {
-        if self.starts.len() > 1 {
-            self.active_idx = (self.active_idx + 1) % self.starts.len();
-            self.stall_counter = 0;
         }
     }
 
@@ -353,5 +340,109 @@ mod tests {
         let config = MultiStartConfig::default();
         assert_eq!(config.k, 4);
         assert_eq!(config.stall_threshold, 10);
+    }
+
+    #[test]
+    fn test_multi_start_with_config() {
+        let mut seeds = Vec::new();
+        for i in 0..30 {
+            let mut point = HashMap::new();
+            point.insert("x".to_string(), i as f64 / 30.0);
+            seeds.push(point);
+        }
+
+        let config = MultiStartConfig {
+            k: 2,
+            stall_threshold: 5,
+            triage_budget: 10,
+            min_evals_per_start: 20,
+        };
+        let ms = MultiStartNM::with_config(1, seeds, config);
+        assert!(ms.starts.len() >= 1);
+    }
+
+    #[test]
+    fn test_val_to_unit_linear() {
+        let result = MultiStartNM::val_to_unit(0.5, 0.0, 1.0, Scale::Linear);
+        assert!((result - 0.5).abs() < 1e-10);
+    }
+
+    #[test]
+    fn test_val_to_unit_log() {
+        let result = MultiStartNM::val_to_unit(1.0, 0.1, 10.0, Scale::Log);
+        // log10(1.0) = 0, log10(0.1) = -1, log10(10) = 1
+        // (0 - (-1)) / (1 - (-1)) = 1/2 = 0.5
+        assert!((result - 0.5).abs() < 1e-10);
+    }
+
+    #[test]
+    fn test_val_to_unit_periodic() {
+        let result = MultiStartNM::val_to_unit(0.5, 0.0, 1.0, Scale::Periodic);
+        assert!((result - 0.5).abs() < 1e-10);
+    }
+
+    #[test]
+    fn test_unit_to_val_linear() {
+        let result = MultiStartNM::unit_to_val(0.5, 0.0, 1.0, Scale::Linear);
+        assert!((result - 0.5).abs() < 1e-10);
+    }
+
+    #[test]
+    fn test_unit_to_val_log() {
+        let result = MultiStartNM::unit_to_val(0.5, 0.1, 10.0, Scale::Log);
+        // unit=0.5 -> log10(x) = -1 + 0.5*2 = 0 -> x = 1.0
+        assert!((result - 1.0).abs() < 1e-10);
+    }
+
+    #[test]
+    fn test_unit_to_val_periodic() {
+        let result = MultiStartNM::unit_to_val(0.5, 0.0, 1.0, Scale::Periodic);
+        assert!((result - 0.5).abs() < 1e-10);
+    }
+
+    #[test]
+    fn test_update_tracking() {
+        let mut seeds = Vec::new();
+        for i in 0..10 {
+            let mut point = HashMap::new();
+            point.insert("x".to_string(), i as f64 / 10.0);
+            seeds.push(point);
+        }
+
+        let mut ms = MultiStartNM::new(1, seeds);
+        ms.update_tracking(0.5);
+        assert_eq!(ms.evals_used, 1);
+        assert_eq!(ms.global_best, 0.5);
+
+        ms.update_tracking(0.3); // Better (lower)
+        assert_eq!(ms.evals_used, 2);
+        assert_eq!(ms.global_best, 0.3);
+    }
+
+    #[test]
+    fn test_update_tracking_stall() {
+        let mut seeds = Vec::new();
+        for i in 0..10 {
+            let mut point = HashMap::new();
+            point.insert("x".to_string(), i as f64 / 10.0);
+            seeds.push(point);
+        }
+
+        let mut ms = MultiStartNM::new(1, seeds);
+        ms.update_tracking(0.5);
+        assert_eq!(ms.stall_counter, 0);
+
+        ms.update_tracking(0.6); // Worse
+        assert_eq!(ms.stall_counter, 1);
+
+        ms.update_tracking(0.7); // Even worse
+        assert_eq!(ms.stall_counter, 2);
+    }
+
+    #[test]
+    fn test_multi_start_empty_seeds() {
+        let seeds: Vec<HashMap<String, f64>> = Vec::new();
+        let ms = MultiStartNM::new(2, seeds);
+        assert!(ms.starts.is_empty() || ms.starts.len() == 1);
     }
 }

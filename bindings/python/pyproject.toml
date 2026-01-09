@@ -12,6 +12,9 @@ classifiers = [
 ]
 dynamic = ["version"]
 
+[project.scripts]
+arqonhpo = "arqonhpo.cli:main"
+
 [tool.maturin]
 features = ["pyo3/extension-module"]
 python-source = "python"

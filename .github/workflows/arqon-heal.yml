@@ -1,0 +1,38 @@
+name: ArqonShip Self-Healing CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Protoc
+        uses: arduino/setup-protoc@v3
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Build
+        run: cargo build --release
+
+      - name: Run Tests
+        id: test
+        continue-on-error: true
+        run: cargo test --message-format=json > test-output.json
+
+      - name: Run ArqonShip Heal (on failure)
+        if: steps.test.outcome == 'failure'
+        run: |
+          cargo run -p ship -- heal --log-file test-output.json --max-attempts 2
+
+      - name: Re-run Tests (after healing)
+        if: steps.test.outcome == 'failure'
+        run: cargo test
