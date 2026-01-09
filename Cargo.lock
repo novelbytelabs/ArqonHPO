@@ -153,7 +153,7 @@ dependencies = [
 
 [[package]]
 name = "arqonhpo"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "arqonhpo-core",
  "pyo3",
@@ -163,7 +163,7 @@ dependencies = [
 
 [[package]]
 name = "arqonhpo-cli"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "arqonhpo-core",
  "assert_cmd",
@@ -196,7 +196,7 @@ dependencies = [
 
 [[package]]
 name = "arqonhpo-core"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "criterion",
  "crossbeam-queue",
@@ -215,7 +215,7 @@ dependencies = [
 
 [[package]]
 name = "arqonhpo-ffi"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "arqonhpo-core",
 ]
@@ -3263,7 +3263,7 @@ dependencies = [
 
 [[package]]
 name = "hotpath"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "crossbeam-queue",
  "rand 0.9.2",
@@ -6427,7 +6427,7 @@ dependencies = [
 
 [[package]]
 name = "ship"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "anyhow",
  "arrow-array",
