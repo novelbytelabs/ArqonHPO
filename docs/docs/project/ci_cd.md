@@ -98,7 +98,7 @@ Releases are automated via `.github/workflows/release.yml`.
 
 ## 🛠 Local Development Commands
 
-Before pushing, it's good practice to run:
+Before pushing, run the full checklist below (CI assumes these are clean):
 
 ```bash
 # 1. Format code
@@ -167,4 +167,3 @@ Before pushing code changes, especially new features:
 | CLI crate | >60% | ~45% |
 | Hotpath crate | >70% | ~70% |
 | Ship crate | >50% | ~40% |
-

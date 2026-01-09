@@ -2,7 +2,6 @@ use std::time::Instant;
 
 /// Simple benchmarks for the Oracle module
 /// Run with: cargo run -p ship --example oracle_bench
-
 fn main() {
     println!("Oracle Benchmarks\n");
     println!("================\n");

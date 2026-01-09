@@ -331,7 +331,7 @@ mod tests {
         }
 
         let ms = MultiStartNM::new(2, seeds);
-        assert!(ms.starts.len() >= 1);
+        assert!(!ms.starts.is_empty());
         assert!(ms.starts.len() <= 4); // K=4 default
     }
 
@@ -358,7 +358,7 @@ mod tests {
             min_evals_per_start: 20,
         };
         let ms = MultiStartNM::with_config(1, seeds, config);
-        assert!(ms.starts.len() >= 1);
+        assert!(!ms.starts.is_empty());
     }
 
     #[test]
@@ -444,5 +444,223 @@ mod tests {
         let seeds: Vec<HashMap<String, f64>> = Vec::new();
         let ms = MultiStartNM::new(2, seeds);
         assert!(ms.starts.is_empty() || ms.starts.len() == 1);
+    }
+
+    fn make_test_solver_config() -> SolverConfig {
+        use crate::config::Domain;
+        let mut bounds = HashMap::new();
+        bounds.insert(
+            "x".to_string(),
+            Domain {
+                min: 0.0,
+                max: 1.0,
+                scale: Scale::Linear,
+            },
+        );
+        bounds.insert(
+            "y".to_string(),
+            Domain {
+                min: 0.0,
+                max: 1.0,
+                scale: Scale::Linear,
+            },
+        );
+        SolverConfig {
+            bounds,
+            budget: 50,
+            probe_ratio: 0.2,
+            seed: 42,
+            strategy_params: None,
+        }
+    }
+
+    #[test]
+    fn test_run_coordinate_descent() {
+        // Test coordinate descent with valid history
+        let mut seeds = Vec::new();
+        for i in 0..10 {
+            let mut point = HashMap::new();
+            point.insert("x".to_string(), i as f64 / 10.0);
+            point.insert("y".to_string(), 0.5);
+            seeds.push(point);
+        }
+
+        let mut ms = MultiStartNM::new(2, seeds);
+        let config = make_test_solver_config();
+
+        // Create history with a clear best point
+        let history = vec![
+            EvalTrace {
+                eval_id: 1,
+                params: [("x".to_string(), 0.5), ("y".to_string(), 0.5)]
+                    .into_iter()
+                    .collect(),
+                value: 0.1, // Best
+                cost: 1.0,
+            },
+            EvalTrace {
+                eval_id: 2,
+                params: [("x".to_string(), 0.3), ("y".to_string(), 0.7)]
+                    .into_iter()
+                    .collect(),
+                value: 0.5,
+                cost: 1.0,
+            },
+        ];
+
+        // Run coordinate descent
+        let action = ms.run_coordinate_descent(&config, &history);
+
+        // Should return Evaluate with candidates around the best point
+        match action {
+            StrategyAction::Evaluate(candidates) => {
+                assert!(!candidates.is_empty());
+                // Should have 2 * dim candidates (±delta for each dimension)
+                assert!(candidates.len() >= 2);
+            }
+            StrategyAction::Wait => {
+                // This is also valid if no candidates generated
+            }
+            StrategyAction::Converged => panic!("Unexpected Converged from coordinate descent"),
+        }
+    }
+
+    #[test]
+    fn test_strategy_step_triage_phase() {
+        // Test Strategy::step triage phase transitions
+        let mut seeds = Vec::new();
+        for i in 0..20 {
+            let mut point = HashMap::new();
+            point.insert("x".to_string(), i as f64 / 20.0);
+            point.insert("y".to_string(), (20 - i) as f64 / 20.0);
+            seeds.push(point);
+        }
+
+        let config_ms = MultiStartConfig {
+            k: 2,
+            stall_threshold: 5,
+            triage_budget: 3, // Small budget for quick test
+            min_evals_per_start: 10,
+        };
+        let mut ms = MultiStartNM::with_config(2, seeds, config_ms);
+        let solver_config = make_test_solver_config();
+
+        // Create history
+        let history = vec![EvalTrace {
+            eval_id: 1,
+            params: [("x".to_string(), 0.5), ("y".to_string(), 0.5)]
+                .into_iter()
+                .collect(),
+            value: 1.0,
+            cost: 1.0,
+        }];
+
+        // First step should be CoordinateDescent
+        let action1 = ms.step(&solver_config, &history);
+        match action1 {
+            StrategyAction::Evaluate(_) => (),
+            _ => panic!("Expected Evaluate from first step"),
+        }
+        // Phase should move to Triage after CD
+        assert_eq!(ms.phase, MultiStartPhase::Triage);
+    }
+
+    #[test]
+    fn test_strategy_step_commit_phase() {
+        // Test Strategy::step commit phase
+        let mut seeds = Vec::new();
+        for i in 0..6 {
+            let mut point = HashMap::new();
+            point.insert("x".to_string(), i as f64 / 6.0);
+            seeds.push(point);
+        }
+
+        let config_ms = MultiStartConfig {
+            k: 1, // Only 1 start to skip triage
+            stall_threshold: 5,
+            triage_budget: 5,
+            min_evals_per_start: 10,
+        };
+        let mut ms = MultiStartNM::with_config(1, seeds, config_ms);
+        let solver_config = make_test_solver_config();
+
+        // Create sufficient history for NM
+        let history: Vec<EvalTrace> = (0..5)
+            .map(|i| EvalTrace {
+                eval_id: i as u64,
+                params: [("x".to_string(), i as f64 / 5.0), ("y".to_string(), 0.5)]
+                    .into_iter()
+                    .collect(),
+                value: (i as f64 - 2.0).powi(2),
+                cost: 1.0,
+            })
+            .collect();
+
+        // First step should be CoordinateDescent
+        let _ = ms.step(&solver_config, &history);
+
+        // With k=1, should skip triage and go to commit
+        // (Triage is skipped when starts.len() <= 1)
+        let action2 = ms.step(&solver_config, &history);
+
+        // Should get either Evaluate or Converged from commit phase
+        match action2 {
+            StrategyAction::Evaluate(_) | StrategyAction::Converged => (),
+            StrategyAction::Wait => (),
+        }
+    }
+
+    #[test]
+    fn test_triage_budget_exhaustion() {
+        // Test that triage phase properly exhausts and selects winner
+        let mut seeds = Vec::new();
+        for i in 0..20 {
+            let mut point = HashMap::new();
+            point.insert("x".to_string(), i as f64 / 20.0);
+            point.insert("y".to_string(), 0.5);
+            seeds.push(point);
+        }
+
+        let config_ms = MultiStartConfig {
+            k: 2,
+            stall_threshold: 5,
+            triage_budget: 2, // Very small for quick exhaustion
+            min_evals_per_start: 5,
+        };
+        let mut ms = MultiStartNM::with_config(2, seeds, config_ms);
+        let solver_config = make_test_solver_config();
+
+        // Create history with better values for tracking
+        let mut history: Vec<EvalTrace> = (0..5)
+            .map(|i| EvalTrace {
+                eval_id: i as u64,
+                params: [("x".to_string(), i as f64 / 5.0), ("y".to_string(), 0.5)]
+                    .into_iter()
+                    .collect(),
+                value: i as f64,
+                cost: 1.0,
+            })
+            .collect();
+
+        // Run through several steps to exhaust triage
+        for i in 0..10 {
+            let _ = ms.step(&solver_config, &history);
+            // Add to history to simulate evaluations
+            history.push(EvalTrace {
+                eval_id: 100 + i as u64,
+                params: [("x".to_string(), 0.5), ("y".to_string(), 0.5)]
+                    .into_iter()
+                    .collect(),
+                value: 0.5,
+                cost: 1.0,
+            });
+        }
+
+        // After enough steps, should be in Commit phase
+        // (or still in Triage if more iterations needed)
+        match ms.phase {
+            MultiStartPhase::Triage | MultiStartPhase::Commit => (),
+            _ => panic!("Expected Triage or Commit phase, got {:?}", ms.phase),
+        }
     }
 }

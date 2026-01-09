@@ -1,0 +1,65 @@
+name: Coverage
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  coverage:
+    name: Code Coverage
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # Needed to push badges to branch
+      pull-requests: write # Needed to post PR comments
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: llvm-tools-preview
+
+      - name: Install cargo-llvm-cov
+        uses: taiki-e/install-action@cargo-llvm-cov
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Run Analysis
+        run: python3 scripts/coverage_report.py
+
+      # --- HYBRID APPROACH: Upload to Codecov (Free Tier) ---
+      # This gives you the nice UI and history for file browsing
+      - name: Upload to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: lcov.json
+          fail_ci_if_error: false
+          token: ${{ secrets.CODECOV_TOKEN }} # Optional for public
+
+      # --- CUSTOM PRO FEATURES: PR Comments ---
+      - name: Post PR Comment
+        if: github.event_name == 'pull_request'
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          path: coverage_summary.md
+          header: coverage
+
+      # --- CUSTOM PRO FEATURES: Badges ---
+      # Push JSON badges to an orphan 'badges' branch
+      - name: Deploy Badges
+        if: github.ref == 'refs/heads/main'
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./badges
+          publish_branch: badges
+          keep_files: true
+          force_orphan: true
+          user_name: 'github-actions[bot]'
+          user_email: 'github-actions[bot]@users.noreply.github.com'

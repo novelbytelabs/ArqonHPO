@@ -83,7 +83,7 @@ fn bench_t1_apply(c: &mut Criterion) {
 
 /// Benchmark snapshot access (should be near-instant with Arc clone).
 fn bench_snapshot(c: &mut Criterion) {
-    let params = param_vec(&vec![0.5; 16]);
+    let params = param_vec(&[0.5; 16]);
     let config = Arc::new(AtomicConfig::new(params));
 
     c.bench_function("snapshot_16params", |b| {
@@ -202,11 +202,11 @@ fn bench_t1_under_saturation(c: &mut Criterion) {
     }
 
     // Setup executor
-    let params = param_vec(&vec![0.5; 4]);
+    let params = param_vec(&[0.5; 4]);
     let config = Arc::new(AtomicConfig::new(params.clone()));
     let mut executor = SafetyExecutor::new(config, Guardrails::default());
 
-    let delta = param_vec(&vec![0.01; 4]);
+    let delta = param_vec(&[0.01; 4]);
     let proposal = Proposal::Update {
         iteration: 0,
         delta: delta.clone(),
