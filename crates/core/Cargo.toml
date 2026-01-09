@@ -14,7 +14,7 @@ thiserror = { workspace = true }
 miette = { workspace = true }
 tracing = { workspace = true }
 static_assertions = { workspace = true }
-hotpath = { version = "0.1.0", path = "../hotpath" }
+hotpath = { version = "0.3.0", path = "../hotpath" }
 
 [dev-dependencies]
 criterion = "=0.5.1"

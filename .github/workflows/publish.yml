@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - "v*"
+  workflow_dispatch:
 
 jobs:
   linux:
@@ -20,7 +21,7 @@ jobs:
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.target }}
-          args: --release --out dist -m bindings/python/Cargo.toml
+          args: --release --out dist -m bindings/python/Cargo.toml -i python3.12
           sccache: "true"
           manylinux: auto
       - name: Upload wheels

@@ -1,5 +1,5 @@
 [workspace]
-package = { version = "0.1.0", edition = "2021" }
+package = { version = "0.3.0", edition = "2021" }
 members = [
     "crates/core",
     "crates/cli",
@@ -29,7 +29,6 @@ pyo3 = { version = "0.27", features = ["extension-module"] }
 # Internal crates
 arqonhpo-core = { path = "crates/core" }
 static_assertions = "1.1"
-
 
 
 

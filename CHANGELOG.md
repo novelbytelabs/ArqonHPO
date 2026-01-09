@@ -5,21 +5,17 @@ All notable changes to ArqonHPO will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.2.0] - 2025-12-14
+## [Unreleased]
 
 ### Added
-- **PCR Algorithm**: Complete Probe-Classify-Refine implementation (`Solver::pcr`).
-- **ResidualDecayClassifier**: Automatic landscape detection (Structured vs Chaotic).
-- **Scott's Rule TPE**: Adaptive bandwidth selection for chaotic landscapes.
-- **PrimeIndexProbe**: Multi-scale deterministic sampling.
-- **Full Nelder-Mead**: production-grade implementation with all 5 operations.
-- **Benchmarks**: Comprehensive suite comparing ArqonHPO vs Optuna vs Random.
 
 ### Changed
-- Refactored core `Solver` to use the V2 **PCR** pipeline by default.
-- Updated documentation with **PCR** methodology and examples.
 
-## [Unreleased]
+### Documentation
+
+### Tests
+
+## [0.3.0] - 2026-01-09
 
 ### Added
 
@@ -55,3 +51,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - 36 Rust unit tests for all PCR components
 - 3 Python integration tests (test_integration, test_us1, test_us2)
+
+## [0.2.0] - 2025-12-14
+
+### Added
+- **PCR Algorithm**: Complete Probe-Classify-Refine implementation (`Solver::pcr`).
+- **ResidualDecayClassifier**: Automatic landscape detection (Structured vs Chaotic).
+- **Scott's Rule TPE**: Adaptive bandwidth selection for chaotic landscapes.
+- **PrimeIndexProbe**: Multi-scale deterministic sampling.
+- **Full Nelder-Mead**: production-grade implementation with all 5 operations.
+- **Benchmarks**: Comprehensive suite comparing ArqonHPO vs Optuna vs Random.
+
+### Changed
+- Refactored core `Solver` to use the V2 **PCR** pipeline by default.
+- Updated documentation with **PCR** methodology and examples.
