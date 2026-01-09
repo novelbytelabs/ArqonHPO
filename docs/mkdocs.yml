@@ -113,4 +113,5 @@ nav:
       - Contributing: project/contributing.md
       - License: project/LICENSE
       - CI/CD Runbook: project/ci_cd.md
+      - Test Coverage: project/test_coverage.md
       - Constitution: project/constitution.md
