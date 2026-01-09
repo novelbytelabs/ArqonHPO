@@ -104,7 +104,11 @@ jobs:
         run: cargo install cargo-cyclonedx
 
       - name: Generate SBOM
-        run: cargo cyclonedx --format json > sbom.json
+        run: |
+          set -euo pipefail
+          cargo cyclonedx --format json --override-filename sbom
+          cp crates/cli/sbom.json sbom.json
+          test -s sbom.json
 
       - name: Upload SBOM
         uses: actions/upload-artifact@v4
