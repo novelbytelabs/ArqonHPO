@@ -7521,6 +7521,13 @@ dependencies = [
  "clap",
  "futures",
  "hf-hub",
+ "icu_collections",
+ "icu_locale_core",
+ "icu_normalizer",
+ "icu_normalizer_data",
+ "icu_properties",
+ "icu_properties_data",
+ "icu_provider",
  "ignore",
  "indicatif 0.18.3",
  "insta",
@@ -7543,6 +7550,7 @@ dependencies = [
  "tree-sitter-python",
  "tree-sitter-rust",
  "uuid",
+ "writeable",
 ]
 
 [[package]]
