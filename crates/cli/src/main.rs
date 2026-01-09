@@ -1723,6 +1723,7 @@ mod tests {
 
     // ==================== EVALUATE SCRIPT TESTS ====================
 
+    #[cfg(unix)]
     #[test]
     fn test_evaluate_script_success() {
         use std::os::unix::fs::PermissionsExt;
@@ -1748,6 +1749,7 @@ mod tests {
         assert!((result.unwrap() - 0.75).abs() < 0.001);
     }
 
+    #[cfg(unix)]
     #[test]
     fn test_evaluate_script_with_result_prefix() {
         use std::os::unix::fs::PermissionsExt;
@@ -1774,6 +1776,7 @@ mod tests {
         assert!((result.unwrap() - 0.99).abs() < 0.001);
     }
 
+    #[cfg(unix)]
     #[test]
     fn test_evaluate_script_failure() {
         use std::os::unix::fs::PermissionsExt;
@@ -1798,6 +1801,7 @@ mod tests {
         assert!(result.is_err());
     }
 
+    #[cfg(unix)]
     #[test]
     fn test_evaluate_script_env_vars_set() {
         use std::os::unix::fs::PermissionsExt;
