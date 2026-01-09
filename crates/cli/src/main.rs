@@ -1730,10 +1730,16 @@ mod tests {
 
         let dir = tempdir().unwrap();
         let script_path = dir.path().join("test_script.sh");
-        fs::write(&script_path, "#!/bin/bash\necho \"0.75\"").unwrap();
+        {
+            let mut file = fs::File::create(&script_path).unwrap();
+            use std::io::Write;
+            file.write_all(b"#!/bin/bash\necho \"0.75\"").unwrap();
+            file.sync_all().unwrap();
+        }
         let mut perms = fs::metadata(&script_path).unwrap().permissions();
         perms.set_mode(0o755);
         fs::set_permissions(&script_path, perms).unwrap();
+        std::thread::sleep(std::time::Duration::from_millis(10));
 
         let params: HashMap<String, f64> = [("x".to_string(), 0.5)].into_iter().collect();
 
@@ -1749,10 +1755,17 @@ mod tests {
 
         let dir = tempdir().unwrap();
         let script_path = dir.path().join("test_script.sh");
-        fs::write(&script_path, "#!/bin/bash\necho \"RESULT=0.99\"").unwrap();
+        {
+            let mut file = fs::File::create(&script_path).unwrap();
+            use std::io::Write;
+            file.write_all(b"#!/bin/bash\necho \"RESULT=0.99\"")
+                .unwrap();
+            file.sync_all().unwrap();
+        }
         let mut perms = fs::metadata(&script_path).unwrap().permissions();
         perms.set_mode(0o755);
         fs::set_permissions(&script_path, perms).unwrap();
+        std::thread::sleep(std::time::Duration::from_millis(10));
 
         let params: HashMap<String, f64> = HashMap::new();
 
@@ -1768,10 +1781,16 @@ mod tests {
 
         let dir = tempdir().unwrap();
         let script_path = dir.path().join("test_script.sh");
-        fs::write(&script_path, "#!/bin/bash\nexit 1").unwrap();
+        {
+            let mut file = fs::File::create(&script_path).unwrap();
+            use std::io::Write;
+            file.write_all(b"#!/bin/bash\nexit 1").unwrap();
+            file.sync_all().unwrap();
+        }
         let mut perms = fs::metadata(&script_path).unwrap().permissions();
         perms.set_mode(0o755);
         fs::set_permissions(&script_path, perms).unwrap();
+        std::thread::sleep(std::time::Duration::from_millis(10));
 
         let params: HashMap<String, f64> = HashMap::new();
 
@@ -1786,10 +1805,16 @@ mod tests {
 
         let dir = tempdir().unwrap();
         let script_path = dir.path().join("test_script.sh");
-        fs::write(&script_path, "#!/bin/bash\necho $ARQON_alpha").unwrap();
+        {
+            let mut file = fs::File::create(&script_path).unwrap();
+            use std::io::Write;
+            file.write_all(b"#!/bin/bash\necho $ARQON_alpha").unwrap();
+            file.sync_all().unwrap();
+        }
         let mut perms = fs::metadata(&script_path).unwrap().permissions();
         perms.set_mode(0o755);
         fs::set_permissions(&script_path, perms).unwrap();
+        std::thread::sleep(std::time::Duration::from_millis(10));
 
         let params: HashMap<String, f64> = [("alpha".to_string(), 0.123)].into_iter().collect();
 
@@ -1848,6 +1873,239 @@ mod tests {
         // When path is None, it should print to stdout - just verify no panic
         let data = serde_json::json!({"test": true});
         let result = write_output(None, &data);
+        assert!(result.is_ok());
+    }
+
+    // ==================== COMMAND FUNCTION TESTS ====================
+
+    fn create_test_config() -> SolverConfig {
+        let mut bounds = HashMap::new();
+        bounds.insert(
+            "x".to_string(),
+            arqonhpo_core::config::Domain {
+                min: 0.0,
+                max: 1.0,
+                scale: arqonhpo_core::config::Scale::Linear,
+            },
+        );
+        SolverConfig {
+            bounds,
+            budget: 10,
+            probe_ratio: 0.5,
+            seed: 42,
+            strategy_params: None,
+        }
+    }
+
+    fn create_test_state() -> SolverState {
+        SolverState {
+            config: create_test_config(),
+            history: vec![SeedPoint {
+                params: [("x".to_string(), 0.5)].into_iter().collect(),
+                value: 1.0,
+                cost: 1.0,
+            }],
+            run_id: Some("test-run".to_string()),
+        }
+    }
+
+    #[test]
+    fn test_ask_command_basic() {
+        use std::io::Write;
+        use tempfile::NamedTempFile;
+
+        let mut config_file = NamedTempFile::new().unwrap();
+        writeln!(
+            config_file,
+            r#"{{
+            "seed": 42,
+            "budget": 10,
+            "probe_ratio": 0.5,
+            "bounds": {{"x": {{"min": 0.0, "max": 1.0}}}}
+        }}"#
+        )
+        .unwrap();
+
+        let metrics = Metrics::init(None).unwrap();
+        let result = ask_command(config_file.path(), None, None, &metrics);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_ask_command_with_batch_limit() {
+        use std::io::Write;
+        use tempfile::NamedTempFile;
+
+        let mut config_file = NamedTempFile::new().unwrap();
+        writeln!(
+            config_file,
+            r#"{{
+            "seed": 42,
+            "budget": 10,
+            "probe_ratio": 0.5,
+            "bounds": {{"x": {{"min": 0.0, "max": 1.0}}}}
+        }}"#
+        )
+        .unwrap();
+
+        let metrics = Metrics::init(None).unwrap();
+        let result = ask_command(config_file.path(), None, Some(2), &metrics);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_ask_command_with_existing_state() {
+        use tempfile::NamedTempFile;
+
+        let mut config_file = NamedTempFile::new().unwrap();
+        std::io::Write::write_all(
+            &mut config_file,
+            br#"{"seed": 42, "budget": 10, "probe_ratio": 0.5, "bounds": {"x": {"min": 0.0, "max": 1.0}}}"#,
+        )
+        .unwrap();
+
+        let mut state_file = NamedTempFile::new().unwrap();
+        let state = create_test_state();
+        std::io::Write::write_all(
+            &mut state_file,
+            serde_json::to_string(&state).unwrap().as_bytes(),
+        )
+        .unwrap();
+
+        let metrics = Metrics::init(None).unwrap();
+        let result = ask_command(
+            config_file.path(),
+            Some(&state_file.path().to_path_buf()),
+            None,
+            &metrics,
+        );
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_tell_command_basic() {
+        use tempfile::{tempdir, NamedTempFile};
+
+        let dir = tempdir().unwrap();
+        let state_path = dir.path().join("state.json");
+        let state = create_test_state();
+        fs::write(&state_path, serde_json::to_string(&state).unwrap()).unwrap();
+
+        let mut results_file = NamedTempFile::new().unwrap();
+        std::io::Write::write_all(
+            &mut results_file,
+            br#"[{"params": {"x": 0.7}, "value": 0.5, "cost": 1.0}]"#,
+        )
+        .unwrap();
+
+        let metrics = Metrics::init(None).unwrap();
+        let result = tell_command(
+            &state_path,
+            Some(&results_file.path().to_path_buf()),
+            &metrics,
+        );
+        assert!(result.is_ok());
+
+        // Verify state was updated
+        let updated_state: SolverState =
+            serde_json::from_str(&fs::read_to_string(&state_path).unwrap()).unwrap();
+        assert_eq!(updated_state.history.len(), 2);
+    }
+
+    #[test]
+    fn test_export_command_basic() {
+        use tempfile::tempdir;
+
+        let dir = tempdir().unwrap();
+        let state_path = dir.path().join("state.json");
+        let output_path = dir.path().join("artifact.json");
+
+        let state = create_test_state();
+        fs::write(&state_path, serde_json::to_string(&state).unwrap()).unwrap();
+
+        let metrics = Metrics::init(None).unwrap();
+        let result = export_command(&state_path, Some(&output_path), None, &metrics);
+        assert!(result.is_ok());
+
+        // Verify artifact was created
+        let artifact: RunArtifact =
+            serde_json::from_str(&fs::read_to_string(&output_path).unwrap()).unwrap();
+        assert_eq!(artifact.history.len(), 1);
+        assert_eq!(artifact.run_id, "test-run");
+    }
+
+    #[test]
+    fn test_export_command_with_custom_run_id() {
+        use tempfile::tempdir;
+
+        let dir = tempdir().unwrap();
+        let state_path = dir.path().join("state.json");
+        let output_path = dir.path().join("artifact.json");
+
+        let state = create_test_state();
+        fs::write(&state_path, serde_json::to_string(&state).unwrap()).unwrap();
+
+        let metrics = Metrics::init(None).unwrap();
+        let result = export_command(
+            &state_path,
+            Some(&output_path),
+            Some("custom-run".to_string()),
+            &metrics,
+        );
+        assert!(result.is_ok());
+
+        let artifact: RunArtifact =
+            serde_json::from_str(&fs::read_to_string(&output_path).unwrap()).unwrap();
+        assert_eq!(artifact.run_id, "custom-run");
+    }
+
+    #[test]
+    fn test_import_command_basic() {
+        use tempfile::tempdir;
+
+        let dir = tempdir().unwrap();
+        let artifact_path = dir.path().join("artifact.json");
+        let state_path = dir.path().join("state.json");
+
+        // Create artifact
+        let artifact = RunArtifact {
+            run_id: "imported-run".to_string(),
+            seed: 42,
+            budget: 10,
+            config: create_test_config(),
+            history: vec![EvalTrace {
+                eval_id: 1,
+                params: [("x".to_string(), 0.5)].into_iter().collect(),
+                value: 1.0,
+                cost: 1.0,
+            }],
+        };
+        fs::write(&artifact_path, serde_json::to_string(&artifact).unwrap()).unwrap();
+
+        let metrics = Metrics::init(None).unwrap();
+        let result = import_command(&artifact_path, &state_path, &metrics);
+        assert!(result.is_ok());
+
+        // Verify state was created
+        let state: SolverState =
+            serde_json::from_str(&fs::read_to_string(&state_path).unwrap()).unwrap();
+        assert_eq!(state.run_id, Some("imported-run".to_string()));
+        assert_eq!(state.history.len(), 1);
+    }
+
+    #[test]
+    fn test_export_command_no_output_path() {
+        use tempfile::tempdir;
+
+        let dir = tempdir().unwrap();
+        let state_path = dir.path().join("state.json");
+
+        let state = create_test_state();
+        fs::write(&state_path, serde_json::to_string(&state).unwrap()).unwrap();
+
+        let metrics = Metrics::init(None).unwrap();
+        // When output_path is None, it prints to stdout
+        let result = export_command(&state_path, None, None, &metrics);
         assert!(result.is_ok());
     }
 }

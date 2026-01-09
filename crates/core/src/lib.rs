@@ -22,3 +22,15 @@ mod tests;
 pub fn add(left: usize, right: usize) -> usize {
     left + right
 }
+
+#[cfg(test)]
+mod lib_tests {
+    use super::*;
+
+    #[test]
+    fn test_add() {
+        assert_eq!(add(2, 3), 5);
+        assert_eq!(add(0, 0), 0);
+        assert_eq!(add(100, 200), 300);
+    }
+}
