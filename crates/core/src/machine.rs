@@ -436,3 +436,236 @@ impl Solver {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::config::{Domain, Scale};
+
+    fn make_test_config() -> SolverConfig {
+        let mut bounds = HashMap::new();
+        bounds.insert(
+            "x".to_string(),
+            Domain {
+                min: 0.0,
+                max: 1.0,
+                scale: Scale::Linear,
+            },
+        );
+        bounds.insert(
+            "y".to_string(),
+            Domain {
+                min: 0.0,
+                max: 1.0,
+                scale: Scale::Linear,
+            },
+        );
+        SolverConfig {
+            bounds,
+            budget: 20,
+            probe_ratio: 0.5,
+            seed: 42,
+            strategy_params: None,
+        }
+    }
+
+    #[test]
+    fn test_solver_new_creates_probe_phase() {
+        let config = make_test_config();
+        let solver = Solver::new(config);
+        assert_eq!(solver.phase, Phase::Probe);
+        assert!(solver.history.is_empty());
+        assert!(solver.strategy.is_none());
+    }
+
+    #[test]
+    fn test_solver_pcr_creates_probe_phase() {
+        let config = make_test_config();
+        let solver = Solver::pcr(config);
+        assert_eq!(solver.phase, Phase::Probe);
+        assert!(solver.seeding.seed_nm);
+    }
+
+    #[test]
+    fn test_solver_with_residual_decay() {
+        let config = make_test_config();
+        let solver = Solver::with_residual_decay(config);
+        assert_eq!(solver.phase, Phase::Probe);
+    }
+
+    #[test]
+    fn test_seed_adds_to_history() {
+        let config = make_test_config();
+        let mut solver = Solver::new(config);
+
+        let seed_points = vec![
+            SeedPoint {
+                params: [("x".to_string(), 0.5), ("y".to_string(), 0.5)]
+                    .into_iter()
+                    .collect(),
+                value: 1.0,
+                cost: 1.0,
+            },
+            SeedPoint {
+                params: [("x".to_string(), 0.3), ("y".to_string(), 0.7)]
+                    .into_iter()
+                    .collect(),
+                value: 0.8,
+                cost: 1.0,
+            },
+        ];
+        solver.seed(seed_points);
+
+        assert_eq!(solver.history.len(), 2);
+        assert_eq!(solver.history[0].eval_id, 1);
+        assert_eq!(solver.history[1].eval_id, 2);
+    }
+
+    #[test]
+    fn test_tell_extends_history() {
+        let config = make_test_config();
+        let mut solver = Solver::new(config);
+
+        let traces = vec![EvalTrace {
+            eval_id: 1,
+            params: [("x".to_string(), 0.5)].into_iter().collect(),
+            value: 1.0,
+            cost: 1.0,
+        }];
+        solver.tell(traces);
+
+        assert_eq!(solver.history.len(), 1);
+    }
+
+    #[test]
+    fn test_ask_returns_candidates_in_probe_phase() {
+        let config = make_test_config();
+        let mut solver = Solver::new(config);
+
+        let candidates = solver.ask();
+        assert!(candidates.is_some());
+        let batch = candidates.unwrap();
+        assert!(!batch.is_empty());
+    }
+
+    #[test]
+    fn test_ask_one_returns_single_candidate() {
+        let config = make_test_config();
+        let mut solver = Solver::new(config);
+
+        // Seed some data first for TPE
+        solver.seed(vec![SeedPoint {
+            params: [("x".to_string(), 0.5), ("y".to_string(), 0.5)]
+                .into_iter()
+                .collect(),
+            value: 1.0,
+            cost: 1.0,
+        }]);
+
+        let candidate = solver.ask_one();
+        assert!(candidate.is_some());
+        let params = candidate.unwrap();
+        assert!(params.contains_key("x"));
+        assert!(params.contains_key("y"));
+    }
+
+    #[test]
+    fn test_ask_one_respects_budget() {
+        let mut config = make_test_config();
+        config.budget = 2;
+        let mut solver = Solver::new(config);
+
+        // Fill budget
+        solver.seed(vec![
+            SeedPoint {
+                params: [("x".to_string(), 0.5), ("y".to_string(), 0.5)]
+                    .into_iter()
+                    .collect(),
+                value: 1.0,
+                cost: 1.0,
+            },
+            SeedPoint {
+                params: [("x".to_string(), 0.3), ("y".to_string(), 0.3)]
+                    .into_iter()
+                    .collect(),
+                value: 0.5,
+                cost: 1.0,
+            },
+        ]);
+
+        let candidate = solver.ask_one();
+        assert!(candidate.is_none()); // Budget exhausted
+    }
+
+    #[test]
+    fn test_seeding_config_default() {
+        let sc = SeedingConfig::default();
+        assert!(sc.top_k.is_none());
+        assert!(sc.seed_nm);
+    }
+
+    #[test]
+    fn test_phase_enum_equality() {
+        assert_eq!(Phase::Probe, Phase::Probe);
+        assert_eq!(Phase::Done, Phase::Done);
+        assert_ne!(Phase::Probe, Phase::Done);
+        assert_eq!(
+            Phase::Refine(Landscape::Structured),
+            Phase::Refine(Landscape::Structured)
+        );
+        assert_ne!(
+            Phase::Refine(Landscape::Structured),
+            Phase::Refine(Landscape::Chaotic)
+        );
+    }
+
+    #[test]
+    fn test_next_eval_id_increments() {
+        let config = make_test_config();
+        let mut solver = Solver::new(config);
+
+        assert_eq!(solver.next_eval_id(), 1);
+
+        solver.seed(vec![SeedPoint {
+            params: HashMap::new(),
+            value: 1.0,
+            cost: 1.0,
+        }]);
+
+        assert_eq!(solver.next_eval_id(), 2);
+    }
+
+    #[test]
+    fn test_get_top_k_seed_points() {
+        let config = make_test_config();
+        let mut solver = Solver::new(config);
+
+        // Add some history
+        solver.tell(vec![
+            EvalTrace {
+                eval_id: 1,
+                params: [("x".to_string(), 0.1)].into_iter().collect(),
+                value: 3.0,
+                cost: 1.0,
+            },
+            EvalTrace {
+                eval_id: 2,
+                params: [("x".to_string(), 0.2)].into_iter().collect(),
+                value: 1.0,
+                cost: 1.0,
+            },
+            EvalTrace {
+                eval_id: 3,
+                params: [("x".to_string(), 0.3)].into_iter().collect(),
+                value: 2.0,
+                cost: 1.0,
+            },
+        ]);
+
+        let top_k = solver.get_top_k_seed_points(2);
+        assert_eq!(top_k.len(), 2);
+        // Should be sorted by value, so lowest first
+        assert_eq!(top_k[0].get("x"), Some(&0.2));
+        assert_eq!(top_k[1].get("x"), Some(&0.3));
+    }
+}

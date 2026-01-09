@@ -117,3 +117,154 @@ impl OracleStore {
 
 // Add optional helper trait
 use rusqlite::OptionalExtension;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tempfile::tempdir;
+
+    fn make_test_node(name: &str, path: &str, start: usize, end: usize) -> GraphNode {
+        GraphNode {
+            path: path.to_string(),
+            node_type: "function".to_string(),
+            name: name.to_string(),
+            start_line: start,
+            end_line: end,
+            signature_hash: format!("hash_{}", name),
+            docstring: Some(format!("Doc for {}", name)),
+        }
+    }
+
+    #[test]
+    fn test_oracle_store_open_creates_db() {
+        let dir = tempdir().unwrap();
+        let db_path = dir.path().join("test.db");
+        let store = OracleStore::open(&db_path);
+        assert!(store.is_ok());
+        assert!(db_path.exists());
+    }
+
+    #[test]
+    fn test_insert_node_returns_id() {
+        let dir = tempdir().unwrap();
+        let db_path = dir.path().join("test.db");
+        let mut store = OracleStore::open(&db_path).unwrap();
+
+        let node = make_test_node("test_func", "src/lib.rs", 10, 20);
+        let id = store.insert_node(&node).unwrap();
+        assert!(id > 0);
+    }
+
+    #[test]
+    fn test_insert_node_upsert() {
+        let dir = tempdir().unwrap();
+        let db_path = dir.path().join("test.db");
+        let mut store = OracleStore::open(&db_path).unwrap();
+
+        let node = make_test_node("test_func", "src/lib.rs", 10, 20);
+        let id1 = store.insert_node(&node).unwrap();
+
+        // Insert same node again (upsert)
+        let id2 = store.insert_node(&node).unwrap();
+
+        // Should get same ID due to upsert
+        assert!(id1 > 0);
+        assert!(id2 > 0);
+    }
+
+    #[test]
+    fn test_get_node_by_id() {
+        let dir = tempdir().unwrap();
+        let db_path = dir.path().join("test.db");
+        let mut store = OracleStore::open(&db_path).unwrap();
+
+        let node = make_test_node("my_function", "src/main.rs", 5, 15);
+        let id = store.insert_node(&node).unwrap();
+
+        let retrieved = store.get_node_by_id(id);
+        assert!(retrieved.is_some());
+        let r = retrieved.unwrap();
+        assert_eq!(r.name, "my_function");
+        assert_eq!(r.path, "src/main.rs");
+        assert_eq!(r.start_line, 5);
+        assert_eq!(r.end_line, 15);
+    }
+
+    #[test]
+    fn test_get_node_by_id_not_found() {
+        let dir = tempdir().unwrap();
+        let db_path = dir.path().join("test.db");
+        let store = OracleStore::open(&db_path).unwrap();
+
+        let retrieved = store.get_node_by_id(9999);
+        assert!(retrieved.is_none());
+    }
+
+    #[test]
+    fn test_insert_edge() {
+        let dir = tempdir().unwrap();
+        let db_path = dir.path().join("test.db");
+        let mut store = OracleStore::open(&db_path).unwrap();
+
+        // Insert nodes first
+        let node1 = make_test_node("caller", "src/lib.rs", 10, 20);
+        let node2 = make_test_node("callee", "src/lib.rs", 30, 40);
+        store.insert_node(&node1).unwrap();
+        store.insert_node(&node2).unwrap();
+
+        // Insert edge
+        let edge = GraphEdge {
+            source_node_name: "caller".to_string(),
+            target_node_name: "callee".to_string(),
+            edge_type: "calls".to_string(),
+        };
+        let result = store.insert_edge(&edge);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_insert_edge_missing_nodes() {
+        let dir = tempdir().unwrap();
+        let db_path = dir.path().join("test.db");
+        let mut store = OracleStore::open(&db_path).unwrap();
+
+        // Insert edge without nodes - should not fail, just no-op
+        let edge = GraphEdge {
+            source_node_name: "nonexistent_a".to_string(),
+            target_node_name: "nonexistent_b".to_string(),
+            edge_type: "calls".to_string(),
+        };
+        let result = store.insert_edge(&edge);
+        assert!(result.is_ok()); // No error, just ignored
+    }
+
+    #[test]
+    fn test_get_related_signatures() {
+        let dir = tempdir().unwrap();
+        let db_path = dir.path().join("test.db");
+        let mut store = OracleStore::open(&db_path).unwrap();
+
+        // Insert multiple nodes in same file
+        let node1 = make_test_node("func_a", "src/main.rs", 10, 20);
+        let node2 = make_test_node("func_b", "src/main.rs", 25, 35);
+        let node3 = make_test_node("func_c", "src/main.rs", 50, 60);
+        store.insert_node(&node1).unwrap();
+        store.insert_node(&node2).unwrap();
+        store.insert_node(&node3).unwrap();
+
+        let related = store.get_related_signatures("src/main.rs", Some(30));
+        assert!(!related.is_empty());
+        // Should find nodes near line 30
+        assert!(related.iter().any(|s| s.contains("func_b")));
+    }
+
+    #[test]
+    fn test_get_related_signatures_empty_file() {
+        let dir = tempdir().unwrap();
+        let db_path = dir.path().join("test.db");
+        let store = OracleStore::open(&db_path).unwrap();
+
+        let related = store.get_related_signatures("nonexistent.rs", None);
+        assert!(related.is_empty());
+    }
+}

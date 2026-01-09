@@ -940,3 +940,223 @@ fn parse_result(stdout: &str) -> Result<f64> {
         .into_diagnostic()
         .with_context(|| format!("Failed to parse result '{}'", value))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_format_params_empty() {
+        let params: HashMap<String, f64> = HashMap::new();
+        assert_eq!(format_params(&params), "");
+    }
+
+    #[test]
+    fn test_format_params_single() {
+        let mut params = HashMap::new();
+        params.insert("alpha".to_string(), 0.1234);
+        assert_eq!(format_params(&params), "alpha=0.1234");
+    }
+
+    #[test]
+    fn test_format_params_multiple_sorted() {
+        let mut params = HashMap::new();
+        params.insert("z".to_string(), 1.0);
+        params.insert("a".to_string(), 2.0);
+        params.insert("m".to_string(), 3.0);
+        let result = format_params(&params);
+        assert!(result.starts_with("a="));
+        assert!(result.contains("m="));
+        assert!(result.ends_with("z=1.0000"));
+    }
+
+    #[test]
+    fn test_format_event_line_valid_json() {
+        let line = r#"{"event":"update","timestamp_us":1234567890,"value":0.5}"#;
+        let result = format_event_line(line);
+        assert!(result.is_some());
+        let formatted = result.unwrap();
+        assert!(formatted.contains("1234567890"));
+        assert!(formatted.contains("update"));
+        assert!(formatted.contains("value=0.500000"));
+    }
+
+    #[test]
+    fn test_format_event_line_invalid_json() {
+        let line = "not valid json";
+        let result = format_event_line(line);
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn test_format_event_line_minimal() {
+        let line = r#"{}"#;
+        let result = format_event_line(line);
+        assert!(result.is_some());
+        let formatted = result.unwrap();
+        assert!(formatted.contains("event"));
+    }
+
+    #[test]
+    fn test_generate_run_id() {
+        let run_id = generate_run_id("test");
+        assert!(run_id.starts_with("test-"));
+        assert!(run_id.len() > 5);
+    }
+
+    #[test]
+    fn test_split_query_with_query() {
+        let (path, query) = split_query("/api/data?key=value");
+        assert_eq!(path, "/api/data");
+        assert_eq!(query, Some("key=value"));
+    }
+
+    #[test]
+    fn test_split_query_without_query() {
+        let (path, query) = split_query("/api/data");
+        assert_eq!(path, "/api/data");
+        assert!(query.is_none());
+    }
+
+    #[test]
+    fn test_parse_query_empty() {
+        let params = parse_query(None);
+        assert!(params.is_empty());
+    }
+
+    #[test]
+    fn test_parse_query_single() {
+        let params = parse_query(Some("key=value"));
+        assert_eq!(params.get("key"), Some(&"value".to_string()));
+    }
+
+    #[test]
+    fn test_parse_query_multiple() {
+        let params = parse_query(Some("a=1&b=2&c=3"));
+        assert_eq!(params.len(), 3);
+        assert_eq!(params.get("a"), Some(&"1".to_string()));
+        assert_eq!(params.get("b"), Some(&"2".to_string()));
+        assert_eq!(params.get("c"), Some(&"3".to_string()));
+    }
+
+    #[test]
+    fn test_parse_query_empty_key() {
+        let params = parse_query(Some("=value&key=val"));
+        assert_eq!(params.len(), 1);
+        assert_eq!(params.get("key"), Some(&"val".to_string()));
+    }
+
+    #[test]
+    fn test_parse_result_simple() {
+        let result = parse_result("0.5");
+        assert!(result.is_ok());
+        assert!((result.unwrap() - 0.5).abs() < 0.001);
+    }
+
+    #[test]
+    fn test_parse_result_with_prefix() {
+        let result = parse_result("RESULT=0.75");
+        assert!(result.is_ok());
+        assert!((result.unwrap() - 0.75).abs() < 0.001);
+    }
+
+    #[test]
+    fn test_parse_result_multiline() {
+        let output = "some output\nmore output\nRESULT=0.9\n";
+        let result = parse_result(output);
+        assert!(result.is_ok());
+        assert!((result.unwrap() - 0.9).abs() < 0.001);
+    }
+
+    #[test]
+    fn test_parse_result_empty() {
+        let result = parse_result("");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_parse_result_invalid_number() {
+        let result = parse_result("not_a_number");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_validate_config_valid() {
+        let mut bounds = HashMap::new();
+        bounds.insert(
+            "x".to_string(),
+            arqonhpo_core::config::Domain {
+                min: 0.0,
+                max: 1.0,
+                scale: arqonhpo_core::config::Scale::Linear,
+            },
+        );
+        let config = SolverConfig {
+            bounds,
+            budget: 10,
+            probe_ratio: 0.5,
+            seed: 42,
+            strategy_params: None,
+        };
+        assert!(validate_config(&config).is_ok());
+    }
+
+    #[test]
+    fn test_validate_config_zero_budget() {
+        let mut bounds = HashMap::new();
+        bounds.insert(
+            "x".to_string(),
+            arqonhpo_core::config::Domain {
+                min: 0.0,
+                max: 1.0,
+                scale: arqonhpo_core::config::Scale::Linear,
+            },
+        );
+        let config = SolverConfig {
+            bounds,
+            budget: 0,
+            probe_ratio: 0.5,
+            seed: 42,
+            strategy_params: None,
+        };
+        let result = validate_config(&config);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("budget"));
+    }
+
+    #[test]
+    fn test_validate_config_empty_bounds() {
+        let config = SolverConfig {
+            bounds: HashMap::new(),
+            budget: 10,
+            probe_ratio: 0.5,
+            seed: 42,
+            strategy_params: None,
+        };
+        let result = validate_config(&config);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("bounds"));
+    }
+
+    #[test]
+    fn test_validate_config_invalid_bounds() {
+        let mut bounds = HashMap::new();
+        bounds.insert(
+            "x".to_string(),
+            arqonhpo_core::config::Domain {
+                min: 1.0,
+                max: 0.0,
+                scale: arqonhpo_core::config::Scale::Linear,
+            }, // min > max
+        );
+        let config = SolverConfig {
+            bounds,
+            budget: 10,
+            probe_ratio: 0.5,
+            seed: 42,
+            strategy_params: None,
+        };
+        let result = validate_config(&config);
+        assert!(result.is_err());
+    }
+}

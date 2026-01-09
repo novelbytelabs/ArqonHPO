@@ -110,6 +110,11 @@ cargo clippy --workspace --all-targets -- -D warnings
 # 3. Run tests
 cargo test --workspace
 
-# 4. Run documentation site locally
+# 4. MSRV check (mirrors CI stable job)
+# Run this before merging to catch dependency issues early.
+# The `ship` crate is excluded due to heavy transitive deps.
+cargo check --workspace --exclude ship
+
+# 5. Run documentation site locally
 mkdocs serve
 ```
