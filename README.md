@@ -7,8 +7,13 @@
 [![Windows](https://img.shields.io/badge/Windows-passing-brightgreen?logo=windows&logoColor=white)](https://github.com/novelbytelabs/ArqonHPO/actions/workflows/ci.yml)
 
 <!-- Coverage & Quality -->
+<!-- Coverage (Dynamic Components) -->
+[![Project](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/novelbytelabs/ArqonHPO/badges/project.json)](https://github.com/novelbytelabs/ArqonHPO/actions)
+[![Core](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/novelbytelabs/ArqonHPO/badges/core.json)](https://github.com/novelbytelabs/ArqonHPO/tree/main/crates/core)
+[![Hotpath](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/novelbytelabs/ArqonHPO/badges/hotpath.json)](https://github.com/novelbytelabs/ArqonHPO/tree/main/crates/hotpath)
+[![CLI](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/novelbytelabs/ArqonHPO/badges/cli.json)](https://github.com/novelbytelabs/ArqonHPO/tree/main/crates/cli)
+<!-- Hybrid Codecov link -->
 [![codecov](https://codecov.io/gh/novelbytelabs/ArqonHPO/branch/main/graph/badge.svg)](https://codecov.io/gh/novelbytelabs/ArqonHPO)
-[![Coverage](https://img.shields.io/badge/coverage-91%25-brightgreen)](https://codecov.io/gh/novelbytelabs/ArqonHPO)
 
 <!-- Version & Language -->
 [![Crates.io](https://img.shields.io/crates/v/arqonhpo-core?label=crates.io)](https://crates.io/crates/arqonhpo-core)
