@@ -280,4 +280,178 @@ mod tests {
         cs.record_delta(&ParamVec::from_slice(&[-0.05]), 4000); // flip 3 → SafeMode
         assert!(cs.is_safe_mode());
     }
+
+    #[test]
+    fn test_reset_safe_mode() {
+        let mut cs = ControlSafety::new(Guardrails::default(), 10);
+        cs.enter_safe_mode(SafeModeReason::Thrashing, 1000, 30_000_000);
+        assert!(cs.is_safe_mode());
+
+        cs.reset_safe_mode();
+        assert!(!cs.is_safe_mode());
+    }
+
+    #[test]
+    fn test_check_proposal_in_safe_mode() {
+        let mut cs = ControlSafety::new(Guardrails::default(), 2);
+        cs.enter_safe_mode(SafeModeReason::Thrashing, 1000, 30_000_000);
+
+        let delta = ParamVec::from_slice(&[0.1, 0.1]);
+        let result = cs.check_proposal(&delta, 2000);
+
+        // Should be Ok even in SafeMode (no-change indication)
+        assert!(result.is_ok());
+        assert!(cs.is_safe_mode());
+    }
+
+    #[test]
+    fn test_check_proposal_exits_safe_mode_on_timer() {
+        let mut cs = ControlSafety::new(Guardrails::default(), 2);
+        cs.enter_safe_mode(SafeModeReason::Thrashing, 1000, 100);
+
+        let delta = ParamVec::from_slice(&[0.1, 0.1]);
+        // After timer expires
+        let result = cs.check_proposal(&delta, 2000);
+
+        assert!(result.is_ok());
+        assert!(!cs.is_safe_mode()); // Should have exited
+    }
+
+    #[test]
+    fn test_record_objective_regression() {
+        let mut cs = ControlSafety::new(
+            Guardrails {
+                regression_count_limit: 2,
+                cooldown_after_flip_us: 1000,
+                ..Default::default()
+            },
+            1,
+        );
+
+        cs.record_objective(0.5, 1000); // First value
+        cs.record_objective(0.6, 2000); // Worse (regression 1)
+        assert!(!cs.is_safe_mode());
+
+        cs.record_objective(0.7, 3000); // Worse (regression 2) → SafeMode
+        assert!(cs.is_safe_mode());
+        assert_eq!(
+            cs.safe_mode().unwrap().reason,
+            SafeModeReason::ObjectiveRegression
+        );
+    }
+
+    #[test]
+    fn test_record_objective_improvement_resets() {
+        let mut cs = ControlSafety::new(
+            Guardrails {
+                regression_count_limit: 3,
+                cooldown_after_flip_us: 1000,
+                ..Default::default()
+            },
+            1,
+        );
+
+        cs.record_objective(0.5, 1000);
+        cs.record_objective(0.6, 2000); // Worse (regression 1)
+        cs.record_objective(0.7, 3000); // Worse (regression 2)
+        cs.record_objective(0.3, 4000); // Better - resets counter
+        cs.record_objective(0.4, 5000); // Worse (regression 1 again)
+
+        assert!(!cs.is_safe_mode()); // Not in safe mode since counter was reset
+    }
+
+    #[test]
+    fn test_budget_exhaustion() {
+        let mut cs = ControlSafety::new(
+            Guardrails {
+                max_cumulative_delta_per_minute: 0.1,
+                cooldown_after_flip_us: 1000,
+                ..Default::default()
+            },
+            1,
+        );
+
+        // Keep adding deltas until budget exhausted
+        cs.record_delta(&ParamVec::from_slice(&[0.05]), 1000);
+        assert!(!cs.is_safe_mode());
+
+        cs.record_delta(&ParamVec::from_slice(&[0.06]), 2000); // 0.11 > 0.1
+        assert!(cs.is_safe_mode());
+        assert_eq!(
+            cs.safe_mode().unwrap().reason,
+            SafeModeReason::BudgetExhausted
+        );
+    }
+
+    #[test]
+    fn test_delta_window_reset() {
+        let mut cs = ControlSafety::new(
+            Guardrails {
+                max_cumulative_delta_per_minute: 0.1,
+                cooldown_after_flip_us: 1000,
+                ..Default::default()
+            },
+            1,
+        );
+
+        cs.record_delta(&ParamVec::from_slice(&[0.05]), 1000);
+        assert!(!cs.is_safe_mode());
+
+        // After 1 minute, budget resets
+        let minute_plus = 1000 + 60_000_001;
+        cs.record_delta(&ParamVec::from_slice(&[0.05]), minute_plus);
+        assert!(!cs.is_safe_mode()); // Budget reset
+    }
+
+    #[test]
+    fn test_direction_window_reset() {
+        let mut cs = ControlSafety::new(
+            Guardrails {
+                direction_flip_limit: 2,
+                cooldown_after_flip_us: 1000,
+                ..Default::default()
+            },
+            1,
+        );
+
+        cs.record_delta(&ParamVec::from_slice(&[0.05]), 1000);
+        cs.record_delta(&ParamVec::from_slice(&[-0.05]), 2000); // flip 1
+        cs.record_delta(&ParamVec::from_slice(&[0.05]), 3000); // flip 2
+
+        // After 1 minute, flip count resets
+        let minute_plus = 3000 + 60_000_001;
+        cs.record_delta(&ParamVec::from_slice(&[-0.05]), minute_plus); // flip 1 (reset)
+        assert!(!cs.is_safe_mode());
+    }
+
+    #[test]
+    fn test_zero_delta_no_direction_change() {
+        let mut cs = ControlSafety::new(
+            Guardrails {
+                direction_flip_limit: 1,
+                cooldown_after_flip_us: 1000,
+                ..Default::default()
+            },
+            1,
+        );
+
+        cs.record_delta(&ParamVec::from_slice(&[0.05]), 1000);
+        cs.record_delta(&ParamVec::from_slice(&[0.0]), 2000); // zero - no direction
+        cs.record_delta(&ParamVec::from_slice(&[-0.05]), 3000); // flip 1
+
+        // With limit 1, this should trigger SafeMode
+        cs.record_delta(&ParamVec::from_slice(&[0.05]), 4000); // flip 2
+        assert!(cs.is_safe_mode());
+    }
+
+    #[test]
+    fn test_safe_mode_get() {
+        let mut cs = ControlSafety::new(Guardrails::default(), 10);
+        assert!(cs.safe_mode().is_none());
+
+        cs.enter_safe_mode(SafeModeReason::ManualTrigger, 1000, 100);
+        let mode = cs.safe_mode().unwrap();
+        assert_eq!(mode.entered_at_us, 1000);
+        assert_eq!(mode.reason, SafeModeReason::ManualTrigger);
+    }
 }
