@@ -827,7 +827,7 @@ mod tests {
         for sample in samples {
             let lr = *sample.get("lr").unwrap();
             assert!(
-                lr >= 1e-5 && lr <= 1e-1,
+                (1e-5..=1e-1).contains(&lr),
                 "Log-scale sample should be within bounds: got {}",
                 lr
             );
@@ -871,7 +871,7 @@ mod tests {
         for sample in samples {
             let lr = *sample.get("lr").unwrap();
             assert!(
-                lr >= 1e-4 && lr <= 1e-1,
+                (1e-4..=1e-1).contains(&lr),
                 "UniformProbe log-scale sample should be within bounds: got {}",
                 lr
             );

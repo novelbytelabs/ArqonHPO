@@ -331,7 +331,7 @@ mod tests {
         }
 
         let ms = MultiStartNM::new(2, seeds);
-        assert!(ms.starts.len() >= 1);
+        assert!(!ms.starts.is_empty());
         assert!(ms.starts.len() <= 4); // K=4 default
     }
 
@@ -358,7 +358,7 @@ mod tests {
             min_evals_per_start: 20,
         };
         let ms = MultiStartNM::with_config(1, seeds, config);
-        assert!(ms.starts.len() >= 1);
+        assert!(!ms.starts.is_empty());
     }
 
     #[test]

@@ -1161,12 +1161,9 @@ mod tests {
         let history: Vec<EvalTrace> = (0..10)
             .map(|i| EvalTrace {
                 eval_id: i as u64,
-                params: [
-                    ("x".to_string(), i as f64 / 10.0),
-                    ("y".to_string(), 0.5),
-                ]
-                .into_iter()
-                .collect(),
+                params: [("x".to_string(), i as f64 / 10.0), ("y".to_string(), 0.5)]
+                    .into_iter()
+                    .collect(),
                 value: (i as f64 / 10.0 - 0.5).powi(2),
                 cost: 1.0,
             })
@@ -1204,12 +1201,9 @@ mod tests {
         let mut history: Vec<EvalTrace> = (0..10)
             .map(|i| EvalTrace {
                 eval_id: i as u64,
-                params: [
-                    ("x".to_string(), i as f64 / 10.0),
-                    ("y".to_string(), 0.5),
-                ]
-                .into_iter()
-                .collect(),
+                params: [("x".to_string(), i as f64 / 10.0), ("y".to_string(), 0.5)]
+                    .into_iter()
+                    .collect(),
                 value: (i as f64 / 10.0 - 0.5).powi(2),
                 cost: 1.0,
             })
@@ -1238,9 +1232,8 @@ mod tests {
         }
 
         // Should have progressed past Init
-        match nm.state {
-            NMState::Init => panic!("NM should have progressed past Init after 15 iterations"),
-            _ => (),
+        if let NMState::Init = nm.state {
+            panic!("NM should have progressed past Init after 15 iterations");
         }
     }
 
@@ -1383,12 +1376,9 @@ mod tests {
         let mut history: Vec<EvalTrace> = (0..10)
             .map(|i| EvalTrace {
                 eval_id: i as u64,
-                params: [
-                    ("x".to_string(), i as f64 / 10.0),
-                    ("y".to_string(), 0.5),
-                ]
-                .into_iter()
-                .collect(),
+                params: [("x".to_string(), i as f64 / 10.0), ("y".to_string(), 0.5)]
+                    .into_iter()
+                    .collect(),
                 value: 0.5 + (i as f64 / 10.0 - 0.5).abs(),
                 cost: 1.0,
             })
@@ -1459,17 +1449,11 @@ mod tests {
 
         // Step through shrink
         let action = nm.step(&config, &history);
-        match action {
-            StrategyAction::Evaluate(_) => {
-                // Should be evaluating next shrunk point
-                match &nm.state {
-                    NMState::Shrink { shrunk_idx, .. } => {
-                        assert_eq!(*shrunk_idx, 1);
-                    }
-                    _ => (),
-                }
+        if let StrategyAction::Evaluate(_) = action {
+            // Should be evaluating next shrunk point
+            if let NMState::Shrink { shrunk_idx, .. } = &nm.state {
+                assert_eq!(*shrunk_idx, 1);
             }
-            _ => (),
         }
     }
 
@@ -1504,6 +1488,9 @@ mod tests {
 
         let _ = nm.step(&config, &history);
         // After accepting contraction, should restart from Init
-        assert!(matches!(nm.state, NMState::Init) || matches!(nm.state, NMState::CoordinatePrepass { .. }));
+        assert!(
+            matches!(nm.state, NMState::Init)
+                || matches!(nm.state, NMState::CoordinatePrepass { .. })
+        );
     }
 }

@@ -17,11 +17,11 @@ fn test_ship_e2e_flow() -> Result<(), Box<dyn std::error::Error>> {
 
     // Config git user for commits
     std::process::Command::new("git")
-        .args(&["config", "user.email", "test@example.com"])
+        .args(["config", "user.email", "test@example.com"])
         .current_dir(root)
         .output()?;
     std::process::Command::new("git")
-        .args(&["config", "user.name", "Test User"])
+        .args(["config", "user.name", "Test User"])
         .current_dir(root)
         .output()?;
 
@@ -35,22 +35,22 @@ edition = "2021"
 
     // Initial commit
     std::process::Command::new("git")
-        .args(&["add", "."])
+        .args(["add", "."])
         .current_dir(root)
         .output()?;
     std::process::Command::new("git")
-        .args(&["commit", "-m", "chore: initial commit"])
+        .args(["commit", "-m", "chore: initial commit"])
         .current_dir(root)
         .output()?;
 
     // 2. Make a fix commit
     fs::write(root.join("fix.txt"), "bugfix")?;
     std::process::Command::new("git")
-        .args(&["add", "."])
+        .args(["add", "."])
         .current_dir(root)
         .output()?;
     std::process::Command::new("git")
-        .args(&["commit", "-m", "fix: critical bug"])
+        .args(["commit", "-m", "fix: critical bug"])
         .current_dir(root)
         .output()?;
 
@@ -95,11 +95,11 @@ fn test_ship_fails_on_dirty_state() -> Result<(), Box<dyn std::error::Error>> {
         .current_dir(root)
         .output()?;
     std::process::Command::new("git")
-        .args(&["config", "user.email", "test@example.com"])
+        .args(["config", "user.email", "test@example.com"])
         .current_dir(root)
         .output()?;
     std::process::Command::new("git")
-        .args(&["config", "user.name", "Test User"])
+        .args(["config", "user.name", "Test User"])
         .current_dir(root)
         .output()?;
 
@@ -112,11 +112,11 @@ version = "0.1.0"
 "#,
     )?;
     std::process::Command::new("git")
-        .args(&["add", "."])
+        .args(["add", "."])
         .current_dir(root)
         .output()?;
     std::process::Command::new("git")
-        .args(&["commit", "-m", "init"])
+        .args(["commit", "-m", "init"])
         .current_dir(root)
         .output()?;
 

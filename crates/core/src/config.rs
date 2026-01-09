@@ -194,7 +194,7 @@ mod tests {
         // Mean of 0.25 and 0.75 should be 0.5 or 0.0 depending on interpretation
         // Actually for 0.25 and 0.75, the circular mean could be 0.0 or 0.5
         let mean = circular_mean01(&values);
-        assert!(mean >= 0.0 && mean < 1.0);
+        assert!((0.0..1.0).contains(&mean));
     }
 
     #[test]
@@ -210,6 +210,6 @@ mod tests {
         // Test case where mean_angle is negative
         let values = vec![0.7, 0.8, 0.9];
         let mean = circular_mean01(&values);
-        assert!(mean >= 0.0 && mean < 1.0);
+        assert!((0.0..1.0).contains(&mean));
     }
 }

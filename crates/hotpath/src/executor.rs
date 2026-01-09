@@ -429,8 +429,10 @@ mod tests {
 
     #[test]
     fn test_clamp_to_bounds() {
-        let mut guardrails = Guardrails::default();
-        guardrails.bounds = Some(vec![(0.0, 1.0), (0.2, 0.8)]);
+        let guardrails = Guardrails {
+            bounds: Some(vec![(0.0, 1.0), (0.2, 0.8)]),
+            ..Default::default()
+        };
 
         let config = Arc::new(AtomicConfig::new(ParamVec::from_slice(&[0.5, 0.5])));
         let executor = SafetyExecutor::new(config, guardrails);
@@ -444,8 +446,10 @@ mod tests {
 
     #[test]
     fn test_validate_delta_out_of_bounds() {
-        let mut guardrails = Guardrails::default();
-        guardrails.bounds = Some(vec![(0.0, 1.0), (0.0, 1.0)]);
+        let guardrails = Guardrails {
+            bounds: Some(vec![(0.0, 1.0), (0.0, 1.0)]),
+            ..Default::default()
+        };
 
         let config = Arc::new(AtomicConfig::new(ParamVec::from_slice(&[0.9, 0.5])));
         let executor = SafetyExecutor::new(config, guardrails);
@@ -514,7 +518,7 @@ mod tests {
 
     #[test]
     fn test_apply_no_change_proposal() {
-        use crate::proposer::{Proposal, NoChangeReason};
+        use crate::proposer::{NoChangeReason, Proposal};
 
         let config = Arc::new(AtomicConfig::new(ParamVec::from_slice(&[0.5, 0.5])));
         let mut executor = SafetyExecutor::new(config, Guardrails::default());
