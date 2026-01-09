@@ -833,4 +833,140 @@ mod tests {
             );
         }
     }
+
+    #[test]
+    fn test_prime_index_probe_with_max_primes() {
+        let probe = PrimeIndexProbe::with_max_primes(5);
+        assert_eq!(probe.max_primes, Some(5));
+
+        let config = test_config();
+        let samples = probe.sample(&config);
+        assert!(!samples.is_empty());
+    }
+
+    #[test]
+    fn test_uniform_probe_log_scale() {
+        // Test UniformProbe with Log scale
+        let mut bounds = HashMap::new();
+        bounds.insert(
+            "lr".to_string(),
+            Domain {
+                min: 1e-4,
+                max: 1e-1,
+                scale: Scale::Log,
+            },
+        );
+
+        let config = SolverConfig {
+            bounds,
+            budget: 50,
+            seed: 42,
+            probe_ratio: 0.2,
+            strategy_params: None,
+        };
+
+        let probe = UniformProbe;
+        let samples = probe.sample(&config);
+
+        for sample in samples {
+            let lr = *sample.get("lr").unwrap();
+            assert!(
+                lr >= 1e-4 && lr <= 1e-1,
+                "UniformProbe log-scale sample should be within bounds: got {}",
+                lr
+            );
+        }
+    }
+
+    #[test]
+    fn test_prime_sqrt_sample_at_sharding_api() {
+        // Test the sample_at sharding API
+        let probe = PrimeSqrtSlopesRotProbe::with_seed(42);
+        let config = test_config();
+
+        // Sample at specific indices
+        let point0 = probe.sample_at(0, &config);
+        let point10 = probe.sample_at(10, &config);
+
+        // Same index should give same point
+        let point0_again = probe.sample_at(0, &config);
+        assert_eq!(point0.get("x"), point0_again.get("x"));
+
+        // Different indices should give different points
+        assert_ne!(point0.get("x"), point10.get("x"));
+    }
+
+    #[test]
+    fn test_prime_sqrt_sample_range_sharding_api() {
+        // Test the sample_range sharding API
+        let probe = PrimeSqrtSlopesRotProbe::with_seed(42);
+        let config = test_config();
+
+        let range1 = probe.sample_range(0, 5, &config);
+        let range2 = probe.sample_range(5, 5, &config);
+
+        assert_eq!(range1.len(), 5);
+        assert_eq!(range2.len(), 5);
+
+        // Non-overlapping ranges should be different
+        assert_ne!(range1[0].get("x"), range2[0].get("x"));
+    }
+
+    #[test]
+    fn test_prime_sqrt_with_config() {
+        let custom_config = PrimeSqrtSlopesRotConfig {
+            prime_offset: 100,
+            rot_offset: 300,
+            rot_alpha: 0.5,
+            random_spice_ratio: 0.2,
+            cp_shift: None,
+        };
+
+        let probe = PrimeSqrtSlopesRotProbe::with_config(custom_config);
+        let config = test_config();
+        let samples = probe.sample(&config);
+        assert!(!samples.is_empty());
+    }
+
+    #[test]
+    fn test_prime_sqrt_with_cp_shift() {
+        let base_config = PrimeSqrtSlopesRotConfig::with_spice(0.1);
+        let shifted_config = base_config.with_cp_shift(vec![0.25, 0.75]);
+
+        assert!(shifted_config.cp_shift.is_some());
+        let shift = shifted_config.cp_shift.unwrap();
+        assert_eq!(shift.len(), 2);
+        assert!((shift[0] - 0.25).abs() < 1e-10);
+    }
+
+    #[test]
+    fn test_adaptive_spice_for_landscape() {
+        let chaotic_spice = PrimeSqrtSlopesRotConfig::adaptive_spice_for_landscape(true);
+        let structured_spice = PrimeSqrtSlopesRotConfig::adaptive_spice_for_landscape(false);
+
+        assert!((chaotic_spice - 0.20).abs() < 1e-10);
+        assert!((structured_spice - 0.0).abs() < 1e-10);
+    }
+
+    #[test]
+    fn test_sieve_of_eratosthenes_edge_cases() {
+        // Test with limit < 2
+        let primes_zero = PrimeIndexProbe::sieve_of_eratosthenes(0);
+        assert!(primes_zero.is_empty());
+
+        let primes_one = PrimeIndexProbe::sieve_of_eratosthenes(1);
+        assert!(primes_one.is_empty());
+
+        let primes_two = PrimeIndexProbe::sieve_of_eratosthenes(2);
+        assert_eq!(primes_two, vec![2]);
+    }
+
+    #[test]
+    fn test_first_n_primes_edge_cases() {
+        let primes_zero = PrimeIndexProbe::first_n_primes(0);
+        assert!(primes_zero.is_empty());
+
+        let primes_one = PrimeIndexProbe::first_n_primes(1);
+        assert_eq!(primes_one, vec![2]);
+    }
 }

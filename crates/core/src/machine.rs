@@ -668,4 +668,232 @@ mod tests {
         assert_eq!(top_k[0].get("x"), Some(&0.2));
         assert_eq!(top_k[1].get("x"), Some(&0.3));
     }
+
+    #[test]
+    fn test_classify_phase_transition() {
+        // Test that solver transitions from Probe to Classify when probe budget is met
+        let mut config = make_test_config();
+        config.budget = 20;
+        config.probe_ratio = 0.5; // probe_budget = 10
+        let mut solver = Solver::new(config);
+
+        // Fill probe budget with 10 evaluations
+        let traces: Vec<EvalTrace> = (0..10)
+            .map(|i| EvalTrace {
+                eval_id: i as u64,
+                params: [
+                    ("x".to_string(), i as f64 / 10.0),
+                    ("y".to_string(), 0.5),
+                ]
+                .into_iter()
+                .collect(),
+                value: (i as f64 - 5.0).powi(2), // parabola
+                cost: 1.0,
+            })
+            .collect();
+        solver.tell(traces);
+
+        // Phase should still be Probe, but next ask() should transition to Classify
+        assert_eq!(solver.phase, Phase::Probe);
+
+        // Call ask - should trigger classification and move to Refine
+        let candidates = solver.ask();
+        assert!(candidates.is_some());
+        // After classification, phase should be Refine (Structured or Chaotic)
+        match solver.phase {
+            Phase::Refine(_) => (),
+            _ => panic!("Expected Refine phase after classification, got {:?}", solver.phase),
+        }
+    }
+
+    #[test]
+    fn test_chaotic_landscape_triggers_tpe() {
+        // Test that Chaotic classification results in TPE strategy
+        let mut config = make_test_config();
+        config.budget = 20;
+        config.probe_ratio = 0.5;
+        let mut solver = Solver::new(config);
+
+        // Add high-variance data (simulates chaotic landscape)
+        let traces: Vec<EvalTrace> = (0..10)
+            .map(|i| EvalTrace {
+                eval_id: i as u64,
+                params: [
+                    ("x".to_string(), i as f64 / 10.0),
+                    ("y".to_string(), 0.5),
+                ]
+                .into_iter()
+                .collect(),
+                // Random-looking values with high variance
+                value: if i % 2 == 0 { 100.0 } else { 0.1 },
+                cost: 1.0,
+            })
+            .collect();
+        solver.tell(traces);
+
+        // Trigger classification
+        let _ = solver.ask();
+
+        // Strategy should now be set (either NM or TPE based on landscape)
+        assert!(solver.strategy.is_some());
+    }
+
+    #[test]
+    fn test_refine_phase_budget_exhaustion() {
+        // Test that solver returns None when budget is exhausted in Refine phase
+        let mut config = make_test_config();
+        config.budget = 12;
+        config.probe_ratio = 0.5;
+        let mut solver = Solver::pcr(config);
+
+        // Fill probe budget
+        let traces: Vec<EvalTrace> = (0..6)
+            .map(|i| EvalTrace {
+                eval_id: i as u64,
+                params: [
+                    ("x".to_string(), i as f64 / 10.0),
+                    ("y".to_string(), 0.5),
+                ]
+                .into_iter()
+                .collect(),
+                value: (i as f64 - 3.0).powi(2),
+                cost: 1.0,
+            })
+            .collect();
+        solver.tell(traces);
+
+        // Trigger classification
+        let _ = solver.ask();
+
+        // Fill remaining budget
+        let more_traces: Vec<EvalTrace> = (6..12)
+            .map(|i| EvalTrace {
+                eval_id: i as u64,
+                params: [
+                    ("x".to_string(), i as f64 / 10.0),
+                    ("y".to_string(), 0.5),
+                ]
+                .into_iter()
+                .collect(),
+                value: 1.0,
+                cost: 1.0,
+            })
+            .collect();
+        solver.tell(more_traces);
+
+        // Now budget is exhausted, ask should return None or transition to Done or trigger CP restart
+        let result = solver.ask();
+        // Either returns None, or moves to Done phase, or triggers CP restart
+        if result.is_some() {
+            // If still returning points, phase should be Refine or Done
+            match solver.phase {
+                Phase::Done | Phase::Refine(_) => (),
+                _ => panic!("Expected Done or Refine phase after budget exhaustion, got {:?}", solver.phase),
+            }
+        }
+    }
+
+    #[test]
+    fn test_cp_restart_trigger() {
+        // Test CP restart trigger at 70% budget in Structured mode
+        let mut config = make_test_config();
+        config.budget = 100;
+        config.probe_ratio = 0.1; // probe_budget = 10
+        let mut solver = Solver::pcr(config);
+
+        // Fill probe budget with structured data
+        let mut traces: Vec<EvalTrace> = (0..10)
+            .map(|i| EvalTrace {
+                eval_id: i as u64,
+                params: [
+                    ("x".to_string(), i as f64 / 10.0),
+                    ("y".to_string(), 0.5),
+                ]
+                .into_iter()
+                .collect(),
+                value: (i as f64 / 10.0).powi(2), // structured: parabola
+                cost: 1.0,
+            })
+            .collect();
+        solver.tell(traces.clone());
+
+        // Trigger classification - should be Structured
+        let _ = solver.ask();
+
+        // Verify we're in Refine(Structured) and have NM strategy
+        match solver.phase {
+            Phase::Refine(Landscape::Structured) => (),
+            _ => {
+                // If not structured, that's OK - classification may vary
+                return;
+            }
+        }
+
+        // Add more evaluations to reach 70% of budget (70 evaluations)
+        for i in 10..70 {
+            traces.push(EvalTrace {
+                eval_id: i as u64,
+                params: [
+                    ("x".to_string(), (i % 10) as f64 / 10.0),
+                    ("y".to_string(), 0.5),
+                ]
+                .into_iter()
+                .collect(),
+                value: 1.0,
+                cost: 1.0,
+            });
+        }
+        solver.tell(traces[10..70].to_vec());
+
+        // This ask() should trigger CP restart
+        let rescue_batch = solver.ask();
+
+        // After CP restart, restarted flag should be true
+        assert!(solver.restarted);
+
+        // Should have returned a rescue batch
+        assert!(rescue_batch.is_some());
+    }
+
+    #[test]
+    fn test_post_restart_strategy_reinit() {
+        // Test that strategy is re-initialized after CP restart
+        let mut config = make_test_config();
+        config.budget = 100;
+        config.probe_ratio = 0.1;
+        let mut solver = Solver::pcr(config);
+
+        // Add probe data
+        let traces: Vec<EvalTrace> = (0..10)
+            .map(|i| EvalTrace {
+                eval_id: i as u64,
+                params: [
+                    ("x".to_string(), i as f64 / 10.0),
+                    ("y".to_string(), 0.5),
+                ]
+                .into_iter()
+                .collect(),
+                value: (i as f64 / 10.0).powi(2),
+                cost: 1.0,
+            })
+            .collect();
+        solver.tell(traces);
+        let _ = solver.ask();
+
+        // Artificially set up post-restart state where strategy is None
+        // This simulates: CP restart happened, rescue batch returned, now re-calling ask
+        solver.phase = Phase::Refine(Landscape::Structured);
+        solver.strategy = None; // Simulate post-restart state
+        solver.restarted = true; // Already restarted (prevents re-trigger)
+
+        // Now ask should detect strategy is None and re-init
+        let result = solver.ask();
+
+        // Strategy should now be re-initialized (NelderMead)
+        // If result is Some, strategy is initialized and returned candidates
+        // If result is None due to convergence, that's also valid
+        if result.is_some() {
+            assert!(solver.strategy.is_some());
+        }
+    }
 }

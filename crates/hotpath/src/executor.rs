@@ -491,4 +491,98 @@ mod tests {
         let result = executor.rollback();
         assert!(result.is_ok());
     }
+
+    #[test]
+    fn test_apply_update_proposal() {
+        use crate::proposer::Proposal;
+
+        let config = Arc::new(AtomicConfig::new(ParamVec::from_slice(&[0.5, 0.5])));
+        let mut executor = SafetyExecutor::new(config, Guardrails::default());
+
+        let proposal = Proposal::Update {
+            iteration: 1,
+            delta: ParamVec::from_slice(&[0.05, -0.05]),
+            gradient_estimate: ParamVec::from_slice(&[0.1, -0.1]),
+        };
+
+        let result = executor.apply(proposal);
+        assert!(result.is_ok());
+
+        let receipt = result.unwrap();
+        assert_eq!(receipt.new_generation, 1);
+    }
+
+    #[test]
+    fn test_apply_no_change_proposal() {
+        use crate::proposer::{Proposal, NoChangeReason};
+
+        let config = Arc::new(AtomicConfig::new(ParamVec::from_slice(&[0.5, 0.5])));
+        let mut executor = SafetyExecutor::new(config, Guardrails::default());
+
+        let proposal = Proposal::NoChange {
+            reason: NoChangeReason::CooldownActive,
+        };
+
+        let result = executor.apply(proposal);
+        assert!(result.is_ok());
+
+        let receipt = result.unwrap();
+        // Generation should stay at 0 since no change
+        assert_eq!(receipt.new_generation, 0);
+    }
+
+    #[test]
+    fn test_apply_plus_proposal() {
+        use crate::proposer::Proposal;
+
+        let config = Arc::new(AtomicConfig::new(ParamVec::from_slice(&[0.5, 0.5])));
+        let mut executor = SafetyExecutor::new(config, Guardrails::default());
+
+        let proposal = Proposal::ApplyPlus {
+            perturbation_id: 1,
+            delta: ParamVec::from_slice(&[0.02, 0.0]),
+        };
+
+        let result = executor.apply(proposal);
+        assert!(result.is_ok());
+
+        let snapshot = executor.snapshot();
+        assert!((snapshot.params[0] - 0.52).abs() < 0.001);
+    }
+
+    #[test]
+    fn test_apply_minus_proposal() {
+        use crate::proposer::Proposal;
+
+        let config = Arc::new(AtomicConfig::new(ParamVec::from_slice(&[0.5, 0.5])));
+        let mut executor = SafetyExecutor::new(config, Guardrails::default());
+
+        let proposal = Proposal::ApplyMinus {
+            perturbation_id: 1,
+            delta: ParamVec::from_slice(&[-0.02, 0.0]),
+        };
+
+        let result = executor.apply(proposal);
+        assert!(result.is_ok());
+
+        let snapshot = executor.snapshot();
+        assert!((snapshot.params[0] - 0.48).abs() < 0.001);
+    }
+
+    #[test]
+    fn test_apply_delta_rejected_too_large() {
+        use crate::proposer::Proposal;
+
+        let config = Arc::new(AtomicConfig::new(ParamVec::from_slice(&[0.5, 0.5])));
+        let mut executor = SafetyExecutor::new(config, Guardrails::default());
+
+        let proposal = Proposal::Update {
+            iteration: 1,
+            delta: ParamVec::from_slice(&[0.5, 0.0]), // 0.5 > 0.1 limit
+            gradient_estimate: ParamVec::from_slice(&[0.5, 0.0]),
+        };
+
+        let result = executor.apply(proposal);
+        assert!(matches!(result, Err(Violation::DeltaTooLarge { .. })));
+    }
 }

@@ -199,9 +199,119 @@ fn read_jsonl_values(path: &Path, limit: usize) -> Result<Vec<serde_json::Value>
 #[cfg(test)]
 mod tests {
     use super::*;
+    use arqonhpo_core::config::{Domain, Scale, SolverConfig};
+    use arqonhpo_core::artifact::SeedPoint;
+    use crate::SolverState;
     use std::fs;
     use std::io::Cursor;
     use tempfile::NamedTempFile;
+
+    fn create_test_state() -> SolverState {
+        let mut bounds = HashMap::new();
+        bounds.insert(
+            "x".to_string(),
+            Domain {
+                min: 0.0,
+                max: 1.0,
+                scale: Scale::Linear,
+            },
+        );
+        SolverState {
+            config: SolverConfig {
+                bounds,
+                budget: 10,
+                seed: 42,
+                probe_ratio: 0.3,
+                strategy_params: None,
+            },
+            history: vec![
+                SeedPoint {
+                    params: [("x".to_string(), 0.5)].into_iter().collect(),
+                    value: 0.25,
+                    cost: 1.0,
+                },
+                SeedPoint {
+                    params: [("x".to_string(), 0.3)].into_iter().collect(),
+                    value: 0.10,
+                    cost: 1.0,
+                },
+            ],
+            run_id: Some("test-run".to_string()),
+        }
+    }
+
+    #[test]
+    fn test_json_response_success() {
+        let value = serde_json::json!({"ok": true});
+        let response = json_response(Ok(value.clone()));
+        // Check status and content type
+        let status_code = response.status_code().0;
+        assert_eq!(status_code, 200);
+    }
+
+    #[test]
+    fn test_json_response_error() {
+        let err = miette::miette!("Test error");
+        let response = json_response(Err(err));
+        let status_code = response.status_code().0;
+        assert_eq!(status_code, 500);
+    }
+
+    #[test]
+    fn test_plain_response_html() {
+        let response = plain_response("<html></html>", "text/html");
+        let status_code = response.status_code().0;
+        assert_eq!(status_code, 200);
+    }
+
+    #[test]
+    fn test_plain_response_css() {
+        let response = plain_response("body { color: red; }", "text/css");
+        let status_code = response.status_code().0;
+        assert_eq!(status_code, 200);
+    }
+
+    #[test]
+    fn test_plain_response_js() {
+        let response = plain_response("console.log('hi');", "text/javascript");
+        let status_code = response.status_code().0;
+        assert_eq!(status_code, 200);
+    }
+
+    #[test]
+    fn test_load_state_json_success() -> Result<()> {
+        let file = NamedTempFile::new().into_diagnostic()?;
+        let path = file.path().to_path_buf();
+        let state = create_test_state();
+        fs::write(&path, serde_json::to_string(&state).unwrap()).into_diagnostic()?;
+
+        let metrics = Metrics::init(None)?;
+        let result = load_state_json(&path, &metrics)?;
+        
+        assert!(result.get("config").is_some());
+        assert!(result.get("history").is_some());
+        assert_eq!(result["run_id"], "test-run");
+        Ok(())
+    }
+
+    #[test]
+    fn test_load_summary_json_success() -> Result<()> {
+        let file = NamedTempFile::new().into_diagnostic()?;
+        let path = file.path().to_path_buf();
+        let state = create_test_state();
+        fs::write(&path, serde_json::to_string(&state).unwrap()).into_diagnostic()?;
+
+        let result = load_summary_json(&path)?;
+        
+        assert_eq!(result["run_id"], "test-run");
+        assert_eq!(result["budget"], 10);
+        assert_eq!(result["history_len"], 2);
+        // Best value should be 0.10 (the minimum)
+        assert!((result["best"].as_f64().unwrap() - 0.10).abs() < 0.001);
+        // Latest value should be 0.10 (last entry)
+        assert!((result["latest"].as_f64().unwrap() - 0.10).abs() < 0.001);
+        Ok(())
+    }
 
     #[test]
     fn test_load_events_filtering() -> Result<()> {
@@ -236,6 +346,66 @@ mod tests {
     }
 
     #[test]
+    fn test_load_events_no_path() -> Result<()> {
+        let params = HashMap::new();
+        let result = load_events_json(None, &params)?;
+        let array = result["events"].as_array().unwrap();
+        assert!(array.is_empty());
+        Ok(())
+    }
+
+    #[test]
+    fn test_load_events_with_empty_lines() -> Result<()> {
+        let file = NamedTempFile::new().into_diagnostic()?;
+        let path = file.path().to_path_buf();
+        let content = r#"{"event": "a"}
+
+{"event": "b"}
+
+"#;
+        fs::write(&path, content).into_diagnostic()?;
+
+        let params = HashMap::new();
+        let result = load_events_json(Some(&path), &params)?;
+        let array = result["events"].as_array().unwrap();
+        assert_eq!(array.len(), 2);
+        Ok(())
+    }
+
+    #[test]
+    fn test_load_events_with_invalid_json() -> Result<()> {
+        let file = NamedTempFile::new().into_diagnostic()?;
+        let path = file.path().to_path_buf();
+        let content = r#"{"event": "valid"}
+not json
+{"event": "also_valid"}"#;
+        fs::write(&path, content).into_diagnostic()?;
+
+        let params = HashMap::new();
+        let result = load_events_json(Some(&path), &params)?;
+        let array = result["events"].as_array().unwrap();
+        // Should skip invalid line
+        assert_eq!(array.len(), 2);
+        Ok(())
+    }
+
+    #[test]
+    fn test_load_events_with_event_type_field() -> Result<()> {
+        let file = NamedTempFile::new().into_diagnostic()?;
+        let path = file.path().to_path_buf();
+        // Using "event_type" instead of "event"
+        let content = r#"{"event_type": "custom", "data": 123}"#;
+        fs::write(&path, content).into_diagnostic()?;
+
+        let mut params = HashMap::new();
+        params.insert("event".to_string(), "custom".to_string());
+        let result = load_events_json(Some(&path), &params)?;
+        let array = result["events"].as_array().unwrap();
+        assert_eq!(array.len(), 1);
+        Ok(())
+    }
+
+    #[test]
     fn test_load_actions_limit() -> Result<()> {
         let file = NamedTempFile::new().into_diagnostic()?;
         let path = file.path().to_path_buf();
@@ -258,6 +428,32 @@ mod tests {
     }
 
     #[test]
+    fn test_load_actions_no_path() -> Result<()> {
+        let params = HashMap::new();
+        let result = load_actions_json(None, &params)?;
+        let array = result["actions"].as_array().unwrap();
+        assert!(array.is_empty());
+        Ok(())
+    }
+
+    #[test]
+    fn test_load_actions_with_invalid_json() -> Result<()> {
+        let file = NamedTempFile::new().into_diagnostic()?;
+        let path = file.path().to_path_buf();
+        let content = r#"{"valid": 1}
+broken json
+{"valid": 2}"#;
+        fs::write(&path, content).into_diagnostic()?;
+
+        let params = HashMap::new();
+        let result = load_actions_json(Some(&path), &params)?;
+        let array = result["actions"].as_array().unwrap();
+        // Should skip invalid line
+        assert_eq!(array.len(), 2);
+        Ok(())
+    }
+
+    #[test]
     fn test_store_action_valid() -> Result<()> {
         let file = NamedTempFile::new().into_diagnostic()?;
         let path = file.path().to_path_buf();
@@ -270,6 +466,23 @@ mod tests {
         let content = fs::read_to_string(&path).into_diagnostic()?;
         assert!(content.contains(r#""action":"tune""#));
         assert!(content.contains(r#""timestamp_us":"#));
+        Ok(())
+    }
+
+    #[test]
+    fn test_store_action_with_existing_timestamp() -> Result<()> {
+        let file = NamedTempFile::new().into_diagnostic()?;
+        let path = file.path().to_path_buf();
+        // Already has timestamp_us
+        let body = r#"{"action": "test", "timestamp_us": 12345}"#;
+        let reader = Cursor::new(body);
+
+        let response = store_action(reader, Some(&path))?;
+        assert_eq!(response, serde_json::json!({ "ok": true }));
+
+        let content = fs::read_to_string(&path).into_diagnostic()?;
+        // Should keep existing timestamp
+        assert!(content.contains("12345"));
         Ok(())
     }
 
@@ -290,5 +503,12 @@ mod tests {
         let reader = Cursor::new(body);
         let result = store_action(reader, None);
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_dashboard_assets_not_empty() {
+        assert!(!DASHBOARD_HTML.is_empty());
+        assert!(!DASHBOARD_CSS.is_empty());
+        assert!(!DASHBOARD_JS.is_empty());
     }
 }
