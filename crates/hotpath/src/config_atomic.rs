@@ -282,10 +282,7 @@ mod tests {
     fn test_to_param_vec_and_to_kv() {
         let registry = ParamRegistry::new(["alpha", "beta"]);
 
-        let map: Vec<(String, f64)> = vec![
-            ("alpha".to_string(), 1.5),
-            ("beta".to_string(), 2.5),
-        ];
+        let map: Vec<(String, f64)> = vec![("alpha".to_string(), 1.5), ("beta".to_string(), 2.5)];
 
         let param_vec = registry.to_param_vec(&map);
         assert_eq!(param_vec.len(), 2);

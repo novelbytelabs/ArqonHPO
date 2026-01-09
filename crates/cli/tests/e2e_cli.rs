@@ -1,4 +1,3 @@
-use assert_cmd::cargo::CommandCargoExt;
 use std::io::Write;
 use std::process::{Command, Stdio};
 use tempfile::NamedTempFile;
@@ -23,7 +22,7 @@ fn create_config() -> NamedTempFile {
 fn test_validate_command_success() -> Result<(), Box<dyn std::error::Error>> {
     let config_file = create_config();
 
-    let output = Command::cargo_bin("arqonhpo-cli")?
+    let output = Command::new(assert_cmd::cargo::cargo_bin!("arqonhpo-cli"))
         .arg("validate")
         .arg("--config")
         .arg(config_file.path())
@@ -50,7 +49,7 @@ fn test_validate_command_invalid() -> Result<(), Box<dyn std::error::Error>> {
         }}"#
     )?;
 
-    let output = Command::cargo_bin("arqonhpo-cli")?
+    let output = Command::new(assert_cmd::cargo::cargo_bin!("arqonhpo-cli"))
         .arg("validate")
         .arg("--config")
         .arg(file.path())
@@ -65,7 +64,7 @@ fn test_validate_command_invalid() -> Result<(), Box<dyn std::error::Error>> {
 fn test_ask_command_basic() -> Result<(), Box<dyn std::error::Error>> {
     let config_file = create_config();
 
-    let output = Command::cargo_bin("arqonhpo-cli")?
+    let output = Command::new(assert_cmd::cargo::cargo_bin!("arqonhpo-cli"))
         .arg("ask")
         .arg("--config")
         .arg(config_file.path())
@@ -83,7 +82,7 @@ fn test_ask_command_basic() -> Result<(), Box<dyn std::error::Error>> {
 fn test_ask_command_with_batch_limit() -> Result<(), Box<dyn std::error::Error>> {
     let config_file = create_config();
 
-    let output = Command::cargo_bin("arqonhpo-cli")?
+    let output = Command::new(assert_cmd::cargo::cargo_bin!("arqonhpo-cli"))
         .arg("ask")
         .arg("--config")
         .arg(config_file.path())
@@ -121,7 +120,7 @@ fn test_tell_command_with_results_file() -> Result<(), Box<dyn std::error::Error
     let results_content = r#"[{"params": {"x": 0.5}, "value": 0.25, "cost": 1.0}]"#;
     std::fs::write(results_file.path(), results_content)?;
 
-    let output = Command::cargo_bin("arqonhpo-cli")?
+    let output = Command::new(assert_cmd::cargo::cargo_bin!("arqonhpo-cli"))
         .arg("tell")
         .arg("--state")
         .arg(state_file.path())
@@ -157,7 +156,7 @@ fn test_export_import_roundtrip() -> Result<(), Box<dyn std::error::Error>> {
 
     // Export
     let artifact_file = NamedTempFile::new()?;
-    let export_output = Command::cargo_bin("arqonhpo-cli")?
+    let export_output = Command::new(assert_cmd::cargo::cargo_bin!("arqonhpo-cli"))
         .arg("export")
         .arg("--state")
         .arg(state_file.path())
@@ -174,7 +173,7 @@ fn test_export_import_roundtrip() -> Result<(), Box<dyn std::error::Error>> {
 
     // Import to new state file
     let new_state_file = NamedTempFile::new()?;
-    let import_output = Command::cargo_bin("arqonhpo-cli")?
+    let import_output = Command::new(assert_cmd::cargo::cargo_bin!("arqonhpo-cli"))
         .arg("import")
         .arg("--artifact")
         .arg(artifact_file.path())
@@ -197,7 +196,7 @@ fn test_interactive_ask_tell() -> Result<(), Box<dyn std::error::Error>> {
     let config_file = create_config();
 
     // Spawn interactive process
-    let mut child = Command::cargo_bin("arqonhpo-cli")?
+    let mut child = Command::new(assert_cmd::cargo::cargo_bin!("arqonhpo-cli"))
         .arg("interactive")
         .arg("--config")
         .arg(config_file.path())

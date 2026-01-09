@@ -199,9 +199,9 @@ fn read_jsonl_values(path: &Path, limit: usize) -> Result<Vec<serde_json::Value>
 #[cfg(test)]
 mod tests {
     use super::*;
-    use arqonhpo_core::config::{Domain, Scale, SolverConfig};
-    use arqonhpo_core::artifact::SeedPoint;
     use crate::SolverState;
+    use arqonhpo_core::artifact::SeedPoint;
+    use arqonhpo_core::config::{Domain, Scale, SolverConfig};
     use std::fs;
     use std::io::Cursor;
     use tempfile::NamedTempFile;
@@ -287,7 +287,7 @@ mod tests {
 
         let metrics = Metrics::init(None)?;
         let result = load_state_json(&path, &metrics)?;
-        
+
         assert!(result.get("config").is_some());
         assert!(result.get("history").is_some());
         assert_eq!(result["run_id"], "test-run");
@@ -302,7 +302,7 @@ mod tests {
         fs::write(&path, serde_json::to_string(&state).unwrap()).into_diagnostic()?;
 
         let result = load_summary_json(&path)?;
-        
+
         assert_eq!(result["run_id"], "test-run");
         assert_eq!(result["budget"], 10);
         assert_eq!(result["history_len"], 2);
@@ -317,7 +317,7 @@ mod tests {
     fn test_load_events_filtering() -> Result<()> {
         let file = NamedTempFile::new().into_diagnostic()?;
         let path = file.path().to_path_buf();
-        let events = vec![
+        let events = [
             r#"{"event": "start", "timestamp_us": 100}"#,
             r#"{"event": "stop", "timestamp_us": 200}"#,
             r#"{"event": "error", "timestamp_us": 300, "details": "bad bad"}"#,
@@ -507,8 +507,8 @@ broken json
 
     #[test]
     fn test_dashboard_assets_not_empty() {
-        assert!(!DASHBOARD_HTML.is_empty());
-        assert!(!DASHBOARD_CSS.is_empty());
-        assert!(!DASHBOARD_JS.is_empty());
+        assert!(!DASHBOARD_HTML.trim().is_empty());
+        assert!(!DASHBOARD_CSS.trim().is_empty());
+        assert!(!DASHBOARD_JS.trim().is_empty());
     }
 }

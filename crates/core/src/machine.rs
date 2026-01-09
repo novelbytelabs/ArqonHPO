@@ -681,12 +681,9 @@ mod tests {
         let traces: Vec<EvalTrace> = (0..10)
             .map(|i| EvalTrace {
                 eval_id: i as u64,
-                params: [
-                    ("x".to_string(), i as f64 / 10.0),
-                    ("y".to_string(), 0.5),
-                ]
-                .into_iter()
-                .collect(),
+                params: [("x".to_string(), i as f64 / 10.0), ("y".to_string(), 0.5)]
+                    .into_iter()
+                    .collect(),
                 value: (i as f64 - 5.0).powi(2), // parabola
                 cost: 1.0,
             })
@@ -702,7 +699,10 @@ mod tests {
         // After classification, phase should be Refine (Structured or Chaotic)
         match solver.phase {
             Phase::Refine(_) => (),
-            _ => panic!("Expected Refine phase after classification, got {:?}", solver.phase),
+            _ => panic!(
+                "Expected Refine phase after classification, got {:?}",
+                solver.phase
+            ),
         }
     }
 
@@ -718,12 +718,9 @@ mod tests {
         let traces: Vec<EvalTrace> = (0..10)
             .map(|i| EvalTrace {
                 eval_id: i as u64,
-                params: [
-                    ("x".to_string(), i as f64 / 10.0),
-                    ("y".to_string(), 0.5),
-                ]
-                .into_iter()
-                .collect(),
+                params: [("x".to_string(), i as f64 / 10.0), ("y".to_string(), 0.5)]
+                    .into_iter()
+                    .collect(),
                 // Random-looking values with high variance
                 value: if i % 2 == 0 { 100.0 } else { 0.1 },
                 cost: 1.0,
@@ -750,12 +747,9 @@ mod tests {
         let traces: Vec<EvalTrace> = (0..6)
             .map(|i| EvalTrace {
                 eval_id: i as u64,
-                params: [
-                    ("x".to_string(), i as f64 / 10.0),
-                    ("y".to_string(), 0.5),
-                ]
-                .into_iter()
-                .collect(),
+                params: [("x".to_string(), i as f64 / 10.0), ("y".to_string(), 0.5)]
+                    .into_iter()
+                    .collect(),
                 value: (i as f64 - 3.0).powi(2),
                 cost: 1.0,
             })
@@ -769,12 +763,9 @@ mod tests {
         let more_traces: Vec<EvalTrace> = (6..12)
             .map(|i| EvalTrace {
                 eval_id: i as u64,
-                params: [
-                    ("x".to_string(), i as f64 / 10.0),
-                    ("y".to_string(), 0.5),
-                ]
-                .into_iter()
-                .collect(),
+                params: [("x".to_string(), i as f64 / 10.0), ("y".to_string(), 0.5)]
+                    .into_iter()
+                    .collect(),
                 value: 1.0,
                 cost: 1.0,
             })
@@ -788,7 +779,10 @@ mod tests {
             // If still returning points, phase should be Refine or Done
             match solver.phase {
                 Phase::Done | Phase::Refine(_) => (),
-                _ => panic!("Expected Done or Refine phase after budget exhaustion, got {:?}", solver.phase),
+                _ => panic!(
+                    "Expected Done or Refine phase after budget exhaustion, got {:?}",
+                    solver.phase
+                ),
             }
         }
     }
@@ -805,12 +799,9 @@ mod tests {
         let mut traces: Vec<EvalTrace> = (0..10)
             .map(|i| EvalTrace {
                 eval_id: i as u64,
-                params: [
-                    ("x".to_string(), i as f64 / 10.0),
-                    ("y".to_string(), 0.5),
-                ]
-                .into_iter()
-                .collect(),
+                params: [("x".to_string(), i as f64 / 10.0), ("y".to_string(), 0.5)]
+                    .into_iter()
+                    .collect(),
                 value: (i as f64 / 10.0).powi(2), // structured: parabola
                 cost: 1.0,
             })
@@ -867,12 +858,9 @@ mod tests {
         let traces: Vec<EvalTrace> = (0..10)
             .map(|i| EvalTrace {
                 eval_id: i as u64,
-                params: [
-                    ("x".to_string(), i as f64 / 10.0),
-                    ("y".to_string(), 0.5),
-                ]
-                .into_iter()
-                .collect(),
+                params: [("x".to_string(), i as f64 / 10.0), ("y".to_string(), 0.5)]
+                    .into_iter()
+                    .collect(),
                 value: (i as f64 / 10.0).powi(2),
                 cost: 1.0,
             })

@@ -137,56 +137,6 @@ impl SemVer {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::fs;
-
-    #[test]
-    fn test_write_to_cargo_toml() -> Result<()> {
-        let dir = tempfile::tempdir().into_diagnostic()?;
-        let path = dir.path().join("Cargo.toml");
-
-        // 1. Setup basic Cargo.toml
-        fs::write(
-            &path,
-            r#"
-[package]
-name = "test"
-version = "0.1.0"
-"#,
-        )
-        .into_diagnostic()?;
-
-        // 2. Write update
-        let v = SemVer {
-            major: 1,
-            minor: 2,
-            patch: 3,
-        };
-        v.write_to_cargo_toml(&path)?;
-
-        let content = fs::read_to_string(&path).into_diagnostic()?;
-        assert!(content.contains("version = \"1.2.3\""));
-
-        // 3. Test workspace format
-        fs::write(
-            &path,
-            r#"
-[workspace.package]
-version = "0.0.0"
-"#,
-        )
-        .into_diagnostic()?;
-
-        v.write_to_cargo_toml(&path)?;
-        let content = fs::read_to_string(&path).into_diagnostic()?;
-        assert!(content.contains("version = \"1.2.3\""));
-
-        Ok(())
-    }
-}
-
 /// Calculate next version based on conventional commits
 pub fn calculate_next_version(current: &SemVer, commits: &[Commit]) -> SemVer {
     let has_breaking = commits.iter().any(|c| c.is_breaking);
@@ -238,4 +188,54 @@ pub fn generate_changelog(version: &SemVer, commits: &[Commit]) -> String {
     }
 
     changelog
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs;
+
+    #[test]
+    fn test_write_to_cargo_toml() -> Result<()> {
+        let dir = tempfile::tempdir().into_diagnostic()?;
+        let path = dir.path().join("Cargo.toml");
+
+        // 1. Setup basic Cargo.toml
+        fs::write(
+            &path,
+            r#"
+[package]
+name = "test"
+version = "0.1.0"
+"#,
+        )
+        .into_diagnostic()?;
+
+        // 2. Write update
+        let v = SemVer {
+            major: 1,
+            minor: 2,
+            patch: 3,
+        };
+        v.write_to_cargo_toml(&path)?;
+
+        let content = fs::read_to_string(&path).into_diagnostic()?;
+        assert!(content.contains("version = \"1.2.3\""));
+
+        // 3. Test workspace format
+        fs::write(
+            &path,
+            r#"
+[workspace.package]
+version = "0.0.0"
+"#,
+        )
+        .into_diagnostic()?;
+
+        v.write_to_cargo_toml(&path)?;
+        let content = fs::read_to_string(&path).into_diagnostic()?;
+        assert!(content.contains("version = \"1.2.3\""));
+
+        Ok(())
+    }
 }

@@ -35,13 +35,12 @@ impl EdgeBuilder {
         let mut edges = Vec::new();
         if let Some(tree) = self.rust_parser.parse(content) {
             let mut cursor = tree.walk();
-            self.visit_rust_node(&mut cursor, content, &mut edges, None);
+            Self::visit_rust_node(&mut cursor, content, &mut edges, None);
         }
         edges
     }
 
     fn visit_rust_node(
-        &self,
         cursor: &mut TreeCursor,
         content: &str,
         edges: &mut Vec<GraphEdge>,
@@ -76,7 +75,7 @@ impl EdgeBuilder {
 
         if cursor.goto_first_child() {
             loop {
-                self.visit_rust_node(cursor, content, edges, new_scope.clone());
+                Self::visit_rust_node(cursor, content, edges, new_scope.clone());
                 if !cursor.goto_next_sibling() {
                     break;
                 }

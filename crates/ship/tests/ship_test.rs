@@ -83,22 +83,15 @@ mod commit_tests {
 
                 // Extract scope
                 let scope = if let Some(paren_start) = prefix.find('(') {
-                    if let Some(paren_end) = prefix.find(')') {
-                        Some(&prefix[paren_start + 1..paren_end])
-                    } else {
-                        None
-                    }
+                    prefix
+                        .find(')')
+                        .map(|paren_end| &prefix[paren_start + 1..paren_end])
                 } else {
                     None
                 };
 
                 assert_eq!(commit_type, expected_type, "Type mismatch for: {}", message);
-                assert_eq!(
-                    scope,
-                    expected_scope.as_deref(),
-                    "Scope mismatch for: {}",
-                    message
-                );
+                assert_eq!(scope, expected_scope, "Scope mismatch for: {}", message);
                 assert_eq!(desc, expected_desc, "Description mismatch for: {}", message);
             }
         }
