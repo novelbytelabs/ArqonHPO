@@ -214,7 +214,7 @@ mod tests {
         ];
         fs::write(&path, events.join("\n")).into_diagnostic()?;
 
-        let metrics = Metrics::init(None)?; // Dummy metrics
+        let _metrics = Metrics::init(None)?; // Dummy metrics
 
         // Test Filter
         let mut params = HashMap::new();

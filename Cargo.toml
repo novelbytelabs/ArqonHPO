@@ -29,3 +29,4 @@ pyo3 = { version = "0.27", features = ["extension-module"] }
 # Internal crates
 arqonhpo-core = { path = "crates/core" }
 static_assertions = "1.1"
+
