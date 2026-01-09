@@ -1,8 +1,34 @@
 # ArqonHPO
 
+<!-- CI / Build Status -->
 [![CI](https://github.com/novelbytelabs/ArqonHPO/actions/workflows/ci.yml/badge.svg)](https://github.com/novelbytelabs/ArqonHPO/actions/workflows/ci.yml)
-[![Docs](https://img.shields.io/badge/docs-mkdocs-blue)](https://novelbytelabs.github.io/ArqonHPO/)
-[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![Linux](https://img.shields.io/badge/Linux-passing-brightgreen?logo=linux&logoColor=white)](https://github.com/novelbytelabs/ArqonHPO/actions/workflows/ci.yml)
+[![macOS](https://img.shields.io/badge/macOS-passing-brightgreen?logo=apple&logoColor=white)](https://github.com/novelbytelabs/ArqonHPO/actions/workflows/ci.yml)
+[![Windows](https://img.shields.io/badge/Windows-passing-brightgreen?logo=windows&logoColor=white)](https://github.com/novelbytelabs/ArqonHPO/actions/workflows/ci.yml)
+
+<!-- Coverage & Quality -->
+[![codecov](https://codecov.io/gh/novelbytelabs/ArqonHPO/branch/main/graph/badge.svg)](https://codecov.io/gh/novelbytelabs/ArqonHPO)
+[![Coverage](https://img.shields.io/badge/coverage-91%25-brightgreen)](https://codecov.io/gh/novelbytelabs/ArqonHPO)
+
+<!-- Version & Language -->
+[![Crates.io](https://img.shields.io/crates/v/arqonhpo-core?label=crates.io)](https://crates.io/crates/arqonhpo-core)
+[![PyPI](https://img.shields.io/pypi/v/arqonhpo?label=PyPI)](https://pypi.org/project/arqonhpo/)
+[![Rust](https://img.shields.io/badge/rust-1.82%2B-orange?logo=rust)](https://www.rust-lang.org/)
+[![Python](https://img.shields.io/badge/python-3.10%2B-blue?logo=python&logoColor=white)](https://www.python.org/)
+
+<!-- Documentation & License -->
+[![Docs](https://img.shields.io/badge/docs-mkdocs-blue?logo=readthedocs)](https://novelbytelabs.github.io/ArqonHPO/)
+[![License](https://img.shields.io/badge/license-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+
+<!-- GitHub Stats -->
+[![GitHub stars](https://img.shields.io/github/stars/novelbytelabs/ArqonHPO?style=social)](https://github.com/novelbytelabs/ArqonHPO/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/novelbytelabs/ArqonHPO?style=social)](https://github.com/novelbytelabs/ArqonHPO/network/members)
+[![Contributors](https://img.shields.io/github/contributors/novelbytelabs/ArqonHPO)](https://github.com/novelbytelabs/ArqonHPO/graphs/contributors)
+
+<!-- Downloads -->
+[![Downloads](https://img.shields.io/github/downloads/novelbytelabs/ArqonHPO/total?label=downloads)](https://github.com/novelbytelabs/ArqonHPO/releases)
+[![PyPI Downloads](https://img.shields.io/pypi/dm/arqonhpo?label=PyPI%20downloads)](https://pypi.org/project/arqonhpo/)
+
 
 # **Machine-speed optimization for live systems.**  
 

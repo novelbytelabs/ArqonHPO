@@ -280,4 +280,80 @@ mod tests {
 
         assert!(bw >= 1e-6, "Bandwidth should be clamped to minimum");
     }
+
+    #[test]
+    fn test_silverman_bandwidth() {
+        // Test Silverman's bandwidth rule
+        let values: Vec<f64> = (0..20).map(|i| i as f64).collect();
+        let bandwidth = TPE::silverman_bandwidth(&values);
+
+        // Should be reasonable
+        assert!(
+            bandwidth > 0.0 && bandwidth < 10.0,
+            "Silverman bandwidth should be reasonable, got {}",
+            bandwidth
+        );
+    }
+
+    #[test]
+    fn test_silverman_bandwidth_fallback() {
+        // With < 4 samples, should fall back to Scott's
+        let values: Vec<f64> = vec![1.0, 2.0, 3.0];
+        let silverman_bw = TPE::silverman_bandwidth(&values);
+        let scott_bw = TPE::scotts_bandwidth(&values);
+
+        assert!((silverman_bw - scott_bw).abs() < 1e-10);
+    }
+
+    #[test]
+    fn test_fixed_bandwidth() {
+        let bw = TPE::fixed_bandwidth(10.0, 0.1);
+        assert!((bw - 1.0).abs() < 1e-10);
+    }
+
+    #[test]
+    fn test_fixed_bandwidth_minimum() {
+        let bw = TPE::fixed_bandwidth(0.0, 0.1);
+        assert!(bw >= 1e-6, "Fixed bandwidth should be clamped to minimum");
+    }
+
+    #[test]
+    fn test_tpe_with_bandwidth_rule() {
+        let tpe_scott = TPE::with_bandwidth_rule(2, BandwidthRule::Scott);
+        assert_eq!(tpe_scott.bandwidth_rule, BandwidthRule::Scott);
+
+        let tpe_silverman = TPE::with_bandwidth_rule(2, BandwidthRule::Silverman);
+        assert_eq!(tpe_silverman.bandwidth_rule, BandwidthRule::Silverman);
+
+        let tpe_fixed = TPE::with_bandwidth_rule(2, BandwidthRule::Fixed);
+        assert_eq!(tpe_fixed.bandwidth_rule, BandwidthRule::Fixed);
+    }
+
+    #[test]
+    fn test_scotts_bandwidth_edge_case() {
+        // Test with < 2 values
+        let one_val = vec![1.0];
+        let bw = TPE::scotts_bandwidth(&one_val);
+        assert_eq!(bw, 1.0, "Should return fallback 1.0 for insufficient data");
+
+        let empty: Vec<f64> = vec![];
+        let bw_empty = TPE::scotts_bandwidth(&empty);
+        assert_eq!(bw_empty, 1.0, "Should return fallback 1.0 for empty data");
+    }
+
+    #[test]
+    fn test_tpe_pdf_function() {
+        // Test the Gaussian PDF calculation
+        let pdf_at_mean = TPE::pdf(0.0, 0.0, 1.0);
+        // At mean with sigma=1, PDF should be ~0.3989
+        assert!(
+            (pdf_at_mean - 0.3989).abs() < 0.01,
+            "PDF at mean should be ~0.3989, got {}",
+            pdf_at_mean
+        );
+
+        // PDF should decrease as we move away from mean
+        let pdf_at_1std = TPE::pdf(1.0, 0.0, 1.0);
+        assert!(pdf_at_1std < pdf_at_mean);
+    }
 }

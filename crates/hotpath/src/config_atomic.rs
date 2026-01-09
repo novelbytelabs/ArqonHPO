@@ -259,4 +259,61 @@ mod tests {
         assert_eq!(config.snapshot().params[0], 0.5);
         assert_eq!(gen, 2);
     }
+
+    #[test]
+    fn test_param_registry_is_empty() {
+        let empty = ParamRegistry::new(std::iter::empty::<String>());
+        assert!(empty.is_empty());
+        assert_eq!(empty.len(), 0);
+
+        let not_empty = ParamRegistry::new(["x"]);
+        assert!(!not_empty.is_empty());
+    }
+
+    #[test]
+    fn test_rollback_without_baseline() {
+        let config = AtomicConfig::new(ParamVec::from_slice(&[0.5]));
+        // No baseline set
+        let result = config.rollback();
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn test_to_param_vec_and_to_kv() {
+        let registry = ParamRegistry::new(["alpha", "beta"]);
+
+        let map: Vec<(String, f64)> = vec![
+            ("alpha".to_string(), 1.5),
+            ("beta".to_string(), 2.5),
+        ];
+
+        let param_vec = registry.to_param_vec(&map);
+        assert_eq!(param_vec.len(), 2);
+        assert!((param_vec[0] - 1.5).abs() < 1e-10);
+        assert!((param_vec[1] - 2.5).abs() < 1e-10);
+
+        let kv = registry.to_kv(&param_vec);
+        assert_eq!(kv.len(), 2);
+        assert_eq!(kv[0].0, "alpha");
+        assert!((kv[0].1 - 1.5).abs() < 1e-10);
+    }
+
+    #[test]
+    fn test_param_vec_helper() {
+        let pv = param_vec(&[1.0, 2.0, 3.0]);
+        assert_eq!(pv.len(), 3);
+        assert!((pv[0] - 1.0).abs() < 1e-10);
+    }
+
+    #[test]
+    fn test_get_id_not_found() {
+        let registry = ParamRegistry::new(["alpha"]);
+        assert!(registry.get_id("nonexistent").is_none());
+    }
+
+    #[test]
+    fn test_get_name_out_of_bounds() {
+        let registry = ParamRegistry::new(["alpha"]);
+        assert!(registry.get_name(100).is_none());
+    }
 }
