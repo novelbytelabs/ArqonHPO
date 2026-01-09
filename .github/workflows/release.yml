@@ -57,7 +57,18 @@ jobs:
         run: choco install protoc --no-progress
 
       - name: Build
-        run: cargo build --release --target ${{ matrix.target }}
+        run: cargo build --release --target ${{ matrix.target }} -p arqonhpo-cli
+
+      - name: Prepare release artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          src="target/${{ matrix.target }}/release/arqonhpo-cli"
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            src="${src}.exe"
+          fi
+          dst="target/${{ matrix.target }}/release/${{ matrix.artifact_name }}"
+          cp "$src" "$dst"
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
@@ -119,9 +130,6 @@ jobs:
         with:
           python-version: "3.10"
 
-      - name: Install Maturin
-        run: pip install maturin
-
       - name: Install protoc (Linux)
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
@@ -135,13 +143,16 @@ jobs:
         run: choco install protoc --no-progress
 
       - name: Build Wheels
-        run: maturin build --release -m bindings/python/Cargo.toml
+        uses: PyO3/maturin-action@v1
+        with:
+          command: build
+          args: --release -m bindings/python/Cargo.toml -i python3.10 --out dist
 
       - name: Upload Wheels
         uses: actions/upload-artifact@v4
         with:
           name: python-wheels-${{ matrix.os }}
-          path: target/wheels/*.whl
+          path: dist
 
   # ==========================================================================
   # Create GitHub Release
