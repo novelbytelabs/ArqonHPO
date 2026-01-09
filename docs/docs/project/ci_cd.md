@@ -118,3 +118,53 @@ cargo check --workspace --exclude ship
 # 5. Run documentation site locally
 mkdocs serve
 ```
+
+## Local Code Coverage Testing
+
+Before pushing, verify test coverage locally to catch gaps before CI reports them. This uses `cargo-llvm-cov` for accurate coverage measurement.
+
+### Setup (one-time)
+
+```bash
+# Install cargo-llvm-cov
+cargo install cargo-llvm-cov
+
+# Install llvm-tools (required component)
+rustup component add llvm-tools-preview
+```
+
+### Running Coverage Locally
+
+```bash
+# Quick summary (text output)
+cargo llvm-cov --workspace --exclude ship
+
+# Detailed HTML report (opens in browser)
+cargo llvm-cov --workspace --exclude ship --html --open
+
+# Show uncovered lines for specific files
+cargo llvm-cov --workspace --exclude ship --show-missing-lines
+
+# Check only specific crate
+cargo llvm-cov -p arqonhpo-cli --show-missing-lines
+```
+
+### Coverage Pre-Push Checklist
+
+Before pushing code changes, especially new features:
+
+1. **Run coverage**: `cargo llvm-cov --workspace --exclude ship --show-missing-lines`
+2. **Check for uncovered lines**: Focus on new/modified files
+3. **Add tests for gaps**: Target functions with 0% coverage
+4. **Re-run to verify**: Ensure coverage improves
+5. **Then push**: `git push origin HEAD`
+
+### Coverage Targets
+
+| Component | Target | Current |
+|-----------|--------|---------|
+| Core crate | >80% | ~75% |
+| CLI crate | >60% | ~45% |
+| Hotpath crate | >70% | ~70% |
+| Ship crate | >50% | ~40% |
+

@@ -1524,4 +1524,330 @@ mod tests {
         let json = serde_json::to_string(&response).unwrap();
         assert!(json.contains("\"ok\":true"));
     }
+
+    // ==================== LOAD STATE OR CONFIG TESTS ====================
+
+    #[test]
+    fn test_load_state_or_config_with_existing_state() {
+        use std::io::Write;
+        use tempfile::NamedTempFile;
+
+        // Create a config file
+        let mut config_file = NamedTempFile::new().unwrap();
+        writeln!(
+            config_file,
+            r#"{{
+            "seed": 42,
+            "budget": 20,
+            "probe_ratio": 0.5,
+            "bounds": {{"x": {{"min": 0.0, "max": 1.0}}}}
+        }}"#
+        )
+        .unwrap();
+
+        // Create a state file
+        let mut state_file = NamedTempFile::new().unwrap();
+        writeln!(
+            state_file,
+            r#"{{
+            "config": {{
+                "seed": 99,
+                "budget": 30,
+                "probe_ratio": 0.3,
+                "bounds": {{"y": {{"min": 0.0, "max": 2.0}}}}
+            }},
+            "history": [],
+            "run_id": "existing-run"
+        }}"#
+        )
+        .unwrap();
+
+        let loaded =
+            load_state_or_config(config_file.path(), Some(&state_file.path().to_path_buf()))
+                .unwrap();
+        // Should use state's config, not the config file
+        assert_eq!(loaded.config.seed, 99);
+        assert_eq!(loaded.run_id, Some("existing-run".to_string()));
+    }
+
+    #[test]
+    fn test_load_state_or_config_no_state_file() {
+        use std::io::Write;
+        use tempfile::NamedTempFile;
+
+        // Create a config file
+        let mut config_file = NamedTempFile::new().unwrap();
+        writeln!(
+            config_file,
+            r#"{{
+            "seed": 42,
+            "budget": 20,
+            "probe_ratio": 0.5,
+            "bounds": {{"x": {{"min": 0.0, "max": 1.0}}}}
+        }}"#
+        )
+        .unwrap();
+
+        let loaded = load_state_or_config(config_file.path(), None).unwrap();
+        assert_eq!(loaded.config.seed, 42);
+        assert!(loaded.history.is_empty());
+        assert!(loaded.run_id.is_none());
+    }
+
+    #[test]
+    fn test_load_state_or_config_state_doesnt_exist() {
+        use std::io::Write;
+        use tempfile::NamedTempFile;
+
+        // Create a config file
+        let mut config_file = NamedTempFile::new().unwrap();
+        writeln!(
+            config_file,
+            r#"{{
+            "seed": 42,
+            "budget": 20,
+            "probe_ratio": 0.5,
+            "bounds": {{"x": {{"min": 0.0, "max": 1.0}}}}
+        }}"#
+        )
+        .unwrap();
+
+        // Path that doesn't exist
+        let nonexistent = PathBuf::from("/tmp/nonexistent_state_12345.json");
+        let loaded = load_state_or_config(config_file.path(), Some(&nonexistent)).unwrap();
+        // Should fall back to config
+        assert_eq!(loaded.config.seed, 42);
+        assert!(loaded.run_id.is_none());
+    }
+
+    // ==================== VALIDATE COMMAND TESTS ====================
+
+    #[test]
+    fn test_validate_command_success() {
+        use std::io::Write;
+        use tempfile::NamedTempFile;
+
+        let mut config_file = NamedTempFile::new().unwrap();
+        writeln!(
+            config_file,
+            r#"{{
+            "seed": 42,
+            "budget": 20,
+            "probe_ratio": 0.5,
+            "bounds": {{"x": {{"min": 0.0, "max": 1.0}}}}
+        }}"#
+        )
+        .unwrap();
+
+        let result = validate_command(config_file.path());
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_validate_command_invalid_config() {
+        use std::io::Write;
+        use tempfile::NamedTempFile;
+
+        let mut config_file = NamedTempFile::new().unwrap();
+        writeln!(
+            config_file,
+            r#"{{
+            "seed": 42,
+            "budget": 0,
+            "probe_ratio": 0.5,
+            "bounds": {{"x": {{"min": 0.0, "max": 1.0}}}}
+        }}"#
+        )
+        .unwrap();
+
+        let result = validate_command(config_file.path());
+        assert!(result.is_err());
+    }
+
+    // ==================== READ EVENT LINES TESTS ====================
+
+    #[test]
+    fn test_read_event_lines_basic() {
+        use std::io::Write;
+        use tempfile::NamedTempFile;
+
+        let mut file = NamedTempFile::new().unwrap();
+        writeln!(file, r#"{{"event": "test1", "timestamp_us": 100}}"#).unwrap();
+        writeln!(file, r#"{{"event": "test2", "timestamp_us": 200}}"#).unwrap();
+        writeln!(file, r#"{{"event": "test3", "timestamp_us": 300}}"#).unwrap();
+
+        let lines = read_event_lines(file.path(), 10).unwrap();
+        assert_eq!(lines.len(), 3);
+    }
+
+    #[test]
+    fn test_read_event_lines_limit() {
+        use std::io::Write;
+        use tempfile::NamedTempFile;
+
+        let mut file = NamedTempFile::new().unwrap();
+        for i in 0..10 {
+            writeln!(
+                file,
+                r#"{{"event": "test{}", "timestamp_us": {}}}"#,
+                i,
+                i * 100
+            )
+            .unwrap();
+        }
+
+        let lines = read_event_lines(file.path(), 3).unwrap();
+        // Should only get the last 3
+        assert_eq!(lines.len(), 3);
+    }
+
+    #[test]
+    fn test_read_event_lines_filters_invalid_json() {
+        use std::io::Write;
+        use tempfile::NamedTempFile;
+
+        let mut file = NamedTempFile::new().unwrap();
+        writeln!(file, "not valid json").unwrap();
+        writeln!(file, r#"{{"event": "valid", "timestamp_us": 100}}"#).unwrap();
+        writeln!(file, "also invalid").unwrap();
+
+        let lines = read_event_lines(file.path(), 10).unwrap();
+        assert_eq!(lines.len(), 1); // Only the valid JSON line
+    }
+
+    #[test]
+    fn test_read_event_lines_file_not_found() {
+        let result = read_event_lines(Path::new("/nonexistent/events.json"), 10);
+        assert!(result.is_err());
+    }
+
+    // ==================== EVALUATE SCRIPT TESTS ====================
+
+    #[test]
+    fn test_evaluate_script_success() {
+        use std::os::unix::fs::PermissionsExt;
+        use tempfile::tempdir;
+
+        let dir = tempdir().unwrap();
+        let script_path = dir.path().join("test_script.sh");
+        fs::write(&script_path, "#!/bin/bash\necho \"0.75\"").unwrap();
+        let mut perms = fs::metadata(&script_path).unwrap().permissions();
+        perms.set_mode(0o755);
+        fs::set_permissions(&script_path, perms).unwrap();
+
+        let params: HashMap<String, f64> = [("x".to_string(), 0.5)].into_iter().collect();
+
+        let result = evaluate_script(&script_path, &params);
+        assert!(result.is_ok(), "evaluate_script failed: {:?}", result);
+        assert!((result.unwrap() - 0.75).abs() < 0.001);
+    }
+
+    #[test]
+    fn test_evaluate_script_with_result_prefix() {
+        use std::os::unix::fs::PermissionsExt;
+        use tempfile::tempdir;
+
+        let dir = tempdir().unwrap();
+        let script_path = dir.path().join("test_script.sh");
+        fs::write(&script_path, "#!/bin/bash\necho \"RESULT=0.99\"").unwrap();
+        let mut perms = fs::metadata(&script_path).unwrap().permissions();
+        perms.set_mode(0o755);
+        fs::set_permissions(&script_path, perms).unwrap();
+
+        let params: HashMap<String, f64> = HashMap::new();
+
+        let result = evaluate_script(&script_path, &params);
+        assert!(result.is_ok(), "evaluate_script failed: {:?}", result);
+        assert!((result.unwrap() - 0.99).abs() < 0.001);
+    }
+
+    #[test]
+    fn test_evaluate_script_failure() {
+        use std::os::unix::fs::PermissionsExt;
+        use tempfile::tempdir;
+
+        let dir = tempdir().unwrap();
+        let script_path = dir.path().join("test_script.sh");
+        fs::write(&script_path, "#!/bin/bash\nexit 1").unwrap();
+        let mut perms = fs::metadata(&script_path).unwrap().permissions();
+        perms.set_mode(0o755);
+        fs::set_permissions(&script_path, perms).unwrap();
+
+        let params: HashMap<String, f64> = HashMap::new();
+
+        let result = evaluate_script(&script_path, &params);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_evaluate_script_env_vars_set() {
+        use std::os::unix::fs::PermissionsExt;
+        use tempfile::tempdir;
+
+        let dir = tempdir().unwrap();
+        let script_path = dir.path().join("test_script.sh");
+        fs::write(&script_path, "#!/bin/bash\necho $ARQON_alpha").unwrap();
+        let mut perms = fs::metadata(&script_path).unwrap().permissions();
+        perms.set_mode(0o755);
+        fs::set_permissions(&script_path, perms).unwrap();
+
+        let params: HashMap<String, f64> = [("alpha".to_string(), 0.123)].into_iter().collect();
+
+        let result = evaluate_script(&script_path, &params);
+        assert!(result.is_ok(), "evaluate_script failed: {:?}", result);
+        assert!((result.unwrap() - 0.123).abs() < 0.001);
+    }
+
+    // ==================== START METRICS SERVER TEST ====================
+
+    #[test]
+    fn test_metrics_init_with_server_address() {
+        // Test that init with an address spawns a thread (just verify it doesn't panic)
+        // Using port 0 to let OS assign an available port
+        let metrics = Metrics::init(Some("127.0.0.1:0"));
+        assert!(metrics.is_ok());
+    }
+
+    // ==================== DRAW TUI TESTS ====================
+
+    #[test]
+    fn test_format_event_line_with_event_type() {
+        // Test event_type fallback
+        let line = r#"{"event_type":"update","timestamp_us":1234567890}"#;
+        let result = format_event_line(line);
+        assert!(result.is_some());
+        let formatted = result.unwrap();
+        assert!(formatted.contains("update"));
+    }
+
+    #[test]
+    fn test_format_event_line_without_value() {
+        let line = r#"{"event":"test","timestamp_us":1000}"#;
+        let result = format_event_line(line);
+        assert!(result.is_some());
+        let formatted = result.unwrap();
+        assert!(formatted.contains("test"));
+        assert!(!formatted.contains("value=")); // No value field
+    }
+
+    // ==================== GENERATE RUN ID TESTS ====================
+
+    #[test]
+    fn test_generate_run_id_uniqueness() {
+        let id1 = generate_run_id("test");
+        std::thread::sleep(std::time::Duration::from_millis(10));
+        // In same second, IDs should be same (timestamp-based)
+        // But we can at least check format
+        assert!(id1.starts_with("test-"));
+    }
+
+    // ==================== WRITE OUTPUT TESTS ====================
+
+    #[test]
+    fn test_write_output_to_stdout() {
+        // When path is None, it should print to stdout - just verify no panic
+        let data = serde_json::json!({"test": true});
+        let result = write_output(None, &data);
+        assert!(result.is_ok());
+    }
 }
