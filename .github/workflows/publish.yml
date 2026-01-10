@@ -116,6 +116,15 @@ jobs:
         with:
           name: sdist
           path: dist
+      - name: Verify GitHub Packages auth
+        shell: bash
+        env:
+          GH_PACKAGES_TOKEN: ${{ secrets.GH_PACKAGES_TOKEN }}
+        run: |
+          set -euo pipefail
+          status=$(curl -s -o /dev/null -w "%{http_code}" -u "${GITHUB_ACTOR}:${GH_PACKAGES_TOKEN}" \
+            "https://pypi.pkg.github.com/${{ github.repository_owner }}/")
+          echo "GitHub Packages auth HTTP status: ${status}"
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
