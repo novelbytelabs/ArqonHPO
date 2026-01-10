@@ -120,9 +120,10 @@ jobs:
         shell: bash
         env:
           GH_PACKAGES_TOKEN: ${{ secrets.GH_PACKAGES_TOKEN }}
+          GH_PACKAGES_USER: ${{ secrets.GH_PACKAGES_USER || github.actor }}
         run: |
           set -euo pipefail
-          status=$(curl -s -o /dev/null -w "%{http_code}" -u "${GITHUB_ACTOR}:${GH_PACKAGES_TOKEN}" \
+          status=$(curl -s -o /dev/null -w "%{http_code}" -u "${GH_PACKAGES_USER}:${GH_PACKAGES_TOKEN}" \
             "https://pypi.pkg.github.com/${{ github.repository_owner }}/")
           echo "GitHub Packages auth HTTP status: ${status}"
       - name: Publish to PyPI
@@ -134,7 +135,7 @@ jobs:
       - name: Publish to GitHub Packages
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          user: ${{ github.actor }}
+          user: ${{ secrets.GH_PACKAGES_USER || github.actor }}
           password: ${{ secrets.GH_PACKAGES_TOKEN }}
           repository-url: https://pypi.pkg.github.com/${{ github.repository_owner }}/
           packages-dir: dist
