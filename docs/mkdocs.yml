@@ -84,21 +84,51 @@ extra_javascript:
 
 nav:
   - Home: index.md
-  - Why: why/index.md
-  - Demos: demos/index.md
-  - Benchmarks: benchmarks/index.md
+  - Why:
+      - why/index.md
+      - Architecture: why/architecture.md
+  - Demos:
+      - demos/index.md
+      - Inference: demos/inference.md
+      - Systems: demos/systems.md
+      - Edge: demos/edge.md
+  - Benchmarks:
+      - benchmarks/index.md
+      - Methodology: benchmarks/methodology.md
   - Docs:
       - documentation/index.md
+      - Installation: documentation/installation.md
       - Quickstart: documentation/quickstart.md
       - Concepts:
           - Metabolic Architecture: documentation/concepts/metabolic_architecture.md
           - PCR Algorithm: documentation/concepts/pcr_algorithm.md
+          - Probe Deep Dive: documentation/concepts/probe_deep_dive.md
+          - Strategies: documentation/concepts/strategies.md
+          - Batch vs Online: documentation/concepts/batch_vs_online.md
+          - Determinism: documentation/concepts/determinism.md
+          - Safety: documentation/concepts/safety.md
       - Reference:
           - Python API: documentation/reference/python.md
           - Rust Core: documentation/reference/rust.md
+          - Hotpath API: documentation/reference/hotpath.md
           - CLI: documentation/reference/cli.md
+          - TUI: documentation/reference/tui.md
+          - Dashboard: documentation/reference/dashboard.md
           - Observability: documentation/reference/observability.md
-      - Cookbook: documentation/cookbook/
+          - Error Codes: documentation/reference/error_codes.md
+      - Cookbook:
+          - documentation/cookbook/index.md
+          - ML Tuning: documentation/cookbook/ml_tuning.md
+          - Sim Tuning: documentation/cookbook/sim_tuning.md
+          - Warm Starting: documentation/cookbook/warm_starting.md
+          - Kubernetes: documentation/cookbook/kubernetes.md
+          - FastAPI: documentation/cookbook/fastapi.md
+          - Ray Tune: documentation/cookbook/ray.md
+      - Integrations:
+          - documentation/integrations/index.md
+      - Migration: documentation/migration.md
+      - Troubleshooting: documentation/troubleshooting.md
+      - FAQ: documentation/faq.md
   - ArqonShip:
       - arqonship/index.md
       - Architecture: arqonship/architecture.md
@@ -110,7 +140,7 @@ nav:
       - About: project/about.md
       - Roadmap: project/roadmap.md
       - Changelog: project/changelog.md
-      - Contributing: project/contributing.md
+      - Contributing: project/CONTRIBUTING.md
       - License: project/LICENSE
       - CI/CD Runbook: project/ci_cd.md
       - Test Coverage: project/test_coverage.md
