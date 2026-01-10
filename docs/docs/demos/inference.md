@@ -18,13 +18,13 @@ ArqonHPO continuously tunes these parameters as traffic shifts.
 
 ## What to Optimize
 
-| Parameter | Impact |
-|-----------|--------|
-| `batch_size` | Throughput vs. latency |
-| `max_tokens` | Memory vs. completion length |
-| `kv_cache_size` | Hit rate vs. memory |
-| `speculative_decoding_k` | Speed vs. accuracy |
-| `router_weights` | Model selection (small vs. large) |
+| Parameter                | Impact                            |
+| ------------------------ | --------------------------------- |
+| `batch_size`             | Throughput vs. latency            |
+| `max_tokens`             | Memory vs. completion length      |
+| `kv_cache_size`          | Hit rate vs. memory               |
+| `speculative_decoding_k` | Speed vs. accuracy                |
+| `router_weights`         | Model selection (small vs. large) |
 
 ---
 
@@ -49,22 +49,22 @@ while True:
     candidate = solver.ask_one()
     if candidate is None:
         break
-    
+
     # Apply new batch config
     serving_engine.set_batch_config(
         batch_size=int(candidate["batch_size"]),
         max_wait_ms=candidate["max_wait_ms"]
     )
-    
+
     # Measure over 60 seconds
     metrics = serving_engine.collect_metrics(duration_s=60)
-    
+
     # Objective: maximize throughput while keeping p99 < SLA
     if metrics.p99_latency_ms > SLA_MS:
         reward = -1000  # Penalty for SLA violation
     else:
         reward = -metrics.cost_per_token  # Minimize cost
-    
+
     solver.seed(json.dumps([{
         "params": candidate,
         "value": reward,
@@ -77,6 +77,7 @@ while True:
 ## Integration Points
 
 ### vLLM
+
 ```python
 # Tune PagedAttention parameters
 config["bounds"]["block_size"] = {"min": 8, "max": 32}
@@ -84,6 +85,7 @@ config["bounds"]["gpu_memory_utilization"] = {"min": 0.7, "max": 0.95}
 ```
 
 ### TensorRT-LLM
+
 ```python
 # Tune inflight batching
 config["bounds"]["max_batch_size"] = {"min": 1, "max": 256}
@@ -91,6 +93,7 @@ config["bounds"]["max_queue_delay_ms"] = {"min": 1, "max": 100}
 ```
 
 ### Triton Inference Server
+
 ```python
 # Tune dynamic batching
 config["bounds"]["preferred_batch_size"] = {"min": 1, "max": 128}
@@ -105,7 +108,10 @@ Use Guardrails to prevent catastrophic configurations:
 
 ```json
 {
-  "bounds": [[1, 64], [10, 500]],
+  "bounds": [
+    [1, 64],
+    [10, 500]
+  ],
   "max_delta": [8, 100],
   "max_updates_per_second": 1.0
 }

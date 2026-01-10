@@ -6,12 +6,12 @@ Use ArqonHPO as a backend for Ray Tune distributed hyperparameter optimization.
 
 ## Why ArqonHPO + Ray?
 
-| Feature | ArqonHPO Alone | Ray Tune + ArqonHPO |
-|---------|----------------|---------------------|
-| Parallelism | Manual | Automatic |
-| Distributed | Manual sharding | Built-in |
-| Fault tolerance | Manual | Checkpointing |
-| Scheduling | None | ASHA, HyperBand |
+| Feature         | ArqonHPO Alone  | Ray Tune + ArqonHPO |
+| --------------- | --------------- | ------------------- |
+| Parallelism     | Manual          | Automatic           |
+| Distributed     | Manual sharding | Built-in            |
+| Fault tolerance | Manual          | Checkpointing       |
+| Scheduling      | None            | ASHA, HyperBand     |
 
 ---
 
@@ -30,14 +30,14 @@ class ArqonSearcher(Searcher):
         super().__init__(**kwargs)
         self.solver = ArqonSolver(json.dumps(config))
         self._pending = {}
-    
+
     def suggest(self, trial_id):
         candidate = self.solver.ask_one()
         if candidate is None:
             return Searcher.FINISHED
         self._pending[trial_id] = candidate
         return candidate
-    
+
     def on_trial_complete(self, trial_id, result, **kwargs):
         params = self._pending.pop(trial_id)
         self.solver.seed(json.dumps([{
@@ -120,7 +120,7 @@ def evaluate_sample(probe_config, seed, index):
 
 # Launch 1000 parallel evaluations
 futures = [
-    evaluate_sample.remote(config, 42, i) 
+    evaluate_sample.remote(config, 42, i)
     for i in range(1000)
 ]
 results = ray.get(futures)
@@ -141,7 +141,7 @@ class ArqonSearcherWithCheckpoint(ArqonSearcher):
         state = self.solver.export()
         with open(checkpoint_path, "w") as f:
             f.write(state)
-    
+
     def restore(self, checkpoint_path):
         with open(checkpoint_path) as f:
             state = f.read()

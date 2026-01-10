@@ -9,11 +9,13 @@ Common issues and how to fix them.
 ### `pip install arqonhpo` fails
 
 **"No matching distribution found"**
+
 ```
 ERROR: Could not find a version that satisfies the requirement arqonhpo
 ```
 
 **Fix:** Check Python version and platform:
+
 ```bash
 python --version  # Need 3.10+
 python -c "import platform; print(platform.machine())"  # Need x86_64 or arm64
@@ -27,13 +29,15 @@ python -c "import platform; print(platform.machine())"  # Need x86_64 or arm64
 
 This happens when the wheel was built with a different Python version.
 
-**Fix:** 
+**Fix:**
+
 ```bash
 pip uninstall arqonhpo
 pip install --no-cache-dir arqonhpo
 ```
 
 Or use a virtual environment:
+
 ```bash
 python -m venv .venv
 source .venv/bin/activate
@@ -51,6 +55,7 @@ PyValueError: Invalid config: missing field `budget`
 ```
 
 **Fix:** Ensure all required fields are present:
+
 ```python
 config = {
     "seed": 42,       # Required
@@ -66,11 +71,13 @@ config = {
 **Problem:** `solver.ask()` returns `None` immediately.
 
 **Causes:**
+
 1. Budget already exhausted
 2. Config has 0 budget
 3. State file corrupted
 
 **Fix:** Check budget and history:
+
 ```python
 print(f"History: {solver.get_history_len()}")
 # Ensure history_len < budget
@@ -83,11 +90,13 @@ print(f"History: {solver.get_history_len()}")
 **Problem:** Each `ask()` takes >100ms.
 
 **Causes:**
+
 1. Python object conversion overhead
 2. Large parameter space
 3. TPE with many history points
 
 **Fix:**
+
 - Use batch mode: `solver.ask()` returns multiple candidates
 - Reduce history size in config
 - Use Nelder-Mead for smooth functions
@@ -99,11 +108,13 @@ print(f"History: {solver.get_history_len()}")
 ### "command not found: arqonhpo"
 
 **Fix:** Install the CLI binary:
+
 ```bash
 cargo install --path crates/cli --bin arqonhpo-cli
 ```
 
 Or use the Python CLI:
+
 ```bash
 python -m arqonhpo --help
 ```
@@ -115,10 +126,12 @@ python -m arqonhpo --help
 **Problem:** TUI starts but shows no data.
 
 **Causes:**
+
 1. State file doesn't exist or is empty
 2. State file has incompatible format
 
 **Fix:**
+
 ```bash
 # Check state file exists
 ls -la state.json
@@ -134,10 +147,12 @@ arqonhpo ask --config config.json --state state.json
 **Problem:** `curl http://localhost:3030/api/state` returns 404.
 
 **Causes:**
+
 1. Wrong URL (no /api prefix)
 2. Dashboard not running
 
 **Fix:**
+
 ```bash
 # Correct endpoints
 curl http://localhost:3030/api/state
@@ -158,6 +173,7 @@ error: failed to run custom build command for `arqonhpo-ffi`
 ```
 
 **Fix:**
+
 ```bash
 # Ubuntu/Debian
 sudo apt install protobuf-compiler
@@ -178,6 +194,7 @@ error: package requires rustc 1.82.0 or newer
 ```
 
 **Fix:**
+
 ```bash
 rustup update stable
 rustc --version  # Should be 1.82+

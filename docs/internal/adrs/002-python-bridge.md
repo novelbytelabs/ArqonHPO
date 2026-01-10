@@ -16,6 +16,7 @@ Use **PyO3 with Maturin** for Python bindings.
 1. **JSON I/O:** Config and results are passed as JSON strings. This avoids complex type mappings and makes the API debuggable.
 
 2. **Module Structure:**
+
    ```
    arqonhpo/
    ├── __init__.py          # Re-exports from _internal

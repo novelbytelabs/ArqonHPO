@@ -42,12 +42,13 @@ This guide helps you upgrade between ArqonHPO versions.
 1. Update config files (rename `probe_budget` to `probe_ratio`)
 2. Update imports in Python code
 3. Re-export artifacts from v0.2 state files:
+
    ```bash
    # With v0.2
    arqonhpo export --state old_state.json --output artifact.json
-   
+
    # Manually add "cost": 1.0 to each history entry
-   
+
    # With v0.3
    arqonhpo import --artifact artifact.json --state new_state.json
    ```
@@ -80,11 +81,11 @@ This guide helps you upgrade between ArqonHPO versions.
 
 ## Version Compatibility Matrix
 
-| ArqonHPO | Python | Rust | State Format |
-|----------|--------|------|--------------|
-| v0.3.x | 3.10+ | 1.82+ | v3 |
-| v0.2.x | 3.9+ | 1.75+ | v2 |
-| v0.1.x | 3.8+ | 1.70+ | v1 (incompatible) |
+| ArqonHPO | Python | Rust  | State Format      |
+| -------- | ------ | ----- | ----------------- |
+| v0.3.x   | 3.10+  | 1.82+ | v3                |
+| v0.2.x   | 3.9+   | 1.75+ | v2                |
+| v0.1.x   | 3.8+   | 1.70+ | v1 (incompatible) |
 
 ---
 
@@ -93,6 +94,7 @@ This guide helps you upgrade between ArqonHPO versions.
 State files are **not forward compatible**. To migrate state:
 
 1. Export from old version:
+
    ```bash
    # Using OLD arqonhpo version
    arqonhpo export --state state.json --output artifact.json
@@ -115,17 +117,17 @@ State files are **not forward compatible**. To migrate state:
 
 ### v0.3 (Current)
 
-| Feature | Status | Replacement |
-|---------|--------|-------------|
-| `probe_budget` config | Removed | Use `probe_ratio` |
-| `arqonhpo._internal` imports | Removed | Use `arqonhpo` |
+| Feature                      | Status  | Replacement       |
+| ---------------------------- | ------- | ----------------- |
+| `probe_budget` config        | Removed | Use `probe_ratio` |
+| `arqonhpo._internal` imports | Removed | Use `arqonhpo`    |
 
 ### v0.4 (Upcoming)
 
-| Feature | Status | Replacement |
-|---------|--------|-------------|
+| Feature                 | Status     | Replacement                            |
+| ----------------------- | ---------- | -------------------------------------- |
 | `strategy_params.alpha` | Deprecated | Use `strategy_params.reflection_coeff` |
-| `--log-level debug` | Deprecated | Use `--log-level=debug` (with `=`) |
+| `--log-level debug`     | Deprecated | Use `--log-level=debug` (with `=`)     |
 
 ---
 

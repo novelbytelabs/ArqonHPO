@@ -1,139 +1,136 @@
-# TUI Reference
+# Terminal User Interface (TUI)
 
-The ArqonHPO TUI (Terminal User Interface) provides real-time monitoring of solver state and events.
+Optimization happens fast. Sometimes, you need to see it unfold without leaving your terminal.
+
+The ArqonHPO TUI is a zero-latency, high-visibility monitor for your optimization runs. Whether you're debugging a local script or monitoring a job over SSH, the TUI gives you an instant pulse on your solver's progress using a modern, responsive interface.
 
 ![ArqonHPO TUI Interface](../../assets/images/tui_screenshot.png)
+
+## Why Use the TUI?
+
+- **Zero Overhead**: runs directly in your terminal; no browser required.
+- **Instant Feedback**: Watch the solver explore, converge, and react in real-time.
+- **Remote Ready**: Perfect for monitoring headless servers or SSH sessions where web ports aren't forwarded.
+
+---
+
+## The Interface Explained
+
+The TUI is divided into three logical panels, designed to give you the complete picture at a glance:
+
+### 1. Summary Phase (Top)
+
+_The Pulse._
+This panel shows the high-level health of your run.
+
+- **Run ID**: The unique identifier for this optimization session (useful for tracking logs).
+- **Budget**: How many evaluations are left before the solver stops.
+- **History**: The total number of points evaluated so far.
+
+### 2. Recent Evaluations (Middle)
+
+_The Action._
+This is where the work happens. It lists the most recent parameter combinations the solver has tried, along with their results.
+
+- **Value**: The objective function result (lower is better for minimization).
+- **Params**: The hyperparameters chosen for that evaluation (e.g., `learning_rate`, `batch_size`).
+- **Color Coding**:
+  - <span style="color: #00ff00">Green</span> values indicate a **new best** finding.
+  - Standard white/gray values indicate exploration or non-optimal points.
+
+### 3. Events Stream (Bottom)
+
+_The Narrative._
+While evaluations show _what_ happened, events tell you _why_.
+
+- **Convergence Warnings**: When the solver detects it's stuck in a local minima.
+- **Phase Shifts**: When the algorithm switches strategies (e.g., from "Probe" to "Refine").
+- **Errors**: Immediate feedback on script failures or guardrail violations.
 
 ---
 
 ## Starting the TUI
 
+To launch the TUI, point it at your solver's state file:
+
 ```bash
 arqonhpo tui --state state.json
 ```
 
-### Options
-
-| Flag | Default | Description |
-|------|---------|-------------|
-| `--state` | (required) | Path to solver state file |
-| `--events` | (optional) | Path to events log file |
-| `--refresh-ms` | `500` | Refresh rate in milliseconds |
-
----
-
-## Interface Layout
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    ArqonHPO TUI v0.3.0                         │
-├─────────────────────────────────────────────────────────────────┤
-│  Status: Running │ Budget: 45/100 │ Best: 0.0234              │
-├─────────────────────────────────────────────────────────────────┤
-│  Current Best Parameters                                        │
-│  ┌───────────┬──────────┐                                      │
-│  │ Parameter │ Value    │                                      │
-│  ├───────────┼──────────┤                                      │
-│  │ x         │ 1.9823   │                                      │
-│  │ y         │ -0.9945  │                                      │
-│  └───────────┴──────────┘                                      │
-├─────────────────────────────────────────────────────────────────┤
-│  Event Log                                                      │
-│  [12:34:56] ask: batch_size=4                                  │
-│  [12:34:57] tell: best_improved 0.0512 → 0.0234               │
-│  [12:34:58] phase: Refine (Nelder-Mead)                        │
-└─────────────────────────────────────────────────────────────────┘
-│  [q] Quit  [r] Refresh  [p] Pause                              │
-└─────────────────────────────────────────────────────────────────┘
-```
-
----
-
-## Keybindings
-
-| Key | Action |
-|-----|--------|
-| `q` | Quit the TUI |
-| `r` | Force refresh |
-| `p` | Pause/resume auto-refresh |
-| `↑` / `↓` | Scroll event log |
-| `Ctrl+C` | Force quit |
-
----
-
-## Event Log Format
-
-Events are displayed in the format:
-```
-[HH:MM:SS] event_type: details
-```
-
-### Event Types
-
-| Event | Description |
-|-------|-------------|
-| `ask` | Solver returned candidates |
-| `tell` | Results reported to solver |
-| `phase` | Solver phase transition (Probe → Classify → Refine) |
-| `best_improved` | New best value found |
-| `strategy` | Strategy selection changed |
-| `warning` | Guardrail triggered |
-| `error` | Error occurred |
-
----
-
-## State File
-
-The TUI reads from the state file specified by `--state`. This file is updated by `arqonhpo ask/tell` commands.
-
-**State Schema:**
-```json
-{
-  "config": { ... },
-  "history": [ ... ],
-  "phase": "Refine",
-  "best": {
-    "params": {"x": 1.98, "y": -0.99},
-    "value": 0.0234
-  }
-}
-```
-
----
-
-## Events File (Optional)
-
-If `--events` is specified, the TUI tails this file for real-time events:
+If you also want to see the live event stream (highly recommended for debugging), include the events file:
 
 ```bash
 arqonhpo tui --state state.json --events events.jsonl
 ```
 
-Events file format (JSONL):
-```json
-{"ts": 1704067200, "type": "ask", "batch": 4}
-{"ts": 1704067201, "type": "tell", "results": [...]}
-```
+| Flag           | Description                                                               |
+| -------------- | ------------------------------------------------------------------------- |
+| `--state`      | **Required.** Path to the JSON state file updated by `arqonhpo ask/tell`. |
+| `--events`     | **Optional.** Path to the JSONL events log for rich narrative feedback.   |
+| `--refresh-ms` | Update frequency (default: 500ms). Increase for slow SSH connections.     |
 
 ---
 
-## Configuration
+## Controls & Keybindings
+
+Navigate the interface without touching your mouse.
+
+| Key          | Action            | Context                                          |
+| ------------ | ----------------- | ------------------------------------------------ |
+| `q` or `Esc` | **Quit**          | Exit the TUI immediately.                        |
+| `r`          | **Force Refresh** | Manually reload the state and events files.      |
+| `p`          | **Pause**         | Freeze auto-refresh to inspect a specific value. |
+| `↑` / `↓`    | **Scroll**        | Scroll through history or logs when paused.      |
+
+---
+
+## configuration & Performance
 
 ### Refresh Rate
 
-Lower refresh rates reduce CPU usage but make the display less responsive:
+By default, the TUI polls for changes every **500 milliseconds**.
 
-```bash
-# Faster updates (100ms)
-arqonhpo tui --state state.json --refresh-ms 100
+- **Local Development**: Lower it to `100`ms for a smoother, "matrix-like" feel.
 
-# Slower updates (2 seconds)
-arqonhpo tui --state state.json --refresh-ms 2000
-```
+  ```bash
+  arqonhpo tui --state state.json --refresh-ms 100
+  ```
+
+- **High-Latency SSH**: Raise it to `2000`ms (2 seconds) to reduce bandwidth usage.
+  ```bash
+  arqonhpo tui --state state.json --refresh-ms 2000
+  ```
+
+### Data Sources
+
+The TUI is **stateless**. It simply visualizes the files on disk. This means:
+
+1. You can stop/start the TUI without affecting the running optimization.
+2. You can run multiple TUI instances watching the same file (e.g., one on a big screen, one on your laptop).
+
+### Monitoring Multiple Experiments
+
+Since the TUI is bound to a single state file, it displays **one run per window**.
+
+To monitor multiple concurrent experiments:
+
+1. Ensure each experiment writes to a unique state file (e.g., `run_A.json`, `run_B.json`).
+2. Open separate terminal tabs or use a multiplexer like `tmux`.
+3. Launch a dedicated TUI instance for each run:
+
+   ```bash
+   # Terminal 1
+   arqonhpo tui --state run_A.json
+
+   # Terminal 2
+   arqonhpo tui --state run_B.json
+   ```
 
 ---
 
 ## Next Steps
 
-- [CLI Reference](cli.md) — Full CLI documentation
-- [Dashboard](dashboard.md) — Web-based monitoring
+- **[CLI Reference](cli.md)**: Learn how to generate the state files the TUI consumes.
+- **[Dashboard](dashboard.md)**: Prefer a browser? Check out the web-based dashboard for charts and graphs.
+
+---

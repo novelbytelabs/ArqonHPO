@@ -12,16 +12,17 @@ ArqonHPO is a **microsecond-budget hyperparameter optimizer** written in Rust wi
 
 ### When should I use ArqonHPO vs Optuna?
 
-| Use ArqonHPO when... | Use Optuna when... |
-|---------------------|-------------------|
-| Evaluations are <10ms | Evaluations are >1s |
-| Need real-time tuning | Running offline experiments |
-| Want deterministic replay | Need advanced samplers |
-| Embedded/constrained systems | Rich visualization needed |
+| Use ArqonHPO when...         | Use Optuna when...          |
+| ---------------------------- | --------------------------- |
+| Evaluations are <10ms        | Evaluations are >1s         |
+| Need real-time tuning        | Running offline experiments |
+| Want deterministic replay    | Need advanced samplers      |
+| Embedded/constrained systems | Rich visualization needed   |
 
 ### Is it production-ready?
 
 Yes. ArqonHPO is used in production for:
+
 - LLM inference batch sizing
 - Real-time control loops
 - SRE automation
@@ -69,11 +70,11 @@ It's stateless and shardable — worker N can generate points [N*100, (N+1)*100)
 
 ### How fast is it?
 
-| Metric | Value |
-|--------|-------|
-| Overhead per trial | ~3ms |
-| Throughput | ~33,000 trials/sec |
-| Memory | O(history_size) |
+| Metric             | Value              |
+| ------------------ | ------------------ |
+| Overhead per trial | ~3ms               |
+| Throughput         | ~33,000 trials/sec |
+| Memory             | O(history_size)    |
 
 ### Why is it faster than Optuna?
 
@@ -92,6 +93,7 @@ Yes. The CLI compiles to a ~5MB static binary with no runtime dependencies.
 ### What are Guardrails?
 
 Guardrails prevent dangerous configurations:
+
 - **Bounds** — Absolute limits on values
 - **Delta limits** — Max change per update
 - **Rate limits** — Max updates per second
@@ -125,6 +127,7 @@ After 3 worse results, it reverts to the last good config.
 ### Can I use it with Kubernetes?
 
 Yes, via:
+
 1. CLI in a sidecar container
 2. Python bindings in your app
 3. Dashboard for monitoring

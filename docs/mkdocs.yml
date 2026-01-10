@@ -39,6 +39,9 @@ theme:
   icon:
     repo: fontawesome/brands/github
 
+extra_css:
+  - stylesheets/extra.css
+
 plugins:
   - search
   - social
@@ -54,7 +57,11 @@ markdown_extensions:
   - md_in_html
   - toc:
       permalink: true
-  - pymdownx.superfences
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
   - pymdownx.details
   - pymdownx.tabbed:
       alternate_style: true
@@ -80,6 +87,7 @@ extra_css:
   - stylesheets/extra.css
 
 extra_javascript:
+  - https://unpkg.com/mermaid@10/dist/mermaid.min.js
   - javascripts/theme.js
 
 nav:
@@ -124,8 +132,10 @@ nav:
           - Kubernetes: documentation/cookbook/kubernetes.md
           - FastAPI: documentation/cookbook/fastapi.md
           - Ray Tune: documentation/cookbook/ray.md
+          - MLflow: documentation/cookbook/mlflow.md
       - Integrations:
           - documentation/integrations/index.md
+          - Prometheus: documentation/integrations/prometheus.md
       - Migration: documentation/migration.md
       - Troubleshooting: documentation/troubleshooting.md
       - FAQ: documentation/faq.md

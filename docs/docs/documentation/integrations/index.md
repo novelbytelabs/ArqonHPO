@@ -6,11 +6,11 @@ ArqonHPO integrates with your existing infrastructure.
 
 ## Monitoring & Observability
 
-| Integration | Status | Description |
-|-------------|--------|-------------|
-| **Prometheus** | ✅ Built-in | Metrics via `--metrics-addr` |
-| **Grafana** | ✅ Compatible | Use Prometheus data source |
-| **OpenTelemetry** | 🔜 Planned | v0.4 roadmap |
+| Integration       | Status        | Description                  |
+| ----------------- | ------------- | ---------------------------- |
+| **Prometheus**    | ✅ Built-in   | Metrics via `--metrics-addr` |
+| **Grafana**       | ✅ Compatible | Use Prometheus data source   |
+| **OpenTelemetry** | 🔜 Planned    | v0.4 roadmap                 |
 
 → [Observability Guide](../reference/observability.md)
 
@@ -18,31 +18,31 @@ ArqonHPO integrates with your existing infrastructure.
 
 ## ML Frameworks
 
-| Integration | Status | Description |
-|-------------|--------|-------------|
-| **Ray Tune** | ✅ Custom Searcher | [Ray Guide](../cookbook/ray.md) |
-| **MLflow** | 🔜 Planned | Tracking plugin |
-| **Weights & Biases** | 🔜 Planned | Callback |
+| Integration          | Status             | Description                     |
+| -------------------- | ------------------ | ------------------------------- |
+| **Ray Tune**         | ✅ Custom Searcher | [Ray Guide](../cookbook/ray.md) |
+| **MLflow**           | 🔜 Planned         | Tracking plugin                 |
+| **Weights & Biases** | 🔜 Planned         | Callback                        |
 
 ---
 
 ## Web Frameworks
 
-| Integration | Status | Description |
-|-------------|--------|-------------|
-| **FastAPI** | ✅ Example | [FastAPI Guide](../cookbook/fastapi.md) |
-| **Flask** | ✅ Compatible | Similar to FastAPI |
-| **Django** | ✅ Compatible | Use management commands |
+| Integration | Status        | Description                             |
+| ----------- | ------------- | --------------------------------------- |
+| **FastAPI** | ✅ Example    | [FastAPI Guide](../cookbook/fastapi.md) |
+| **Flask**   | ✅ Compatible | Similar to FastAPI                      |
+| **Django**  | ✅ Compatible | Use management commands                 |
 
 ---
 
 ## Infrastructure
 
-| Integration | Status | Description |
-|-------------|--------|-------------|
+| Integration    | Status      | Description                            |
+| -------------- | ----------- | -------------------------------------- |
 | **Kubernetes** | ✅ Patterns | [K8s Guide](../cookbook/kubernetes.md) |
-| **Docker** | ✅ Example | See K8s guide |
-| **Helm** | 🔜 Planned | Official chart in v0.4 |
+| **Docker**     | ✅ Example  | See K8s guide                          |
+| **Helm**       | 🔜 Planned  | Official chart in v0.4                 |
 
 ---
 
@@ -50,11 +50,11 @@ ArqonHPO integrates with your existing infrastructure.
 
 ArqonHPO stores state in JSON files by default. For persistent storage:
 
-| Integration | Status | Description |
-|-------------|--------|-------------|
-| **Redis** | ✅ Use `--state` | Store state in Redis via wrapper |
-| **PostgreSQL** | ✅ Use artifacts | Import/export via SQL |
-| **S3** | ✅ Use artifacts | Store artifacts in S3 |
+| Integration    | Status           | Description                      |
+| -------------- | ---------------- | -------------------------------- |
+| **Redis**      | ✅ Use `--state` | Store state in Redis via wrapper |
+| **PostgreSQL** | ✅ Use artifacts | Import/export via SQL            |
+| **S3**         | ✅ Use artifacts | Store artifacts in S3            |
 
 **Example: S3 State Storage**
 
@@ -89,10 +89,10 @@ save_state('my-bucket', 'arqon/state.json', solver.export())
 
 ## Message Queues
 
-| Integration | Status | Description |
-|-------------|--------|-------------|
-| **RabbitMQ** | ✅ JSONL | Use interactive mode |
-| **Kafka** | ✅ JSONL | Use interactive mode |
+| Integration       | Status   | Description          |
+| ----------------- | -------- | -------------------- |
+| **RabbitMQ**      | ✅ JSONL | Use interactive mode |
+| **Kafka**         | ✅ JSONL | Use interactive mode |
 | **Redis Streams** | ✅ JSONL | Use interactive mode |
 
 **Example: RabbitMQ**
@@ -119,12 +119,12 @@ def on_result(ch, method, props, body):
     result = json.loads(body)
     proc.stdin.write(json.dumps({"cmd": "tell", "results": [result]}).encode() + b'\n')
     proc.stdin.flush()
-    
+
     # Ask for next
     proc.stdin.write(json.dumps({"cmd": "ask", "batch": 1}).encode() + b'\n')
     proc.stdin.flush()
     response = proc.stdout.readline()
-    
+
     channel.basic_publish(exchange='', routing_key='arqon_ask', body=response)
 
 channel.basic_consume(queue='arqon_results', on_message_callback=on_result)
@@ -135,11 +135,11 @@ channel.start_consuming()
 
 ## CI/CD
 
-| Integration | Status | Description |
-|-------------|--------|-------------|
-| **GitHub Actions** | ✅ CLI | Run optimization in workflows |
-| **GitLab CI** | ✅ CLI | Same as GitHub |
-| **ArqonShip** | ✅ Built-in | Self-healing CI |
+| Integration        | Status      | Description                   |
+| ------------------ | ----------- | ----------------------------- |
+| **GitHub Actions** | ✅ CLI      | Run optimization in workflows |
+| **GitLab CI**      | ✅ CLI      | Same as GitHub                |
+| **ArqonShip**      | ✅ Built-in | Self-healing CI               |
 
 → [ArqonShip Docs](../../arqonship/index.md)
 

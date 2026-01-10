@@ -14,7 +14,7 @@ use prometheus::{Encoder, Histogram, HistogramOpts, IntCounter, IntGauge, Regist
 use ratatui::backend::CrosstermBackend;
 use ratatui::layout::{Constraint, Direction, Layout};
 use ratatui::prelude::Frame;
-use ratatui::style::Style;
+use ratatui::style::{Color, Modifier, Style};
 use ratatui::text::Line;
 use ratatui::widgets::{Block, Borders, List, ListItem, Paragraph};
 use ratatui::Terminal;
@@ -556,7 +556,10 @@ fn tui_command(
     let tick_rate = Duration::from_millis(refresh_ms);
 
     loop {
-        let state = load_state(state_path).ok();
+        let state_result = load_state(state_path);
+        let error = state_result.as_ref().err().map(|e| e.to_string());
+        let state = state_result.ok();
+
         if let Some(ref loaded) = state {
             metrics.set_history_len(loaded.history.len());
         }
@@ -565,7 +568,7 @@ fn tui_command(
             .unwrap_or_default();
 
         terminal
-            .draw(|frame| draw_tui(frame, state.as_ref(), &events))
+            .draw(|frame| draw_tui(frame, state.as_ref(), &events, error.as_deref()))
             .into_diagnostic()?;
 
         if event::poll(tick_rate).into_diagnostic()? {
@@ -636,13 +639,19 @@ fn dashboard_command(
     Ok(())
 }
 
-fn draw_tui(frame: &mut Frame, state: Option<&SolverState>, events: &[String]) {
+fn draw_tui(
+    frame: &mut Frame,
+    state: Option<&SolverState>,
+    events: &[String],
+    error: Option<&str>,
+) {
     let layout = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
             Constraint::Length(5),
             Constraint::Min(8),
             Constraint::Length(8),
+            Constraint::Length(1),
         ])
         .split(frame.area());
 
@@ -671,11 +680,29 @@ fn draw_tui(frame: &mut Frame, state: Option<&SolverState>, events: &[String]) {
                 )),
             ]
         }
-        None => vec![Line::from("No state loaded")],
+        None => {
+            if let Some(msg) = error {
+                vec![
+                    Line::from("State Load Error:"),
+                    Line::from(msg).style(Style::default().fg(Color::Red)),
+                ]
+            } else {
+                vec![Line::from("No state loaded (waiting...)")]
+            }
+        }
     };
 
-    let summary = Paragraph::new(summary_lines)
-        .block(Block::default().borders(Borders::ALL).title("Summary"));
+    let summary = Paragraph::new(summary_lines).block(
+        Block::default()
+            .borders(Borders::ALL)
+            .title("Summary")
+            .border_style(Style::default().fg(Color::Magenta))
+            .title_style(
+                Style::default()
+                    .fg(Color::Magenta)
+                    .add_modifier(Modifier::BOLD),
+            ),
+    );
     frame.render_widget(summary, layout[0]);
 
     let history_items: Vec<ListItem> = match state {
@@ -694,7 +721,13 @@ fn draw_tui(frame: &mut Frame, state: Option<&SolverState>, events: &[String]) {
     let history = List::new(history_items).block(
         Block::default()
             .borders(Borders::ALL)
-            .title("Recent Evaluations"),
+            .title("Recent Evaluations")
+            .border_style(Style::default().fg(Color::Cyan))
+            .title_style(
+                Style::default()
+                    .fg(Color::Cyan)
+                    .add_modifier(Modifier::BOLD),
+            ),
     );
     frame.render_widget(history, layout[1]);
 
@@ -706,9 +739,23 @@ fn draw_tui(frame: &mut Frame, state: Option<&SolverState>, events: &[String]) {
             .map(|line| ListItem::new(line.clone()).style(Style::default()))
             .collect()
     };
-    let event_list =
-        List::new(event_items).block(Block::default().borders(Borders::ALL).title("Events"));
+    let event_list = List::new(event_items).block(
+        Block::default()
+            .borders(Borders::ALL)
+            .title("Events")
+            .border_style(Style::default().fg(Color::Yellow))
+            .title_style(
+                Style::default()
+                    .fg(Color::Yellow)
+                    .add_modifier(Modifier::BOLD),
+            ),
+    );
     frame.render_widget(event_list, layout[2]);
+
+    let footer = Paragraph::new(
+        Line::from("Press 'q' or 'Esc' to exit").style(Style::default().fg(Color::DarkGray)),
+    );
+    frame.render_widget(footer, layout[3]);
 }
 
 fn format_params(params: &HashMap<String, f64>) -> String {

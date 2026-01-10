@@ -4,11 +4,11 @@ This document covers code coverage strategy, current status, and identified gaps
 
 ## Quick Reference
 
-| Metric | Value | Date |
-|--------|-------|------|
-| **Overall Line Coverage** | 79% | Jan 2026 |
-| **Total Tests** | ~290+ | |
-| **Files at 100%** | 5 | |
+| Metric                    | Value | Date     |
+| ------------------------- | ----- | -------- |
+| **Overall Line Coverage** | 79%   | Jan 2026 |
+| **Total Tests**           | ~290+ |          |
+| **Files at 100%**         | 5     |          |
 
 ---
 
@@ -62,44 +62,44 @@ rustup component add llvm-tools-preview
 
 ### Files at 100% Coverage ✅
 
-| File | Tests | Notes |
-|------|-------|-------|
-| `config.rs` | 18 | Unit interval arithmetic, Domain, Scale |
-| `lib.rs` | 1 | Re-exports and add function |
-| `rng.rs` | 1 | RNG wrapper |
-| `ffi/lib.rs` | 2 | FFI bindings |
-| `telemetry.rs` | 12 | Ring buffer, digest validation |
+| File           | Tests | Notes                                   |
+| -------------- | ----- | --------------------------------------- |
+| `config.rs`    | 18    | Unit interval arithmetic, Domain, Scale |
+| `lib.rs`       | 1     | Re-exports and add function             |
+| `rng.rs`       | 1     | RNG wrapper                             |
+| `ffi/lib.rs`   | 2     | FFI bindings                            |
+| `telemetry.rs` | 12    | Ring buffer, digest validation          |
 
 ### High Coverage (80%+) 🟢
 
-| File | Coverage | Tests | Key Functionality |
-|------|----------|-------|-------------------|
-| `control_safety.rs` | 97% | 15 | SafeMode, thrashing detection, budget tracking |
-| `orchestrator.rs` | 85% | 11 | AdaptiveEngine, SpsaProposer |
-| `executor.rs` | 90% | 10 | Guardrails, RollbackPolicy |
-| `spsa.rs` | 91% | 8 | SPSA optimization, trimmed mean |
-| `audit.rs` | 94% | 6 | Audit event logging |
-| `classify.rs` | 89% | 8 | Landscape classification |
-| `tpe.rs` | 83% | 6 | Tree-structured Parzen Estimator |
-| `probe.rs` | 79% | 12 | Prime index probe, uniform probe |
+| File                | Coverage | Tests | Key Functionality                              |
+| ------------------- | -------- | ----- | ---------------------------------------------- |
+| `control_safety.rs` | 97%      | 15    | SafeMode, thrashing detection, budget tracking |
+| `orchestrator.rs`   | 85%      | 11    | AdaptiveEngine, SpsaProposer                   |
+| `executor.rs`       | 90%      | 10    | Guardrails, RollbackPolicy                     |
+| `spsa.rs`           | 91%      | 8     | SPSA optimization, trimmed mean                |
+| `audit.rs`          | 94%      | 6     | Audit event logging                            |
+| `classify.rs`       | 89%      | 8     | Landscape classification                       |
+| `tpe.rs`            | 83%      | 6     | Tree-structured Parzen Estimator               |
+| `probe.rs`          | 79%      | 12    | Prime index probe, uniform probe               |
 
 ### Medium Coverage (60-80%) 🟡
 
-| File | Coverage | Gap Lines | Improvement Path |
-|------|----------|-----------|------------------|
-| `main.rs` (CLI) | 78% | 327 | TUI/dashboard server loops, stdin interactive |
-| `homeostasis.rs` | 77% | 5 | Minor edge cases |
-| `config_atomic.rs` | 79% | 27 | Atomic config updates |
-| `nelder_mead.rs` | 67% | 235 | Complex state machine in `step()` |
-| `machine.rs` | 72% | 105 | `ask()` phase transitions |
-| `multi_start_nm.rs` | 63% | 95 | Coordinate descent, phase transitions |
+| File                | Coverage | Gap Lines | Improvement Path                              |
+| ------------------- | -------- | --------- | --------------------------------------------- |
+| `main.rs` (CLI)     | 78%      | 327       | TUI/dashboard server loops, stdin interactive |
+| `homeostasis.rs`    | 77%      | 5         | Minor edge cases                              |
+| `config_atomic.rs`  | 79%      | 27        | Atomic config updates                         |
+| `nelder_mead.rs`    | 67%      | 235       | Complex state machine in `step()`             |
+| `machine.rs`        | 72%      | 105       | `ask()` phase transitions                     |
+| `multi_start_nm.rs` | 63%      | 95        | Coordinate descent, phase transitions         |
 
 ### Low Coverage (<60%) 🔴
 
-| File | Coverage | Gap Lines | Root Cause |
-|------|----------|-----------|------------|
-| `dashboard.rs` | 56% | 51 | HTTP server, TUI rendering |
-| `proposer.rs` | 83% | 1 | Single enum variant |
+| File           | Coverage | Gap Lines | Root Cause                 |
+| -------------- | -------- | --------- | -------------------------- |
+| `dashboard.rs` | 56%      | 51        | HTTP server, TUI rendering |
+| `proposer.rs`  | 83%      | 1         | Single enum variant        |
 
 ---
 

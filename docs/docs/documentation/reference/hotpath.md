@@ -50,13 +50,13 @@ pub struct SafetyExecutor {
 pub trait SafeExecutor {
     /// Apply a proposal through safety guardrails.
     fn apply(&mut self, proposal: Proposal) -> Result<ApplyReceipt, Violation>;
-    
+
     /// Rollback to baseline configuration.
     fn rollback(&mut self) -> Result<RollbackReceipt, Violation>;
-    
+
     /// Set current config as baseline for future rollbacks.
     fn set_baseline(&mut self);
-    
+
     /// Get current config snapshot (zero-copy).
     fn snapshot(&self) -> ConfigSnapshot;
 }
@@ -101,25 +101,25 @@ Guardrails define the safety envelope for parameter updates.
 pub struct Guardrails {
     /// Maximum delta per parameter per step (fraction: 0.0-1.0)
     pub max_delta_per_step: f64,
-    
+
     /// Maximum updates per second
     pub max_updates_per_second: f64,
-    
+
     /// Minimum interval between updates (microseconds)
     pub min_interval_us: u64,
-    
+
     /// Maximum direction flips per dimension per minute
     pub direction_flip_limit: u32,
-    
+
     /// Cooldown after hitting flip limit (microseconds)
     pub cooldown_after_flip_us: u64,
-    
+
     /// Maximum cumulative delta per dimension per minute
     pub max_cumulative_delta_per_minute: f64,
-    
+
     /// Consecutive regressions before SafeMode
     pub regression_count_limit: u32,
-    
+
     /// Per-parameter bounds: [(min, max), ...]
     pub bounds: Option<Vec<(f64, f64)>>,
 }
@@ -127,11 +127,11 @@ pub struct Guardrails {
 
 ### Presets
 
-| Preset | `max_delta` | `updates/s` | `min_interval` | `flip_limit` |
-|--------|-------------|-------------|----------------|--------------|
-| `Conservative` | 0.05 | 2 | 500ms | 2 |
-| `Balanced` (default) | 0.10 | 10 | 100ms | 3 |
-| `Aggressive` | 0.20 | 20 | 50ms | 5 |
+| Preset               | `max_delta` | `updates/s` | `min_interval` | `flip_limit` |
+| -------------------- | ----------- | ----------- | -------------- | ------------ |
+| `Conservative`       | 0.05        | 2           | 500ms          | 2            |
+| `Balanced` (default) | 0.10        | 10          | 100ms          | 3            |
+| `Aggressive`         | 0.20        | 20          | 50ms           | 5            |
 
 ```rust
 let guardrails = Guardrails::preset_conservative();
@@ -153,10 +153,10 @@ Defines when to automatically revert to baseline.
 pub struct RollbackPolicy {
     /// Roll back after N consecutive worse results
     pub max_consecutive_regressions: u32,
-    
+
     /// Circuit breaker: max rollbacks per hour
     pub max_rollbacks_per_hour: u32,
-    
+
     /// Must be stable for N μs before new updates
     pub min_stable_time_us: u64,
 }
@@ -164,11 +164,11 @@ pub struct RollbackPolicy {
 
 ### Presets
 
-| Preset | `max_regressions` | `rollbacks/hour` | `stable_time` |
-|--------|-------------------|------------------|---------------|
-| `Conservative` | 2 | 2 | 30s |
-| `Balanced` | 3 | 4 | 5s |
-| `Aggressive` | 5 | 10 | 1s |
+| Preset         | `max_regressions` | `rollbacks/hour` | `stable_time` |
+| -------------- | ----------------- | ---------------- | ------------- |
+| `Conservative` | 2                 | 2                | 30s           |
+| `Balanced`     | 3                 | 4                | 5s            |
+| `Aggressive`   | 5                 | 10               | 1s            |
 
 ---
 
@@ -182,22 +182,22 @@ Reasons why a proposal was rejected.
 pub enum Violation {
     /// Delta exceeds max_delta_per_step
     DeltaTooLarge,
-    
+
     /// Update rate exceeded
     RateLimitExceeded,
-    
+
     /// Direction changed too many times
     DirectionFlipViolation,
-    
+
     /// Cumulative change too large
     CumulativeDeltaViolation,
-    
+
     /// System in safe mode
     InSafeMode,
-    
+
     /// Internal: audit queue is full
     AuditQueueFull,
-    
+
     /// No baseline set for rollback
     NoBaseline,
 }
@@ -215,24 +215,24 @@ The output of the adaptive proposer.
 pub enum Proposal {
     /// No change needed
     NoChange { reason: NoChangeReason },
-    
+
     /// Apply +Δ perturbation (SPSA phase 1)
-    ApplyPlus { 
-        perturbation_id: u64, 
-        delta: ParamVec 
+    ApplyPlus {
+        perturbation_id: u64,
+        delta: ParamVec
     },
-    
+
     /// Apply −Δ perturbation (SPSA phase 2)
-    ApplyMinus { 
-        perturbation_id: u64, 
-        delta: ParamVec 
+    ApplyMinus {
+        perturbation_id: u64,
+        delta: ParamVec
     },
-    
+
     /// Final update after SPSA gradient estimation
-    Update { 
-        iteration: u64, 
-        delta: ParamVec, 
-        gradient_estimate: ParamVec 
+    Update {
+        iteration: u64,
+        delta: ParamVec,
+        gradient_estimate: ParamVec
     },
 }
 ```
@@ -262,15 +262,15 @@ stateDiagram-v2
 pub enum SpsaState {
     /// Ready to start new iteration
     Ready,
-    
+
     /// Applied +Δ, collecting objective samples
     WaitingPlus {
         perturbation_id: u64,
         delta: ParamVec,
         accumulated: Vec<f64>,
     },
-    
-    /// Applied −Δ, collecting objective samples  
+
+    /// Applied −Δ, collecting objective samples
     WaitingMinus {
         perturbation_id: u64,
         delta: ParamVec,
@@ -286,19 +286,19 @@ pub enum SpsaState {
 pub struct SpsaConfig {
     /// Minimum digests to collect per perturbation
     pub eval_window_digests: usize,    // Default: 5
-    
+
     /// Maximum time to wait for digests (μs)
     pub eval_window_us: u64,            // Default: 500_000
-    
+
     /// Settle time after apply before counting (μs)
     pub settle_time_us: u64,            // Default: 10_000
-    
+
     /// Learning rate decay exponent: a_k = a₀ / (k+1+A)^α
     pub alpha: f64,                      // Default: 0.602
-    
+
     /// Perturbation decay exponent: c_k = c₀ / (k+1)^γ
     pub gamma: f64,                      // Default: 0.101
-    
+
     /// Stability constant A
     pub stability_a: f64,                // Default: 10.0
 }
@@ -316,22 +316,22 @@ impl Spsa {
         perturbation_scale: f64,
         config: SpsaConfig,
     ) -> Self;
-    
+
     /// Generate ±1 Bernoulli perturbation vector
     pub fn generate_perturbation(&mut self) -> ParamVec;
-    
+
     /// Record objective value from current window
     pub fn record_objective(&mut self, value: f64);
-    
+
     /// Check if eval window has enough samples
     pub fn has_enough_samples(&self) -> bool;
-    
+
     /// Complete window, compute gradient if in WaitingMinus
     pub fn complete_eval_window(&mut self) -> Option<(ParamVec, ParamVec)>;
-    
+
     /// Current learning rate for iteration k
     pub fn learning_rate(&self, k: u64) -> f64;
-    
+
     /// Current perturbation scale for iteration k
     pub fn perturbation_scale(&self, k: u64) -> f64;
 }
@@ -380,7 +380,7 @@ let mut engine = AdaptiveEngine::new(config, initial_params);
 // Control loop
 loop {
     let digest = TelemetryDigest::new(latency_us, objective, sample_count);
-    
+
     match engine.observe(digest) {
         Ok(Proposal::Update { delta, .. }) => {
             engine.apply(Proposal::Update { ... })?;
@@ -467,12 +467,12 @@ pub struct AuditEvent {
 
 ## Performance Characteristics
 
-| Operation | Latency | Lock-free |
-|-----------|---------|-----------|
-| `snapshot()` | O(1) | ✅ |
-| `apply()` | ~100μs | ⚠️ CAS loop |
-| `enqueue()` | O(1) | ✅ |
-| `generate_perturbation()` | O(n_params) | ✅ |
+| Operation                 | Latency     | Lock-free   |
+| ------------------------- | ----------- | ----------- |
+| `snapshot()`              | O(1)        | ✅          |
+| `apply()`                 | ~100μs      | ⚠️ CAS loop |
+| `enqueue()`               | O(1)        | ✅          |
+| `generate_perturbation()` | O(n_params) | ✅          |
 
 ---
 

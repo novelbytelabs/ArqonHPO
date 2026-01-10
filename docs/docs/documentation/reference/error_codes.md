@@ -6,15 +6,15 @@ This page documents all error codes, exceptions, and common error messages in Ar
 
 ## CLI Exit Codes
 
-| Code | Name | Description |
-|------|------|-------------|
-| `0` | Success | Command completed successfully |
-| `1` | GeneralError | Unspecified error (check message) |
-| `2` | ConfigError | Config validation failed |
-| `3` | StateError | State file corrupt or incompatible |
-| `10` | BudgetExhausted | Optimization budget exhausted |
-| `20` | ScriptError | Evaluation script failed |
-| `130` | Interrupted | Process interrupted (Ctrl+C) |
+| Code  | Name            | Description                        |
+| ----- | --------------- | ---------------------------------- |
+| `0`   | Success         | Command completed successfully     |
+| `1`   | GeneralError    | Unspecified error (check message)  |
+| `2`   | ConfigError     | Config validation failed           |
+| `3`   | StateError      | State file corrupt or incompatible |
+| `10`  | BudgetExhausted | Optimization budget exhausted      |
+| `20`  | ScriptError     | Evaluation script failed           |
+| `130` | Interrupted     | Process interrupted (Ctrl+C)       |
 
 **Example handling:**
 
@@ -35,11 +35,11 @@ esac
 
 All ArqonHPO Python exceptions inherit from `ArqonError`.
 
-| Exception | When Raised | Example |
-|-----------|-------------|---------|
-| `ValueError` | Invalid config JSON | Missing required field |
-| `RuntimeError` | Internal Rust panic | Unexpected state |
-| `TypeError` | Wrong argument type | Non-string passed to constructor |
+| Exception      | When Raised         | Example                          |
+| -------------- | ------------------- | -------------------------------- |
+| `ValueError`   | Invalid config JSON | Missing required field           |
+| `RuntimeError` | Internal Rust panic | Unexpected state                 |
+| `TypeError`    | Wrong argument type | Non-string passed to constructor |
 
 **Example handling:**
 
@@ -60,16 +60,16 @@ except ValueError as e:
 
 Errors returned by `arqonhpo validate` or when constructing `ArqonSolver`:
 
-| Error Message | Cause | Fix |
-|---------------|-------|-----|
-| `missing field 'seed'` | Required field missing | Add `"seed": 42` |
-| `missing field 'budget'` | Required field missing | Add `"budget": 100` |
-| `missing field 'bounds'` | Required field missing | Add bounds object |
-| `bounds.X.min >= bounds.X.max` | Invalid range | Ensure min < max |
-| `invalid scale 'Foo'` | Unknown scale type | Use `Linear`, `Log`, or `Periodic` |
-| `budget must be > 0` | Zero or negative budget | Use positive integer |
-| `seed must be u64` | Seed too large/negative | Use 0 to 2^64-1 |
-| `probe_ratio must be in [0, 1]` | Invalid ratio | Use value 0.0-1.0 |
+| Error Message                   | Cause                   | Fix                                |
+| ------------------------------- | ----------------------- | ---------------------------------- |
+| `missing field 'seed'`          | Required field missing  | Add `"seed": 42`                   |
+| `missing field 'budget'`        | Required field missing  | Add `"budget": 100`                |
+| `missing field 'bounds'`        | Required field missing  | Add bounds object                  |
+| `bounds.X.min >= bounds.X.max`  | Invalid range           | Ensure min < max                   |
+| `invalid scale 'Foo'`           | Unknown scale type      | Use `Linear`, `Log`, or `Periodic` |
+| `budget must be > 0`            | Zero or negative budget | Use positive integer               |
+| `seed must be u64`              | Seed too large/negative | Use 0 to 2^64-1                    |
+| `probe_ratio must be in [0, 1]` | Invalid ratio           | Use value 0.0-1.0                  |
 
 ---
 
@@ -77,14 +77,14 @@ Errors returned by `arqonhpo validate` or when constructing `ArqonSolver`:
 
 Errors when calling `tell()` or `seed()`:
 
-| Error Message | Cause | Fix |
-|---------------|-------|-----|
-| `invalid JSON` | Malformed JSON string | Validate JSON syntax |
-| `expected array` | Root is not array | Wrap results in `[...]` |
-| `missing field 'params'` | Result missing params | Add params object |
-| `missing field 'value'` | Result missing objective | Add value field |
-| `param X not in bounds` | Unknown parameter | Check param names |
-| `duplicate eval_id N` | IDs not unique | Use unique IDs in tell() |
+| Error Message            | Cause                    | Fix                      |
+| ------------------------ | ------------------------ | ------------------------ |
+| `invalid JSON`           | Malformed JSON string    | Validate JSON syntax     |
+| `expected array`         | Root is not array        | Wrap results in `[...]`  |
+| `missing field 'params'` | Result missing params    | Add params object        |
+| `missing field 'value'`  | Result missing objective | Add value field          |
+| `param X not in bounds`  | Unknown parameter        | Check param names        |
+| `duplicate eval_id N`    | IDs not unique           | Use unique IDs in tell() |
 
 ---
 
@@ -98,13 +98,13 @@ For Rust users, errors are returned as `Result<T, Error>`:
 pub enum SolverError {
     /// Config validation failed
     ConfigError(String),
-    
+
     /// State is corrupt
     StateError(String),
-    
+
     /// Budget exhausted
     BudgetExhausted,
-    
+
     /// Invalid results
     ResultError(String),
 }
@@ -132,11 +132,11 @@ See [Hotpath API Reference](hotpath.md) for violation details.
 
 HTTP errors from the dashboard REST API:
 
-| Status | Endpoint | Cause |
-|--------|----------|-------|
-| `404` | Any | Invalid endpoint path |
-| `400` | POST /api/actions | Invalid action JSON |
-| `500` | Any | Internal server error |
+| Status | Endpoint          | Cause                 |
+| ------ | ----------------- | --------------------- |
+| `404`  | Any               | Invalid endpoint path |
+| `400`  | POST /api/actions | Invalid action JSON   |
+| `500`  | Any               | Internal server error |
 
 ---
 
@@ -147,10 +147,12 @@ HTTP errors from the dashboard REST API:
 **Problem:** `ask()` or `ask_one()` returns `None` immediately.
 
 **Causes:**
+
 1. Budget already exhausted
 2. Config has 0 budget
 
 **Solution:**
+
 ```python
 print(f"Budget: {solver.get_history_len()}")
 ```

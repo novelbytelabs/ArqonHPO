@@ -1,168 +1,190 @@
 # Optimization Strategies
 
-ArqonHPO uses different strategies depending on the problem characteristics. This page explains each strategy and when it's selected.
+**Different landscapes require different navigators.**
+
+A smooth, convex valley is best descended by a geometric solver. A noisy, chaotic mountain range requires a probabilistic explorer. ArqonHPO does not force you to choose one or the other—it chooses for you, dynamically.
+
+The **PCR (Probe-Classify-Refine)** algorithm continuously analyzes the topology of your objective function. It calculates the fractal dimension of the response surface and automatically hot-swaps the underlying strategy to match the terrain. This allows ArqonHPO to transition seamlessly from global exploration to local polishing without human intervention.
 
 ---
 
 ## Strategy Overview
 
-| Strategy | Best For | Speed | Sample Efficiency |
-|----------|----------|-------|-------------------|
-| **Nelder-Mead** | Smooth, unimodal functions | ⚡ Fast | ⭐⭐⭐ Good |
-| **Multi-Start NM** | Multimodal landscapes | ⚡ Fast | ⭐⭐ Medium |
-| **TPE** | Noisy, categorical params | 🐢 Slower | ⭐⭐⭐⭐ Best |
+| Strategy        | Best For                     | Characteristics                                    |
+| --------------- | ---------------------------- | -------------------------------------------------- |
+| **Nelder-Mead** | Smooth, unimodal functions   | Fast convergence, low overhead, requires structure |
+| **TPE**         | Noisy, expensive evaluations | Robust to noise, handles multimodal landscapes     |
 
 ---
 
 ## Nelder-Mead Simplex
 
-The **classic Nelder-Mead** algorithm is a derivative-free optimizer that maintains a simplex of n+1 points in n dimensions.
+The **Nelder-Mead** algorithm is a derivative-free optimizer that maintains a simplex of N+1 points in N dimensions.
 
-### How It Works
+### Algorithm Overview
 
-1. **Initialize** simplex around starting point
-2. **Evaluate** objective at all vertices
-3. **Transform** simplex via reflection, expansion, contraction
-4. **Repeat** until convergence
+Nelder-Mead iteratively transforms a simplex (a geometric shape with N+1 vertices in N dimensions) to find the minimum. The algorithm uses four operations:
 
-### When To Use
+1. **Reflection**: Move the worst point through the centroid of the remaining points
+2. **Expansion**: If reflection finds a good point, extend further in that direction
+3. **Contraction**: If reflection fails, pull the worst point toward the centroid
+4. **Shrink**: If contraction fails, shrink the entire simplex toward the best point
 
-- ✅ Smooth objective functions
+Each iteration replaces the worst point with a better one, gradually moving the simplex toward the optimum.
+
+### Default Coefficients
+
+ArqonHPO uses standard Nelder-Mead coefficients (verified from `nelder_mead.rs`):
+
+| Coefficient | Value | Purpose                 |
+| ----------- | ----- | ----------------------- |
+| `alpha` (α) | 1.0   | Reflection coefficient  |
+| `gamma` (γ) | 2.0   | Expansion coefficient   |
+| `rho` (ρ)   | 0.5   | Contraction coefficient |
+| `sigma` (σ) | 0.5   | Shrink coefficient      |
+
+### Convergence Criteria
+
+The algorithm considers itself converged when the simplex diameter falls below a tolerance threshold—indicating that all points have collapsed to essentially the same location.
+
+### When Nelder-Mead Works Well
+
+- ✅ Smooth, continuous objective functions
+- ✅ Unimodal landscapes (single minimum)
 - ✅ Continuous parameters
-- ✅ Low-dimensional (< 20 params)
-- ✅ Deterministic evaluations
+- ✅ Low to moderate dimensionality
+- ✅ Deterministic evaluations (no noise)
 
-### Configuration
+### When Nelder-Mead Struggles
 
-```json
-{
-  "strategy_params": {
-    "alpha": 1.0,    // Reflection coefficient
-    "gamma": 2.0,    // Expansion coefficient
-    "rho": 0.5,      // Contraction coefficient
-    "sigma": 0.5     // Shrink coefficient
-  }
-}
-```
+- ❌ Noisy evaluations (can get confused by measurement noise)
+- ❌ Multimodal landscapes (may converge to local minima)
+- ❌ High-dimensional spaces (simplex becomes inefficient)
+- ❌ Discontinuous or non-smooth functions
 
----
+### Warm-Starting from Probe
 
-## Multi-Start Nelder-Mead
-
-For **multimodal** functions (multiple local minima), Multi-Start NM runs several simplex searches from different starting points.
-
-### How It Works
-
-1. **Probe** phase samples the landscape
-2. **Cluster** promising regions
-3. **Launch** independent NM searches per cluster
-4. **Return** best across all runs
-
-### When To Use
-
-- ✅ Multiple local minima
-- ✅ Large parameter ranges
-- ✅ Sufficient budget (10x single NM)
-- ⚠️ More expensive than single NM
-
-### Configuration
-
-```json
-{
-  "strategy_params": {
-    "n_starts": 5,           // Number of parallel starts
-    "restart_threshold": 0.1 // Restart if no improvement
-  }
-}
-```
+When PCR classifies a problem as "Structured," Nelder-Mead is initialized using the best points from the Probe phase. This creates an initial simplex centered on promising regions rather than starting blindly.
 
 ---
 
 ## Tree-structured Parzen Estimator (TPE)
 
-**TPE** is a Bayesian optimization algorithm that models p(x|y) instead of p(y|x).
+**TPE** is a Bayesian optimization algorithm that models the relationship between parameters and objective values probabilistically.
 
-### How It Works
+### Algorithm Overview
 
-1. **Split** observations into good/bad groups by objective value
-2. **Fit** kernel density estimators (KDE) to each group
-3. **Sample** candidates that maximize l(x)/g(x) ratio
-4. **Evaluate** and update model
+Unlike traditional Bayesian optimization that models P(y|x), TPE models P(x|y)—the probability of parameters given "good" or "bad" outcomes.
 
-### When To Use
+1. **Split observations**: Divide all evaluated points into "good" (below a threshold) and "bad" (above threshold) groups based on objective values
+2. **Fit density estimators**: Build kernel density estimates (KDEs) for both groups
+3. **Sample candidates**: Draw samples that maximize the ratio l(x)/g(x), where l(x) is the "good" density and g(x) is the "bad" density
+4. **Evaluate and update**: Evaluate the best candidates and add results to history
 
-- ✅ Noisy objective functions
-- ✅ Expensive evaluations (>1 second)
-- ✅ Categorical or mixed parameters
-- ⚠️ Higher per-candidate overhead
+### Bandwidth Selection
 
-### Configuration
+TPE uses kernel density estimation, which requires choosing an appropriate bandwidth (smoothing parameter). ArqonHPO supports multiple bandwidth rules (verified from `tpe.rs`):
 
-```json
-{
-  "strategy_params": {
-    "n_startup_trials": 10,  // Random trials before TPE kicks in
-    "gamma": 0.25,          // Quantile for good/bad split
-    "bandwidth_rule": "Scott" // "Scott", "Silverman", or "Fixed"
-  }
-}
-```
+| Rule                       | Formula                                    | Use Case                                |
+| -------------------------- | ------------------------------------------ | --------------------------------------- |
+| **Scott's Rule** (default) | σ = 1.06 × stddev × n^(-1/5)               | Standard choice, adapts to distribution |
+| **Silverman's Rule**       | σ = 0.9 × min(stddev, IQR/1.34) × n^(-1/5) | More robust to outliers                 |
+| **Fixed**                  | Percentage of range                        | Legacy behavior                         |
+
+### When TPE Works Well
+
+- ✅ Noisy objective functions (measurement noise, stochastic training)
+- ✅ Expensive evaluations (makes efficient use of samples)
+- ✅ Multimodal landscapes (explores multiple regions)
+- ✅ Mixed or categorical parameters (handles discrete choices)
+
+### When TPE Is Less Efficient
+
+- ⚠️ Higher per-candidate computational overhead
+- ⚠️ Slower convergence on smooth, well-behaved functions
+- ⚠️ Small sample sizes (needs sufficient data to build good density models)
+
+### Online Optimization
+
+TPE is the strategy used by `ask_one()` for online/real-time optimization. Its incremental nature makes it well-suited for streaming scenarios where evaluations arrive one at a time.
 
 ---
 
 ## Automatic Strategy Selection
 
-By default, ArqonHPO uses the **Classify** phase to select strategies:
+ArqonHPO's PCR algorithm automatically selects the appropriate strategy based on landscape analysis:
 
 ```mermaid
 graph TD
-    A[Probe Results] --> B{Landscape Analysis}
-    B -->|Smooth| C[Nelder-Mead]
-    B -->|Multimodal| D[Multi-Start NM]
-    B -->|Noisy| E[TPE]
+    A[Probe Phase] --> B[Classify Phase]
+    B --> C{Residual Decay α}
+    C -->|α > 0.5| D[Nelder-Mead]
+    C -->|α ≤ 0.5| E[TPE]
+
+    D --> F[Refine Phase]
+    E --> F
 ```
 
-### Classification Heuristics
+### Classification Logic
 
-| Signal | Interpretation |
-|--------|----------------|
-| Low variance in neighbors | Smooth → NM |
-| Multiple distinct basins | Multimodal → MS-NM |
-| High noise-to-signal ratio | Noisy → TPE |
+The ResidualDecayClassifier examines how objective values improve across the probe samples. Functions with exploitable structure show geometric decay in residuals, while noisy or multimodal functions show irregular patterns.
+
+| Signal         | Interpretation              | Strategy    |
+| -------------- | --------------------------- | ----------- |
+| High α (> 0.5) | Geometric residual decay    | Nelder-Mead |
+| Low α (≤ 0.5)  | Flat or irregular residuals | TPE         |
+
+For details on the classification algorithm, see [PCR Algorithm](pcr_algorithm.md).
 
 ---
 
-## Forcing a Strategy
+## Multi-Start Nelder-Mead
 
-Override automatic selection:
+!!! note "Not Currently Used by PCR"
+Multi-Start NM is available in the codebase but is not currently selected by the PCR classifier. It remains available for potential future use or manual configuration.
 
-```python
-config = {
-    "seed": 42,
-    "budget": 100,
-    "bounds": {...},
-    "strategy": "nelder_mead"  # Force specific strategy
-}
-```
+For **multimodal** functions with multiple local minima, Multi-Start NM launches several simplex searches from different starting points.
 
-Valid values: `"nelder_mead"`, `"multi_start_nm"`, `"tpe"`
+### How It Works
+
+1. **Probe** phase samples the landscape
+2. **Identify** multiple promising regions
+3. **Launch** independent NM searches per region
+4. **Return** the best result across all runs
+
+This approach is more expensive than single NM but can escape local minima.
 
 ---
 
-## Performance Comparison
+## Strategy Comparison
 
-From our benchmarks:
-
-| Function | Nelder-Mead | Multi-Start NM | TPE |
-|----------|-------------|----------------|-----|
-| Sphere (smooth) | **0.001** | 0.003 | 0.012 |
-| Rosenbrock | **0.05** | 0.08 | 0.15 |
-| Rastrigin (multimodal) | 2.5 | **0.8** | 1.2 |
-| Noisy Sphere | 0.5 | 0.4 | **0.08** |
+| Aspect                                    | Nelder-Mead                    | TPE                            |
+| ----------------------------------------- | ------------------------------ | ------------------------------ |
+| **Mechanism**                             | Geometric simplex operations   | Probabilistic density modeling |
+| **Per-step overhead**                     | Minimal                        | Higher (density estimation)    |
+| **Sample efficiency on smooth functions** | Excellent                      | Good                           |
+| **Noise tolerance**                       | Poor                           | Excellent                      |
+| **Incremental/online use**                | Difficult (needs full simplex) | Natural fit                    |
+| **Warm-start support**                    | Yes (from probe points)        | Yes (from all history)         |
 
 ---
 
 ## Next Steps
 
-- [PCR Algorithm](pcr_algorithm.md) — How Probe-Classify-Refine works
-- [Benchmarks](../../benchmarks/index.md) — Full performance data
+<div class="grid cards" markdown>
+
+- :mag: **[PCR Algorithm](pcr_algorithm.md)**
+
+  How Probe-Classify-Refine works
+
+- :zap: **[Batch vs. Online](batch_vs_online.md)**
+
+  When to use `ask()` vs. `ask_one()`
+
+- :dart: **[Probe Deep Dive](probe_deep_dive.md)**
+
+  Mathematics of the sampling phase
+
+</div>
+
+---

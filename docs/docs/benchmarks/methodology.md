@@ -6,30 +6,31 @@ This page documents how our benchmarks were conducted for reproducibility.
 
 ## Hardware
 
-| Component | Specification |
-|-----------|--------------|
-| CPU | AMD Ryzen 9 5950X (16 cores, 32 threads) |
-| RAM | 64 GB DDR4-3600 |
-| Storage | NVMe SSD (Samsung 980 Pro) |
-| OS | Ubuntu 22.04 LTS |
+| Component | Specification                            |
+| --------- | ---------------------------------------- |
+| CPU       | AMD Ryzen 9 5950X (16 cores, 32 threads) |
+| RAM       | 64 GB DDR4-3600                          |
+| Storage   | NVMe SSD (Samsung 980 Pro)               |
+| OS        | Ubuntu 22.04 LTS                         |
 
 ---
 
 ## Software Versions
 
 | Software | Version |
-|----------|---------|
-| Rust | 1.82.0 |
-| Python | 3.12.0 |
-| ArqonHPO | 0.3.0 |
-| Optuna | 3.5.0 |
-| NumPy | 1.26.0 |
+| -------- | ------- |
+| Rust     | 1.82.0  |
+| Python   | 3.12.0  |
+| ArqonHPO | 0.3.0   |
+| Optuna   | 3.5.0   |
+| NumPy    | 1.26.0  |
 
 ---
 
 ## Benchmark Configuration
 
 ### Time-Bounded Benchmarks
+
 - **Budget:** 5 seconds wall-clock time
 - **Warmup:** 1 second (excluded from measurement)
 - **Iterations:** 5 runs, median reported
@@ -37,12 +38,12 @@ This page documents how our benchmarks were conducted for reproducibility.
 
 ### Test Functions
 
-| Function | Dimensions | Characteristics |
-|----------|------------|-----------------|
-| Sphere | 10 | Smooth, unimodal |
-| Rosenbrock | 10 | Smooth, narrow valley |
-| Rastrigin | 10 | Noisy, multimodal |
-| Ackley | 10 | Noisy, multimodal |
+| Function   | Dimensions | Characteristics       |
+| ---------- | ---------- | --------------------- |
+| Sphere     | 10         | Smooth, unimodal      |
+| Rosenbrock | 10         | Smooth, narrow valley |
+| Rastrigin  | 10         | Noisy, multimodal     |
+| Ackley     | 10         | Noisy, multimodal     |
 
 ---
 
@@ -78,6 +79,7 @@ python benchmarks/optuna_comparison.py
 ## Data Files
 
 Raw benchmark data available in:
+
 - `docs/docs/benchmarks/benchmark_data.csv`
 
 ---

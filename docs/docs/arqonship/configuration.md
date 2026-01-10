@@ -61,43 +61,43 @@ version_scheme = "semver"
 
 ### `[meta]` Section
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `config_version` | integer | `1` | Schema version for future migrations |
+| Option           | Type    | Default | Description                          |
+| ---------------- | ------- | ------- | ------------------------------------ |
+| `config_version` | integer | `1`     | Schema version for future migrations |
 
 ### `[oracle]` Section
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
+| Option          | Type     | Default                          | Description              |
+| --------------- | -------- | -------------------------------- | ------------------------ |
 | `include_globs` | string[] | `["src/**/*.rs", "src/**/*.py"]` | Files to parse and index |
-| `exclude_globs` | string[] | `["target/", "venv/", ".git/"]` | Paths to skip |
-| `model_path` | string | `"~/.arqon/models/"` | Model cache directory |
+| `exclude_globs` | string[] | `["target/", "venv/", ".git/"]`  | Paths to skip            |
+| `model_path`    | string   | `"~/.arqon/models/"`             | Model cache directory    |
 
 ### `[heal]` Section
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `max_attempts` | integer | `2` | Max healing iterations per failure |
-| `model_id` | string | `"deepseek-coder-1.3b-instruct"` | Local LLM model |
-| `enabled` | boolean | `true` | Feature toggle |
+| Option         | Type    | Default                          | Description                        |
+| -------------- | ------- | -------------------------------- | ---------------------------------- |
+| `max_attempts` | integer | `2`                              | Max healing iterations per failure |
+| `model_id`     | string  | `"deepseek-coder-1.3b-instruct"` | Local LLM model                    |
+| `enabled`      | boolean | `true`                           | Feature toggle                     |
 
 ### `[ship]` Section
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
+| Option             | Type     | Default    | Description                   |
+| ------------------ | -------- | ---------- | ----------------------------- |
 | `require_branches` | string[] | `["main"]` | Branches allowed for shipping |
-| `version_scheme` | string | `"semver"` | Versioning strategy |
+| `version_scheme`   | string   | `"semver"` | Versioning strategy           |
 
 ## Environment Variables
 
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `GITHUB_TOKEN` | GitHub API token for PR creation | For `arqon ship` |
-| `ARQON_LLM_URL` | LLM API endpoint (OpenAI/Ollama compatible) | For `arqon heal` |
-| `ARQON_LLM_MODEL` | Model name (default: `deepseek-coder:1.3b`) | No |
-| `ARQON_LLM_KEY` | API key for LLM endpoint | If required by API |
-| `ARQON_CONFIG` | Override config file path | No |
-| `ARQON_MODEL_CACHE` | Override model cache directory | No |
+| Variable            | Description                                 | Required           |
+| ------------------- | ------------------------------------------- | ------------------ |
+| `GITHUB_TOKEN`      | GitHub API token for PR creation            | For `arqon ship`   |
+| `ARQON_LLM_URL`     | LLM API endpoint (OpenAI/Ollama compatible) | For `arqon heal`   |
+| `ARQON_LLM_MODEL`   | Model name (default: `deepseek-coder:1.3b`) | No                 |
+| `ARQON_LLM_KEY`     | API key for LLM endpoint                    | If required by API |
+| `ARQON_CONFIG`      | Override config file path                   | No                 |
+| `ARQON_MODEL_CACHE` | Override model cache directory              | No                 |
 
 ### Example LLM Configuration
 
@@ -114,13 +114,13 @@ export ARQON_LLM_KEY="sk-..."
 
 ## Data Directories
 
-| Path | Purpose |
-|------|---------|
-| `.arqon/config.toml` | Project configuration |
-| `.arqon/graph.db` | SQLite graph database |
+| Path                    | Purpose                |
+| ----------------------- | ---------------------- |
+| `.arqon/config.toml`    | Project configuration  |
+| `.arqon/graph.db`       | SQLite graph database  |
 | `.arqon/vectors.lance/` | LanceDB vector storage |
-| `~/.arqon/models/` | Cached AI models |
-| `~/.arqon/audit.db` | Global audit log |
+| `~/.arqon/models/`      | Cached AI models       |
+| `~/.arqon/audit.db`     | Global audit log       |
 
 ## Example Configurations
 

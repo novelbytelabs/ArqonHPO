@@ -37,7 +37,7 @@ We implement a **Rust Core with PyO3 Bindings** architecture:
 
 ### Key Principles
 
-1. **Probe-Gated Pipeline:** All runs start with a deterministic probe phase. Classification happens *after* probing, preventing premature strategy commitment.
+1. **Probe-Gated Pipeline:** All runs start with a deterministic probe phase. Classification happens _after_ probing, preventing premature strategy commitment.
 
 2. **Seed Sovereignty:** All randomness flows from explicit seeds. No hidden global RNG.
 

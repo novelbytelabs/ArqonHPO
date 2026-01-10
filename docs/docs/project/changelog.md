@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.3.0] - 2026-01-09
 
 ### Added
+
 - **Safety Executor** — Centralized config updates with guardrails
 - **Guardrails presets** — Conservative, Balanced, Aggressive
 - **Rollback Policy** — Automatic revert on regressions
@@ -20,15 +21,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **ask_one()** — Single candidate for online mode
 
 ### Changed
+
 - `probe_budget` config → `probe_ratio` (breaking)
 - Default batch size 4 → auto-scaled by budget
 - Improved SPSA gradient estimation with trimmed mean
 
 ### Fixed
+
 - Memory leak in TPE kernel caching
 - Race condition in audit queue flush
 
 ### Documentation
+
 - Comprehensive reference docs (40+ pages)
 - TUI/Dashboard screenshots
 - Integration guides (K8s, FastAPI, Ray)
@@ -38,6 +42,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.2.0] - 2025-09-15
 
 ### Added
+
 - **PCR Algorithm** — Probe-Classify-Refine pipeline
 - **Python bindings** — `ArqonSolver`, `ArqonProbe`
 - **ResidualDecayClassifier** — Landscape classification
@@ -46,10 +51,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CLI commands: `ask`, `tell`, `interactive`, `validate`
 
 ### Changed
+
 - Renamed CLI: `arqon` → `arqonhpo`
 - Renamed package: `arqon` → `arqonhpo`
 
 ### Documentation
+
 - Initial MkDocs site
 - Quickstart guide
 - Python/Rust reference
@@ -59,6 +66,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.1.0] - 2025-06-01
 
 ### Added
+
 - Initial release
 - **Nelder-Mead** simplex optimizer
 - Basic CLI: `run` command
@@ -71,6 +79,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Upgrade Notes
 
 ### 0.2 → 0.3
+
 - Rename `probe_budget` to `probe_ratio` in config
 - Update imports: `from arqonhpo import ArqonSolver`
 - Re-export artifacts (schema change)
@@ -78,6 +87,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 See [Migration Guide](../documentation/migration.md) for details.
 
 ### 0.1 → 0.2
+
 - Complete config rewrite — recreate configs
 - Package renamed — update pip install
 

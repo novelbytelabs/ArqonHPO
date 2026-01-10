@@ -18,13 +18,13 @@ ArqonSolver(config_json: str) -> ArqonSolver
 
 **Config Schema:**
 
-| Field | Type | Required | Default | Description |
-|-------|------|----------|---------|-------------|
-| `seed` | int | ✓ | - | RNG seed for reproducibility |
-| `budget` | int | ✓ | - | Max number of evaluations |
-| `bounds` | dict | ✓ | - | Parameter bounds (see below) |
-| `probe_ratio` | float | ✗ | 0.2 | Fraction of budget for probing |
-| `strategy_params` | dict | ✗ | null | Strategy-specific config |
+| Field             | Type  | Required | Default | Description                    |
+| ----------------- | ----- | -------- | ------- | ------------------------------ |
+| `seed`            | int   | ✓        | -       | RNG seed for reproducibility   |
+| `budget`          | int   | ✓        | -       | Max number of evaluations      |
+| `bounds`          | dict  | ✓        | -       | Parameter bounds (see below)   |
+| `probe_ratio`     | float | ✗        | 0.2     | Fraction of budget for probing |
+| `strategy_params` | dict  | ✗        | null    | Strategy-specific config       |
 
 **Bounds Format:**
 
@@ -33,7 +33,7 @@ ArqonSolver(config_json: str) -> ArqonSolver
   "param_name": {
     "min": 0.0,
     "max": 1.0,
-    "scale": "Linear"  // or "Log"
+    "scale": "Linear" // or "Log"
   }
 }
 ```
@@ -54,7 +54,7 @@ Report evaluation results back to the solver.
 [
   {
     "eval_id": 0,
-    "params": {"x": 1.0, "y": 2.0},
+    "params": { "x": 1.0, "y": 2.0 },
     "value": 0.5,
     "cost": 1.0
   }
@@ -76,7 +76,7 @@ The solver assigns internal `eval_id`s automatically.
 ```json
 [
   {
-    "params": {"x": 1.0, "y": 2.0},
+    "params": { "x": 1.0, "y": 2.0 },
     "value": 0.5,
     "cost": 1.0
   }
@@ -111,8 +111,8 @@ batch = solver.ask()
 ```
 
 !!! tip "Probe Budget"
-    To trigger phase transition to Classify→Refine, seed at least 
-    `budget × probe_ratio` points (default: 20% of budget).
+To trigger phase transition to Classify→Refine, seed at least
+`budget × probe_ratio` points (default: 20% of budget).
 
 #### `get_history_len() -> int`
 
@@ -124,6 +124,7 @@ Useful for verifying seeding or tracking progress.
 Returns a **single** candidate for online/real-time optimization.
 
 Unlike `ask()` which returns a batch for the PCR workflow, `ask_one()`:
+
 1. Skips Probe/Classify phases
 2. Uses TPE strategy directly
 3. Returns exactly 1 candidate per call
@@ -147,10 +148,10 @@ while True:
     candidate = solver.ask_one()
     if candidate is None:
         break
-    
+
     # Evaluate single candidate
     value = evaluate(candidate)
-    
+
     # Immediately feed back
     solver.seed(json.dumps([{
         "params": candidate,
@@ -245,4 +246,3 @@ with Pool(4) as p:
 ```
 
 See [Determinism](../concepts/determinism.md) for more details.
-

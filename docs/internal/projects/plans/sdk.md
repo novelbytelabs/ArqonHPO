@@ -18,6 +18,7 @@ ArqonHPO's sub-microsecond performance isn't just fast—it's **fast enough to e
 
 > [!IMPORTANT]
 > **Target Platform Prioritization**: Confirm the priority order for language bindings:
+>
 > 1. **Node.js/TypeScript** - NPM ecosystem, edge computing (Cloudflare Workers, Deno)
 > 2. **Swift/iOS** - Apple platforms, on-device ML tuning
 > 3. **Go** - Cloud infrastructure, Kubernetes operators
@@ -25,6 +26,7 @@ ArqonHPO's sub-microsecond performance isn't just fast—it's **fast enough to e
 
 > [!WARNING]  
 > **Breaking Change Consideration**: The current Python SDK uses JSON-serialized configs. Options:
+>
 > - **Option A**: Keep JSON for all SDKs (maximum portability, simpler FFI)
 > - **Option B**: Native typed configs per language (better ergonomics, more implementation work)
 > - **Option C**: Both (JSON for interop, native wrappers for convenience)
@@ -39,11 +41,11 @@ graph TB
         CORE["arqonhpo-core<br/>Solver • Probe • Classify • Refine"]
         HOTPATH["hotpath<br/>Adaptive Engine • SPSA • Safety"]
     end
-    
+
     subgraph "C FFI Layer (Universal Bridge)"
         FFI["arqonhpo-ffi<br/>C-ABI Stable • Zero-Copy • Thread-Safe"]
     end
-    
+
     subgraph "Language Bindings"
         PY["Python<br/>PyO3 (Native)"]
         NODE["Node.js<br/>NAPI-RS"]
@@ -51,7 +53,7 @@ graph TB
         GO["Go<br/>CGO Bindings"]
         WASM["WebAssembly<br/>wasm-bindgen"]
     end
-    
+
     subgraph "Distribution"
         NPM["npm / JSR"]
         PYPI["PyPI"]
@@ -59,7 +61,7 @@ graph TB
         GOMOD["Go Modules"]
         CRATES["crates.io"]
     end
-    
+
     CORE --> FFI
     HOTPATH --> FFI
     FFI --> NODE
@@ -67,7 +69,7 @@ graph TB
     FFI --> GO
     CORE --> PY
     CORE --> WASM
-    
+
     NODE --> NPM
     PY --> PYPI
     SWIFT --> COCOA
@@ -90,6 +92,7 @@ The C FFI is the universal substrate enabling all non-Rust bindings. Must be roc
 Complete rewrite from placeholder to production-ready C FFI.
 
 **Key Design Principles:**
+
 - **Opaque Handles**: All Rust objects exposed as opaque pointers (`*mut ArqonSolver`)
 - **Error Strings**: Errors returned as allocated C strings (caller must free)
 - **JSON In/Out**: Config and results as C strings for maximum portability
@@ -104,7 +107,7 @@ pub struct ArqonSolverHandle {
     _private: [u8; 0],
 }
 
-/// Opaque probe handle  
+/// Opaque probe handle
 #[repr(C)]
 pub struct ArqonProbeHandle {
     _private: [u8; 0],
@@ -132,7 +135,7 @@ pub struct ArqonBatch {
 pub extern "C" fn arqon_solver_create(config_json: *const c_char) -> *mut ArqonSolverHandle;
 
 /// Destroy a solver and free all resources
-#[no_mangle]  
+#[no_mangle]
 pub extern "C" fn arqon_solver_destroy(solver: *mut ArqonSolverHandle);
 
 // === Core API ===
@@ -145,7 +148,7 @@ pub extern "C" fn arqon_solver_ask(solver: *mut ArqonSolverHandle) -> ArqonBatch
 /// Report evaluation results
 #[no_mangle]
 pub extern "C" fn arqon_solver_tell(
-    solver: *mut ArqonSolverHandle, 
+    solver: *mut ArqonSolverHandle,
     results_json: *const c_char
 ) -> ArqonResult;
 
@@ -227,6 +230,7 @@ Using NAPI-RS for native Node.js bindings with full TypeScript support.
 Complete Node.js/TypeScript SDK package.
 
 **Directory Structure:**
+
 ```
 bindings/node/
 ├── Cargo.toml           # NAPI-RS Rust bindings
@@ -245,14 +249,14 @@ bindings/node/
 
 **TypeScript API Design (index.d.ts):**
 
-```typescript
+````typescript
 /**
  * ArqonHPO - Adaptive Hyperparameter Optimization
- * 
+ *
  * @example
  * ```typescript
  * import { ArqonSolver } from '@arqon/hpo';
- * 
+ *
  * const solver = new ArqonSolver({
  *   seed: 42,
  *   budget: 100,
@@ -261,11 +265,11 @@ bindings/node/
  *     batch_size: { min: 8, max: 256, scale: 'linear' }
  *   }
  * });
- * 
+ *
  * while (true) {
  *   const batch = solver.ask();
  *   if (!batch) break;
- *   
+ *
  *   const results = await Promise.all(
  *     batch.map(async (params) => ({
  *       params,
@@ -273,7 +277,7 @@ bindings/node/
  *       cost: 1.0
  *     }))
  *   );
- *   
+ *
  *   solver.tell(results);
  * }
  * ```
@@ -282,7 +286,7 @@ bindings/node/
 export interface Bounds {
   min: number;
   max: number;
-  scale?: 'linear' | 'log' | 'periodic';
+  scale?: "linear" | "log" | "periodic";
 }
 
 export interface SolverConfig {
@@ -301,27 +305,27 @@ export interface EvalResult {
 
 export class ArqonSolver {
   constructor(config: SolverConfig);
-  
+
   /** Get next batch of candidates, or null if complete */
   ask(): Record<string, number>[] | null;
-  
+
   /** Report evaluation results */
   tell(results: EvalResult[]): void;
-  
+
   /** Current evaluation count */
   get historyLength(): number;
 }
 
 export class ArqonProbe {
   constructor(config: SolverConfig, seed?: number);
-  
+
   /** Generate a single sample at the given index (stateless) */
   sampleAt(index: number): Record<string, number>;
-  
+
   /** Generate a range of samples (stateless, enables sharding) */
   sampleRange(start: number, count: number): Record<string, number>[];
 }
-```
+````
 
 ---
 
@@ -334,6 +338,7 @@ Native Swift package wrapping the C FFI for iOS, macOS, watchOS, tvOS.
 #### [NEW] `bindings/swift/`
 
 **Directory Structure:**
+
 ```
 bindings/swift/
 ├── Package.swift                    # Swift Package Manager manifest
@@ -353,7 +358,7 @@ bindings/swift/
 
 **Swift API Design:**
 
-```swift
+````swift
 import Foundation
 
 /// Solver configuration for ArqonHPO optimization
@@ -362,12 +367,12 @@ public struct SolverConfig: Codable {
     public let budget: UInt64
     public let bounds: [String: ParameterBounds]
     public var probeRatio: Double = 0.2
-    
+
     public struct ParameterBounds: Codable {
         public let min: Double
         public let max: Double
         public var scale: Scale = .linear
-        
+
         public enum Scale: String, Codable {
             case linear = "Linear"
             case log = "Log"
@@ -407,15 +412,15 @@ public struct EvalResult: Codable {
 /// ```
 public final class ArqonSolver: @unchecked Sendable {
     private let handle: UnsafeMutableRawPointer
-    
+
     public init(config: SolverConfig) throws { ... }
-    
+
     deinit { ... }
-    
+
     /// Get the next batch of candidate parameters
     /// - Returns: Array of parameter dictionaries, or nil if optimization complete
     public func ask() throws -> [[String: Double]]? { ... }
-    
+
     /// Report evaluation results back to the solver
     public func tell(results: [EvalResult]) throws { ... }
 }
@@ -423,14 +428,14 @@ public final class ArqonSolver: @unchecked Sendable {
 /// Thread-safe probe for stateless sampling
 public final class ArqonProbe: @unchecked Sendable {
     public init(config: SolverConfig, seed: UInt64 = 42) throws { ... }
-    
+
     /// Generate a sample at the given index (completely stateless)
     public func sample(at index: Int) -> [String: Double] { ... }
-    
+
     /// Generate a range of samples (enables parallel sharding)
     public func sampleRange(start: Int, count: Int) -> [[String: Double]] { ... }
 }
-```
+````
 
 ---
 
@@ -443,6 +448,7 @@ Go module using CGO for seamless integration with Go services.
 #### [NEW] `bindings/go/`
 
 **Directory Structure:**
+
 ```
 bindings/go/
 ├── go.mod                    # Go module definition
@@ -539,6 +545,7 @@ Browser-compatible WASM build for client-side optimization.
 #### [NEW] `bindings/wasm/`
 
 **Directory Structure:**
+
 ```
 bindings/wasm/
 ├── Cargo.toml                     # wasm-bindgen setup
@@ -574,13 +581,13 @@ impl WasmSolver {
             inner: Solver::pcr(config),
         })
     }
-    
+
     /// Returns JSON array of candidates or null
     pub fn ask(&mut self) -> Option<String> {
         self.inner.ask()
             .map(|batch| serde_json::to_string(&batch).unwrap())
     }
-    
+
     /// Accepts JSON array of results
     pub fn tell(&mut self, results_json: &str) -> Result<(), JsValue> {
         let results = serde_json::from_str(results_json)
@@ -604,6 +611,7 @@ Extend the existing CI to build and publish all SDK targets.
 Add jobs for building and testing all SDK platforms.
 
 **New CI Jobs:**
+
 - `build-ffi`: Build C library + header for all platforms
 - `build-node`: Build and test Node.js bindings
 - `build-swift`: Build XCFramework and run Swift tests
@@ -617,6 +625,7 @@ Add jobs for building and testing all SDK platforms.
 Automated SDK releases on version tags.
 
 **Release Artifacts:**
+
 - NPM: `@arqon/hpo` (Node.js native) and `@arqon/hpo-wasm` (browser)
 - PyPI: `arqonhpo` (existing)
 - Swift Package Registry / GitHub Releases (XCFramework)
@@ -663,6 +672,7 @@ Automated SDK releases on version tags.
 ### Automated Tests
 
 Each binding includes:
+
 - **Unit tests**: Basic API functionality
 - **Integration tests**: Full optimization loops
 - **Determinism tests**: Same seed → same results across platforms
@@ -707,11 +717,11 @@ cd bindings/wasm && wasm-pack test --node
 
 ## Success Criteria
 
-| Metric | Target |
-|--------|--------|
-| **Platform Coverage** | Linux, macOS, Windows, iOS, Browser |
-| **Language SDKs** | Python, TypeScript, Swift, Go, WASM |
-| **API Parity** | 100% feature parity across all SDKs |
-| **Performance Overhead** | < 5% vs native Rust |
-| **Package Availability** | npm, PyPI, Swift Package, Go modules |
-| **Documentation** | Full API docs + examples per language |
+| Metric                   | Target                                |
+| ------------------------ | ------------------------------------- |
+| **Platform Coverage**    | Linux, macOS, Windows, iOS, Browser   |
+| **Language SDKs**        | Python, TypeScript, Swift, Go, WASM   |
+| **API Parity**           | 100% feature parity across all SDKs   |
+| **Performance Overhead** | < 5% vs native Rust                   |
+| **Package Availability** | npm, PyPI, Swift Package, Go modules  |
+| **Documentation**        | Full API docs + examples per language |

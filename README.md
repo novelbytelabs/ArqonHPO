@@ -5,12 +5,12 @@
   <p>Safe self-optimization, robustness, and resilience for live systems—with microsecond-class overhead and deterministic governance.</p>
   <>
 
-
   <!-- CI / Build Status -->
-  [![CI](https://github.com/novelbytelabs/ArqonHPO/actions/workflows/ci.yml/badge.svg)](https://github.com/novelbytelabs/ArqonHPO/actions/workflows/ci.yml)
-  [![Linux](https://img.shields.io/badge/Linux-passing-brightgreen?logo=linux&logoColor=white)](https://github.com/novelbytelabs/ArqonHPO/actions/workflows/ci.yml)
-  [![macOS](https://img.shields.io/badge/macOS-passing-brightgreen?logo=apple&logoColor=white)](https://github.com/novelbytelabs/ArqonHPO/actions/workflows/ci.yml)
-  [![Windows](https://img.shields.io/badge/Windows-passing-brightgreen?logo=windows&logoColor=white)](https://github.com/novelbytelabs/ArqonHPO/actions/workflows/ci.yml)
+
+[![CI](https://github.com/novelbytelabs/ArqonHPO/actions/workflows/ci.yml/badge.svg)](https://github.com/novelbytelabs/ArqonHPO/actions/workflows/ci.yml)
+[![Linux](https://img.shields.io/badge/Linux-passing-brightgreen?logo=linux&logoColor=white)](https://github.com/novelbytelabs/ArqonHPO/actions/workflows/ci.yml)
+[![macOS](https://img.shields.io/badge/macOS-passing-brightgreen?logo=apple&logoColor=white)](https://github.com/novelbytelabs/ArqonHPO/actions/workflows/ci.yml)
+[![Windows](https://img.shields.io/badge/Windows-passing-brightgreen?logo=windows&logoColor=white)](https://github.com/novelbytelabs/ArqonHPO/actions/workflows/ci.yml)
 
   <!-- Coverage & Quality -->
   <br/>
@@ -42,10 +42,9 @@
   <p>Powered by <code>ArqonHPO</code></p>
 </div>
 
+# **Machine-speed optimization for live systems.**
 
-# **Machine-speed optimization for live systems.**  
-
-ArqonHPO is a Rust-first optimization runtime that can sit *inside* a control loop: it proposes bounded parameter updates, ingests telemetry/reward signals, and produces deterministic, auditable decisions with sub-microsecond overhead.
+ArqonHPO is a Rust-first optimization runtime that can sit _inside_ a control loop: it proposes bounded parameter updates, ingests telemetry/reward signals, and produces deterministic, auditable decisions with sub-microsecond overhead.
 
 It’s not “run an offline study.” It’s: **measure → decide → apply → measure again**.
 
@@ -74,17 +73,20 @@ If your loop must run at machine speed, ArqonHPO is built for that.
 ## What’s in the box
 
 ### Tier-2: Adaptive decision engine (hot path)
+
 - Online optimizer designed for **continuous tuning under drift**
 - Runs under strict time budgets
-- Produces **bounded, stable deltas** rather than “wild” parameter jumps 
+- Produces **bounded, stable deltas** rather than “wild” parameter jumps
 
 ### Tier-1: Safety executor (hot path)
+
 - Guardrails: bounds, max-delta, cooldown/dwell, rollback hooks
-- Non-blocking audit + telemetry emission (never blocks the hot path) 
+- Non-blocking audit + telemetry emission (never blocks the hot path)
 
 ### Determinism + evidence
+
 - Stable parameter ordering (registry) for replayability
-- Seeded decisioning, audit trail, and artifacts for “why did it change?” 
+- Seeded decisioning, audit trail, and artifacts for “why did it change?”
 
 ---
 
@@ -127,7 +129,7 @@ maturin develop -m bindings/python/Cargo.toml
 
 ## Quick start (ask/tell loop)
 
-> This example shows the *shape* of integration: you supply measurements, ArqonHPO returns proposals.
+> This example shows the _shape_ of integration: you supply measurements, ArqonHPO returns proposals.
 
 ```python
 import json
@@ -183,9 +185,9 @@ ArqonHPO expects three things:
 ArqonHPO does **not** require you to adopt a giant platform.
 But to deliver the “runtime optimization” promise, you will typically integrate at least:
 
-* a telemetry digest (even minimal),
-* safe actuation,
-* guardrails (policy).
+- a telemetry digest (even minimal),
+- safe actuation,
+- guardrails (policy).
 
 ---
 
@@ -195,10 +197,10 @@ ArqonHPO is developed under a Constitution: a living spec of invariants and timi
 
 Highlights:
 
-* **Hot-Path Representation:** Tier-1/Tier-2 code uses dense parameter vectors (no `HashMap` in hot path)
-* **Timing Contracts:** T1/T2 must remain within defined budgets (p99 targets)
-* **Non-blocking observability:** audit/telemetry must never block the hot path
-* **Deterministic replay:** decisions must be reproducible from artifacts + seeds
+- **Hot-Path Representation:** Tier-1/Tier-2 code uses dense parameter vectors (no `HashMap` in hot path)
+- **Timing Contracts:** T1/T2 must remain within defined budgets (p99 targets)
+- **Non-blocking observability:** audit/telemetry must never block the hot path
+- **Deterministic replay:** decisions must be reproducible from artifacts + seeds
 
 See: `project/constitution.md`
 

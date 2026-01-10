@@ -66,7 +66,6 @@ impl TPE {
         bandwidth
     }
 
-
     /// Silverman's Rule bandwidth: σ = 0.9 × min(stddev, IQR/1.34) × n^(-1/5)
     ///
     /// More robust to outliers than Scott's Rule.
@@ -113,7 +112,6 @@ impl TPE {
         // even when history is clustered. Critical for Online Mode.
         bw.max(range * 0.02)
     }
-
 
     // Gaussian PDF
     fn pdf(x: f64, mean: f64, sigma: f64) -> f64 {

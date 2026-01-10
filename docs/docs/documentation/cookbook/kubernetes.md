@@ -28,7 +28,7 @@ spec:
           volumeMounts:
             - name: shared
               mountPath: /shared
-              
+
         - name: arqon
           image: arqonhpo:latest
           command:
@@ -44,7 +44,7 @@ spec:
               name: dashboard
             - containerPort: 9898
               name: metrics
-              
+
       volumes:
         - name: shared
           emptyDir: {}
@@ -90,13 +90,13 @@ while True:
     candidates = solver.ask()
     if not candidates:
         break
-    
+
     # Launch K8s jobs for each candidate
     jobs = []
     for i, params in enumerate(candidates):
         job = launch_k8s_job(f"eval-{i}", params)
         jobs.append((job, params))
-    
+
     # Wait and collect results
     results = []
     for job, params in jobs:
@@ -106,7 +106,7 @@ while True:
             "value": value,
             "cost": 1.0
         })
-    
+
     solver.tell(json.dumps(results))
 ```
 
@@ -122,7 +122,7 @@ kind: CronJob
 metadata:
   name: arqon-retune
 spec:
-  schedule: "0 */6 * * *"  # Every 6 hours
+  schedule: "0 */6 * * *" # Every 6 hours
   jobTemplate:
     spec:
       template:

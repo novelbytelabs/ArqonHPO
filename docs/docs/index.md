@@ -519,4 +519,3 @@ hide:
         <div class="ladder-desc">Run local control loops on every node with centralized policy oversight. Autonomous resilience becomes a default property of your software.</div>
     </div>
 </div>
-

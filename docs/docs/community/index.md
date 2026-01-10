@@ -5,10 +5,12 @@ Welcome to the ArqonHPO community! 🎉
 ## Get Help
 
 ### GitHub Discussions
+
 For questions, ideas, and general discussion:
 👉 [ArqonHPO Discussions](https://github.com/novelbytelabs/ArqonHPO/discussions)
 
 ### Issues
+
 Found a bug or have a feature request?
 👉 [Open an Issue](https://github.com/novelbytelabs/ArqonHPO/issues)
 

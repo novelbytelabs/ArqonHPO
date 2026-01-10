@@ -15,6 +15,7 @@ ArqonHPO overhead: **~3ms** for batch, **~100ns** per cached lookup.
 ## Use Cases
 
 ### PID Controller Tuning
+
 Continuously adjust Kp, Ki, Kd gains based on tracking error.
 
 ```python
@@ -38,13 +39,13 @@ while running:
     candidate = solver.ask_one()
     if candidate is None:
         break
-    
+
     # Apply gains
     controller.set_gains(candidate["kp"], candidate["ki"], candidate["kd"])
-    
+
     # Measure tracking error over N timesteps
     error = measure_tracking_error(duration_ms=100)
-    
+
     # Feedback
     solver.seed(json.dumps([{
         "params": candidate,
@@ -54,9 +55,11 @@ while running:
 ```
 
 ### Sensor Fusion Weights
+
 Optimize weights for Kalman filter sensor fusion in real-time.
 
 ### Motor Control Parameters
+
 Tune acceleration curves, jerk limits, and response damping.
 
 ---

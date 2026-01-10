@@ -9,29 +9,31 @@ ArqonHPO provides comprehensive observability through structured logs, Prometheu
 The CLI uses `tracing` and emits structured logs to stderr.
 
 ### Enable JSON Output
+
 ```bash
 arqonhpo --log-format json --log-level info <command>
 ```
 
 ### Log Levels
-| Level | Content |
-|-------|---------|
-| `error` | Failures only |
-| `warn` | Violations, guardrail triggers |
-| `info` | Ask/tell events, phase changes |
+
+| Level   | Content                              |
+| ------- | ------------------------------------ |
+| `error` | Failures only                        |
+| `warn`  | Violations, guardrail triggers       |
+| `info`  | Ask/tell events, phase changes       |
 | `debug` | Strategy decisions, proposal details |
-| `trace` | SPSA iterations, config snapshots |
+| `trace` | SPSA iterations, config snapshots    |
 
 ### Log Fields
 
-| Field | Description |
-|-------|-------------|
-| `command` | Current CLI command |
-| `config` | Path to config file |
-| `state` | Path to state file |
-| `artifact` | Path to artifact file |
-| `phase` | Current PCR phase |
-| `iteration` | SPSA iteration count |
+| Field        | Description              |
+| ------------ | ------------------------ |
+| `command`    | Current CLI command      |
+| `config`     | Path to config file      |
+| `state`      | Path to state file       |
+| `artifact`   | Path to artifact file    |
+| `phase`      | Current PCR phase        |
+| `iteration`  | SPSA iteration count     |
 | `generation` | Config generation number |
 
 ---
@@ -51,33 +53,33 @@ Scrape at `http://127.0.0.1:9898/metrics`.
 
 ### Counters
 
-| Metric | Labels | Description |
-|--------|--------|-------------|
-| `arqonhpo_ask_calls_total` | — | Total ask() invocations |
-| `arqonhpo_tell_calls_total` | — | Total tell() invocations |
-| `arqonhpo_candidates_emitted_total` | — | Total candidates generated |
-| `arqonhpo_results_ingested_total` | — | Total results processed |
-| `arqonhpo_violations_total` | `type` | Safety violations by type |
-| `arqonhpo_rollbacks_total` | — | Rollback operations |
+| Metric                              | Labels | Description                |
+| ----------------------------------- | ------ | -------------------------- |
+| `arqonhpo_ask_calls_total`          | —      | Total ask() invocations    |
+| `arqonhpo_tell_calls_total`         | —      | Total tell() invocations   |
+| `arqonhpo_candidates_emitted_total` | —      | Total candidates generated |
+| `arqonhpo_results_ingested_total`   | —      | Total results processed    |
+| `arqonhpo_violations_total`         | `type` | Safety violations by type  |
+| `arqonhpo_rollbacks_total`          | —      | Rollback operations        |
 
 ### Gauges
 
-| Metric | Labels | Description |
-|--------|--------|-------------|
-| `arqonhpo_history_len` | — | Current history size |
-| `arqonhpo_budget_remaining` | — | Remaining evaluation budget |
-| `arqonhpo_best_value` | — | Current best objective value |
-| `arqonhpo_config_generation` | — | Current config generation |
-| `arqonhpo_spsa_iteration` | — | Current SPSA iteration |
-| `arqonhpo_safe_mode_active` | — | 1 if in safe mode, 0 otherwise |
+| Metric                       | Labels | Description                    |
+| ---------------------------- | ------ | ------------------------------ |
+| `arqonhpo_history_len`       | —      | Current history size           |
+| `arqonhpo_budget_remaining`  | —      | Remaining evaluation budget    |
+| `arqonhpo_best_value`        | —      | Current best objective value   |
+| `arqonhpo_config_generation` | —      | Current config generation      |
+| `arqonhpo_spsa_iteration`    | —      | Current SPSA iteration         |
+| `arqonhpo_safe_mode_active`  | —      | 1 if in safe mode, 0 otherwise |
 
 ### Histograms
 
-| Metric | Buckets | Description |
-|--------|---------|-------------|
-| `arqonhpo_eval_duration_seconds` | 0.001, 0.01, 0.1, 1, 10 | Evaluation latency |
-| `arqonhpo_ask_duration_seconds` | 0.0001, 0.001, 0.01, 0.1 | Ask latency |
-| `arqonhpo_apply_duration_seconds` | 0.00001, 0.0001, 0.001 | Config apply latency |
+| Metric                            | Buckets                  | Description          |
+| --------------------------------- | ------------------------ | -------------------- |
+| `arqonhpo_eval_duration_seconds`  | 0.001, 0.01, 0.1, 1, 10  | Evaluation latency   |
+| `arqonhpo_ask_duration_seconds`   | 0.0001, 0.001, 0.01, 0.1 | Ask latency          |
+| `arqonhpo_apply_duration_seconds` | 0.00001, 0.0001, 0.001   | Config apply latency |
 
 ### Example Queries (PromQL)
 
@@ -126,7 +128,7 @@ groups:
           severity: warning
         annotations:
           summary: "High violation rate in ArqonHPO"
-          
+
       - alert: SafeModeActive
         expr: arqonhpo_safe_mode_active == 1
         for: 1m
@@ -142,15 +144,15 @@ groups:
 
 When `log-level=trace`, spans are emitted:
 
-| Span | Parent | Description |
-|------|--------|-------------|
-| `ask` | — | Full ask() operation |
-| `probe` | `ask` | Probe phase sampling |
-| `classify` | `ask` | Landscape classification |
-| `refine` | `ask` | Strategy execution |
-| `tell` | — | Full tell() operation |
-| `apply` | `tell` | Config application |
-| `guardrails` | `apply` | Safety checks |
+| Span         | Parent  | Description              |
+| ------------ | ------- | ------------------------ |
+| `ask`        | —       | Full ask() operation     |
+| `probe`      | `ask`   | Probe phase sampling     |
+| `classify`   | `ask`   | Landscape classification |
+| `refine`     | `ask`   | Strategy execution       |
+| `tell`       | —       | Full tell() operation    |
+| `apply`      | `tell`  | Config application       |
+| `guardrails` | `apply` | Safety checks            |
 
 ### OpenTelemetry (Planned)
 
@@ -186,16 +188,17 @@ See [Dashboard Reference](dashboard.md) for API endpoints.
 
 All safety-relevant events are logged to the audit trail:
 
-| Event | Trigger |
-|-------|---------|
-| `apply_success` | Config update applied |
-| `apply_rejected` | Proposal violated guardrails |
-| `rollback` | Reverted to baseline |
-| `safe_mode_enter` | Entered safe mode |
-| `safe_mode_exit` | Exited safe mode |
-| `baseline_set` | New baseline established |
+| Event             | Trigger                      |
+| ----------------- | ---------------------------- |
+| `apply_success`   | Config update applied        |
+| `apply_rejected`  | Proposal violated guardrails |
+| `rollback`        | Reverted to baseline         |
+| `safe_mode_enter` | Entered safe mode            |
+| `safe_mode_exit`  | Exited safe mode             |
+| `baseline_set`    | New baseline established     |
 
 Access via:
+
 - Dashboard API: `GET /api/events`
 - CLI export: `arqonhpo export --state state.json`
 

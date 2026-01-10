@@ -36,12 +36,12 @@ We reject this. ArqonHPO is built from the ground up for production:
 
 This project operates under a strict [Constitution](constitution.md) that mandates:
 
-| Principle | Meaning |
-|-----------|---------|
-| **No Happy Path Testing** | Every edge case must be tested |
-| **No Silent Failures** | All errors must surface with context |
-| **Zero Unbounded Growth** | Memory/CPU must be bounded |
-| **Audit Everything** | Every state change is logged |
+| Principle                 | Meaning                              |
+| ------------------------- | ------------------------------------ |
+| **No Happy Path Testing** | Every edge case must be tested       |
+| **No Silent Failures**    | All errors must surface with context |
+| **Zero Unbounded Growth** | Memory/CPU must be bounded           |
+| **Audit Everything**      | Every state change is logged         |
 
 Values are enforced by CI, not just written in docs.
 
@@ -49,13 +49,13 @@ Values are enforced by CI, not just written in docs.
 
 ## History
 
-| Version | Date | Milestone |
-|---------|------|-----------|
-| v0.1 | 2025-06 | Initial release, Nelder-Mead only |
-| v0.2 | 2025-09 | PCR algorithm, Python bindings |
-| v0.3 | 2026-01 | Safety Executor, TPE, Dashboard |
-| v0.4 | 2026-Q1 | (Planned) Helm, OTel, Docker |
-| v1.0 | 2026-Q2 | (Planned) GPU, distributed |
+| Version | Date    | Milestone                         |
+| ------- | ------- | --------------------------------- |
+| v0.1    | 2025-06 | Initial release, Nelder-Mead only |
+| v0.2    | 2025-09 | PCR algorithm, Python bindings    |
+| v0.3    | 2026-01 | Safety Executor, TPE, Dashboard   |
+| v0.4    | 2026-Q1 | (Planned) Helm, OTel, Docker      |
+| v1.0    | 2026-Q2 | (Planned) GPU, distributed        |
 
 ---
 

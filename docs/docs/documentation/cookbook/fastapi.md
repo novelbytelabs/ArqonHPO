@@ -43,7 +43,7 @@ def init_solver(config: ConfigRequest):
 def ask():
     if solver is None:
         raise HTTPException(status_code=400, detail="Solver not initialized")
-    
+
     candidates = solver.ask()
     if candidates is None:
         return {"done": True, "candidates": []}
@@ -53,7 +53,7 @@ def ask():
 def tell(results: list[TellRequest]):
     if solver is None:
         raise HTTPException(status_code=400, detail="Solver not initialized")
-    
+
     results_list = [
         {"params": r.params, "value": r.value, "cost": r.cost}
         for r in results
@@ -99,16 +99,16 @@ while True:
     # Ask for candidates
     resp = requests.get("http://localhost:8000/ask")
     data = resp.json()
-    
+
     if data["done"]:
         break
-    
+
     # Evaluate candidates
     results = []
     for params in data["candidates"]:
         value = evaluate(params)  # Your function
         results.append({"params": params, "value": value, "cost": 1.0})
-    
+
     # Tell results
     requests.post("http://localhost:8000/tell", json=results)
 ```
@@ -166,6 +166,7 @@ docker run -p 8000:8000 arqon-api
 ## OpenAPI Docs
 
 FastAPI auto-generates OpenAPI docs at:
+
 - Swagger UI: `http://localhost:8000/docs`
 - ReDoc: `http://localhost:8000/redoc`
 

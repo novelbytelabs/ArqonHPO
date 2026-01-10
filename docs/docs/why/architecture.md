@@ -15,7 +15,7 @@ graph LR
         D --> E[Safety Executor]
         E --> F[Apply]
     end
-    
+
     F --> G[Your System]
     G --> A
 ```
@@ -27,6 +27,7 @@ graph LR
 ArqonHPO uses a **Probe → Classify → Refine** architecture:
 
 ### 1. Probe (Tier 0)
+
 **Goal:** Efficiently scan the parameter landscape.
 
 - Uses **Low-Discrepancy Sequences** (LDS) for uniform coverage
@@ -34,6 +35,7 @@ ArqonHPO uses a **Probe → Classify → Refine** architecture:
 - Stateless, deterministic, shardable via `ArqonProbe`
 
 ### 2. Classify (Tier Ω)
+
 **Goal:** Detect whether the landscape is structured or chaotic.
 
 - Analyzes probe results for patterns
@@ -41,9 +43,11 @@ ArqonHPO uses a **Probe → Classify → Refine** architecture:
 - Detects: smooth gradients vs. noisy/multimodal surfaces
 
 ### 3. Refine (Tier 2)
+
 **Goal:** Converge to optimal parameters.
 
 Strategies:
+
 - **Nelder-Mead** — Simplex method for smooth functions
 - **Multi-Start Nelder-Mead** — Parallel restarts for multimodal
 - **TPE** — Bayesian optimization for noisy landscapes
@@ -69,13 +73,13 @@ graph TD
 
 ### Key Components
 
-| Component | Responsibility |
-|-----------|----------------|
-| `SafetyExecutor` | Enforces all safety rules |
-| `Guardrails` | Configures bounds, rate limits, delta limits |
-| `RollbackPolicy` | Defines when to revert changes |
-| `ControlSafety` | Implements safe mode and exemptions |
-| `AuditQueue` | Lock-free event logging |
+| Component        | Responsibility                               |
+| ---------------- | -------------------------------------------- |
+| `SafetyExecutor` | Enforces all safety rules                    |
+| `Guardrails`     | Configures bounds, rate limits, delta limits |
+| `RollbackPolicy` | Defines when to revert changes               |
+| `ControlSafety`  | Implements safe mode and exemptions          |
+| `AuditQueue`     | Lock-free event logging                      |
 
 ---
 
@@ -109,12 +113,12 @@ For **online mode**, use `ask_one()` + `seed()` for single-candidate flow.
 
 ## Performance Characteristics
 
-| Metric | Value |
-|--------|-------|
-| Overhead per trial | ~3ms |
-| Throughput | ~33,000 trials/sec |
-| Memory | O(history_size) |
-| Deterministic | Yes (with fixed seed) |
+| Metric             | Value                 |
+| ------------------ | --------------------- |
+| Overhead per trial | ~3ms                  |
+| Throughput         | ~33,000 trials/sec    |
+| Memory             | O(history_size)       |
+| Deterministic      | Yes (with fixed seed) |
 
 ---
 

@@ -14,12 +14,12 @@ arqonhpo dashboard --state state.json --addr 127.0.0.1:3030
 
 ### Options
 
-| Flag | Default | Description |
-|------|---------|-------------|
-| `--state` | (required) | Path to solver state file |
-| `--events` | (optional) | Path to events log file |
-| `--actions` | (optional) | Path to actions log file |
-| `--addr` | `127.0.0.1:3030` | Address to bind HTTP server |
+| Flag        | Default          | Description                 |
+| ----------- | ---------------- | --------------------------- |
+| `--state`   | (required)       | Path to solver state file   |
+| `--events`  | (optional)       | Path to events log file     |
+| `--actions` | (optional)       | Path to actions log file    |
+| `--addr`    | `127.0.0.1:3030` | Address to bind HTTP server |
 
 Then open `http://127.0.0.1:3030` in your browser.
 
@@ -50,6 +50,7 @@ curl http://127.0.0.1:3030/api/state
 ```
 
 **Response:**
+
 ```json
 {
   "config": {
@@ -77,13 +78,14 @@ curl http://127.0.0.1:3030/api/summary
 ```
 
 **Response:**
+
 ```json
 {
   "phase": "Refine",
   "budget_used": 45,
   "budget_total": 100,
   "best_value": 0.0234,
-  "best_params": {"x": 1.98, "y": -0.99},
+  "best_params": { "x": 1.98, "y": -0.99 },
   "history_len": 45
 }
 ```
@@ -100,17 +102,18 @@ curl "http://127.0.0.1:3030/api/events?since=1704067200"
 
 **Query Parameters:**
 
-| Param | Type | Description |
-|-------|------|-------------|
-| `since` | int | Unix timestamp, return events after this time |
-| `limit` | int | Maximum events to return (default: 100) |
+| Param   | Type | Description                                   |
+| ------- | ---- | --------------------------------------------- |
+| `since` | int  | Unix timestamp, return events after this time |
+| `limit` | int  | Maximum events to return (default: 100)       |
 
 **Response:**
+
 ```json
 {
   "events": [
-    {"ts": 1704067201, "type": "ask", "batch": 4},
-    {"ts": 1704067202, "type": "tell", "count": 4}
+    { "ts": 1704067201, "type": "ask", "batch": 4 },
+    { "ts": 1704067202, "type": "tell", "count": 4 }
   ]
 }
 ```
@@ -126,11 +129,12 @@ curl "http://127.0.0.1:3030/api/actions?since=0"
 ```
 
 **Response:**
+
 ```json
 {
   "actions": [
-    {"ts": 1704067300, "type": "pause"},
-    {"ts": 1704067400, "type": "resume"}
+    { "ts": 1704067300, "type": "pause" },
+    { "ts": 1704067400, "type": "resume" }
   ]
 }
 ```
@@ -149,16 +153,17 @@ curl -X POST http://127.0.0.1:3030/api/actions \
 
 **Action Types:**
 
-| Type | Description |
-|------|-------------|
-| `pause` | Pause optimization |
-| `resume` | Resume optimization |
-| `stop` | Stop optimization (cannot resume) |
-| `rollback` | Revert to previous best |
+| Type       | Description                       |
+| ---------- | --------------------------------- |
+| `pause`    | Pause optimization                |
+| `resume`   | Resume optimization               |
+| `stop`     | Stop optimization (cannot resume) |
+| `rollback` | Revert to previous best           |
 
 **Response:**
+
 ```json
-{"ok": true, "message": "Action queued"}
+{ "ok": true, "message": "Action queued" }
 ```
 
 ---
@@ -169,6 +174,7 @@ curl -X POST http://127.0.0.1:3030/api/actions \
 > The dashboard does not have authentication. Bind only to `127.0.0.1` or use a reverse proxy with auth.
 
 For production use:
+
 ```bash
 # Behind nginx with basic auth
 arqonhpo dashboard --state state.json --addr 127.0.0.1:3030
