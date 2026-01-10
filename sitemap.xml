@@ -2,138 +2,226 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://novelbytelabs.github.io/ArqonHPO/</loc>
-         <lastmod>2025-12-18</lastmod>
+         <lastmod>2026-01-10</lastmod>
     </url>
     <url>
-         <loc>https://novelbytelabs.github.io/ArqonHPO/adrs/001-core-architecture/</loc>
-         <lastmod>2025-12-18</lastmod>
+         <loc>https://novelbytelabs.github.io/ArqonHPO/arqonship/</loc>
+         <lastmod>2026-01-10</lastmod>
     </url>
     <url>
-         <loc>https://novelbytelabs.github.io/ArqonHPO/adrs/002-python-bridge/</loc>
-         <lastmod>2025-12-18</lastmod>
+         <loc>https://novelbytelabs.github.io/ArqonHPO/arqonship/architecture/</loc>
+         <lastmod>2026-01-10</lastmod>
+    </url>
+    <url>
+         <loc>https://novelbytelabs.github.io/ArqonHPO/arqonship/cli-reference/</loc>
+         <lastmod>2026-01-10</lastmod>
+    </url>
+    <url>
+         <loc>https://novelbytelabs.github.io/ArqonHPO/arqonship/configuration/</loc>
+         <lastmod>2026-01-10</lastmod>
+    </url>
+    <url>
+         <loc>https://novelbytelabs.github.io/ArqonHPO/arqonship/developer-guide/</loc>
+         <lastmod>2026-01-10</lastmod>
     </url>
     <url>
          <loc>https://novelbytelabs.github.io/ArqonHPO/benchmarks/</loc>
-         <lastmod>2025-12-18</lastmod>
+         <lastmod>2026-01-10</lastmod>
     </url>
     <url>
          <loc>https://novelbytelabs.github.io/ArqonHPO/benchmarks/BENCHMARK_REPORT/</loc>
-         <lastmod>2025-12-18</lastmod>
+         <lastmod>2026-01-10</lastmod>
     </url>
     <url>
          <loc>https://novelbytelabs.github.io/ArqonHPO/benchmarks/methodology/</loc>
-         <lastmod>2025-12-18</lastmod>
+         <lastmod>2026-01-10</lastmod>
     </url>
     <url>
          <loc>https://novelbytelabs.github.io/ArqonHPO/community/</loc>
-         <lastmod>2025-12-18</lastmod>
+         <lastmod>2026-01-10</lastmod>
     </url>
     <url>
          <loc>https://novelbytelabs.github.io/ArqonHPO/demos/</loc>
-         <lastmod>2025-12-18</lastmod>
+         <lastmod>2026-01-10</lastmod>
     </url>
     <url>
          <loc>https://novelbytelabs.github.io/ArqonHPO/demos/edge/</loc>
-         <lastmod>2025-12-18</lastmod>
+         <lastmod>2026-01-10</lastmod>
     </url>
     <url>
          <loc>https://novelbytelabs.github.io/ArqonHPO/demos/inference/</loc>
-         <lastmod>2025-12-18</lastmod>
+         <lastmod>2026-01-10</lastmod>
     </url>
     <url>
          <loc>https://novelbytelabs.github.io/ArqonHPO/demos/systems/</loc>
-         <lastmod>2025-12-18</lastmod>
+         <lastmod>2026-01-10</lastmod>
     </url>
     <url>
          <loc>https://novelbytelabs.github.io/ArqonHPO/documentation/</loc>
-         <lastmod>2025-12-18</lastmod>
+         <lastmod>2026-01-10</lastmod>
+    </url>
+    <url>
+         <loc>https://novelbytelabs.github.io/ArqonHPO/documentation/faq/</loc>
+         <lastmod>2026-01-10</lastmod>
+    </url>
+    <url>
+         <loc>https://novelbytelabs.github.io/ArqonHPO/documentation/installation/</loc>
+         <lastmod>2026-01-10</lastmod>
+    </url>
+    <url>
+         <loc>https://novelbytelabs.github.io/ArqonHPO/documentation/migration/</loc>
+         <lastmod>2026-01-10</lastmod>
     </url>
     <url>
          <loc>https://novelbytelabs.github.io/ArqonHPO/documentation/quickstart/</loc>
-         <lastmod>2025-12-18</lastmod>
+         <lastmod>2026-01-10</lastmod>
+    </url>
+    <url>
+         <loc>https://novelbytelabs.github.io/ArqonHPO/documentation/troubleshooting/</loc>
+         <lastmod>2026-01-10</lastmod>
+    </url>
+    <url>
+         <loc>https://novelbytelabs.github.io/ArqonHPO/documentation/concepts/batch_vs_online/</loc>
+         <lastmod>2026-01-10</lastmod>
+    </url>
+    <url>
+         <loc>https://novelbytelabs.github.io/ArqonHPO/documentation/concepts/determinism/</loc>
+         <lastmod>2026-01-10</lastmod>
+    </url>
+    <url>
+         <loc>https://novelbytelabs.github.io/ArqonHPO/documentation/concepts/metabolic_architecture/</loc>
+         <lastmod>2026-01-10</lastmod>
     </url>
     <url>
          <loc>https://novelbytelabs.github.io/ArqonHPO/documentation/concepts/pcr_algorithm/</loc>
-         <lastmod>2025-12-18</lastmod>
+         <lastmod>2026-01-10</lastmod>
     </url>
     <url>
          <loc>https://novelbytelabs.github.io/ArqonHPO/documentation/concepts/probe_deep_dive/</loc>
-         <lastmod>2025-12-18</lastmod>
+         <lastmod>2026-01-10</lastmod>
+    </url>
+    <url>
+         <loc>https://novelbytelabs.github.io/ArqonHPO/documentation/concepts/safety/</loc>
+         <lastmod>2026-01-10</lastmod>
+    </url>
+    <url>
+         <loc>https://novelbytelabs.github.io/ArqonHPO/documentation/concepts/strategies/</loc>
+         <lastmod>2026-01-10</lastmod>
     </url>
     <url>
          <loc>https://novelbytelabs.github.io/ArqonHPO/documentation/cookbook/</loc>
-         <lastmod>2025-12-18</lastmod>
+         <lastmod>2026-01-10</lastmod>
+    </url>
+    <url>
+         <loc>https://novelbytelabs.github.io/ArqonHPO/documentation/cookbook/fastapi/</loc>
+         <lastmod>2026-01-10</lastmod>
+    </url>
+    <url>
+         <loc>https://novelbytelabs.github.io/ArqonHPO/documentation/cookbook/kubernetes/</loc>
+         <lastmod>2026-01-10</lastmod>
     </url>
     <url>
          <loc>https://novelbytelabs.github.io/ArqonHPO/documentation/cookbook/ml_tuning/</loc>
-         <lastmod>2025-12-18</lastmod>
+         <lastmod>2026-01-10</lastmod>
+    </url>
+    <url>
+         <loc>https://novelbytelabs.github.io/ArqonHPO/documentation/cookbook/mlflow/</loc>
+         <lastmod>2026-01-10</lastmod>
+    </url>
+    <url>
+         <loc>https://novelbytelabs.github.io/ArqonHPO/documentation/cookbook/ray/</loc>
+         <lastmod>2026-01-10</lastmod>
     </url>
     <url>
          <loc>https://novelbytelabs.github.io/ArqonHPO/documentation/cookbook/sim_tuning/</loc>
-         <lastmod>2025-12-18</lastmod>
+         <lastmod>2026-01-10</lastmod>
+    </url>
+    <url>
+         <loc>https://novelbytelabs.github.io/ArqonHPO/documentation/cookbook/warm_starting/</loc>
+         <lastmod>2026-01-10</lastmod>
+    </url>
+    <url>
+         <loc>https://novelbytelabs.github.io/ArqonHPO/documentation/integrations/</loc>
+         <lastmod>2026-01-10</lastmod>
+    </url>
+    <url>
+         <loc>https://novelbytelabs.github.io/ArqonHPO/documentation/integrations/prometheus/</loc>
+         <lastmod>2026-01-10</lastmod>
     </url>
     <url>
          <loc>https://novelbytelabs.github.io/ArqonHPO/documentation/reference/cli/</loc>
-         <lastmod>2025-12-18</lastmod>
+         <lastmod>2026-01-10</lastmod>
+    </url>
+    <url>
+         <loc>https://novelbytelabs.github.io/ArqonHPO/documentation/reference/dashboard/</loc>
+         <lastmod>2026-01-10</lastmod>
+    </url>
+    <url>
+         <loc>https://novelbytelabs.github.io/ArqonHPO/documentation/reference/error_codes/</loc>
+         <lastmod>2026-01-10</lastmod>
+    </url>
+    <url>
+         <loc>https://novelbytelabs.github.io/ArqonHPO/documentation/reference/hotpath/</loc>
+         <lastmod>2026-01-10</lastmod>
+    </url>
+    <url>
+         <loc>https://novelbytelabs.github.io/ArqonHPO/documentation/reference/observability/</loc>
+         <lastmod>2026-01-10</lastmod>
     </url>
     <url>
          <loc>https://novelbytelabs.github.io/ArqonHPO/documentation/reference/python/</loc>
-         <lastmod>2025-12-18</lastmod>
+         <lastmod>2026-01-10</lastmod>
     </url>
     <url>
          <loc>https://novelbytelabs.github.io/ArqonHPO/documentation/reference/rust/</loc>
-         <lastmod>2025-12-18</lastmod>
+         <lastmod>2026-01-10</lastmod>
+    </url>
+    <url>
+         <loc>https://novelbytelabs.github.io/ArqonHPO/documentation/reference/tui/</loc>
+         <lastmod>2026-01-10</lastmod>
     </url>
     <url>
          <loc>https://novelbytelabs.github.io/ArqonHPO/project/CODE_OF_CONDUCT/</loc>
-         <lastmod>2025-12-18</lastmod>
+         <lastmod>2026-01-10</lastmod>
     </url>
     <url>
          <loc>https://novelbytelabs.github.io/ArqonHPO/project/CONTRIBUTING/</loc>
-         <lastmod>2025-12-18</lastmod>
+         <lastmod>2026-01-10</lastmod>
     </url>
     <url>
          <loc>https://novelbytelabs.github.io/ArqonHPO/project/SECURITY/</loc>
-         <lastmod>2025-12-18</lastmod>
+         <lastmod>2026-01-10</lastmod>
     </url>
     <url>
          <loc>https://novelbytelabs.github.io/ArqonHPO/project/about/</loc>
-         <lastmod>2025-12-18</lastmod>
+         <lastmod>2026-01-10</lastmod>
     </url>
     <url>
          <loc>https://novelbytelabs.github.io/ArqonHPO/project/changelog/</loc>
-         <lastmod>2025-12-18</lastmod>
+         <lastmod>2026-01-10</lastmod>
     </url>
     <url>
          <loc>https://novelbytelabs.github.io/ArqonHPO/project/ci_cd/</loc>
-         <lastmod>2025-12-18</lastmod>
+         <lastmod>2026-01-10</lastmod>
     </url>
     <url>
          <loc>https://novelbytelabs.github.io/ArqonHPO/project/constitution/</loc>
-         <lastmod>2025-12-18</lastmod>
-    </url>
-    <url>
-         <loc>https://novelbytelabs.github.io/ArqonHPO/project/contributing/</loc>
-         <lastmod>2025-12-18</lastmod>
+         <lastmod>2026-01-10</lastmod>
     </url>
     <url>
          <loc>https://novelbytelabs.github.io/ArqonHPO/project/roadmap/</loc>
-         <lastmod>2025-12-18</lastmod>
+         <lastmod>2026-01-10</lastmod>
     </url>
     <url>
-         <loc>https://novelbytelabs.github.io/ArqonHPO/projects/plans/sdk/</loc>
-         <lastmod>2025-12-18</lastmod>
-    </url>
-    <url>
-         <loc>https://novelbytelabs.github.io/ArqonHPO/reports/TDD_ASSESSMENT_REPORT/</loc>
-         <lastmod>2025-12-18</lastmod>
+         <loc>https://novelbytelabs.github.io/ArqonHPO/project/test_coverage/</loc>
+         <lastmod>2026-01-10</lastmod>
     </url>
     <url>
          <loc>https://novelbytelabs.github.io/ArqonHPO/why/</loc>
-         <lastmod>2025-12-18</lastmod>
+         <lastmod>2026-01-10</lastmod>
     </url>
     <url>
          <loc>https://novelbytelabs.github.io/ArqonHPO/why/architecture/</loc>
-         <lastmod>2025-12-18</lastmod>
+         <lastmod>2026-01-10</lastmod>
     </url>
 </urlset>
