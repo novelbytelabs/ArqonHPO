@@ -1,38 +1,46 @@
-# ArqonHPO
+<div align="center">
+  <img src="docs/docs/assets/logo_with_glow.png" alt="ArqonHPO Logo" width="128"/>
+  <h1>Arqon Runtime Optimizer</h1>
+  <h3>Optimization isn't a workflow anymore.<br>It's a control loop.</h3>
+  <p>Safe self-optimization, robustness, and resilience for live systems—with microsecond-class overhead and deterministic governance.</p>
+  <>
 
-<!-- CI / Build Status -->
-[![CI](https://github.com/novelbytelabs/ArqonHPO/actions/workflows/ci.yml/badge.svg)](https://github.com/novelbytelabs/ArqonHPO/actions/workflows/ci.yml)
-[![Linux](https://img.shields.io/badge/Linux-passing-brightgreen?logo=linux&logoColor=white)](https://github.com/novelbytelabs/ArqonHPO/actions/workflows/ci.yml)
-[![macOS](https://img.shields.io/badge/macOS-passing-brightgreen?logo=apple&logoColor=white)](https://github.com/novelbytelabs/ArqonHPO/actions/workflows/ci.yml)
-[![Windows](https://img.shields.io/badge/Windows-passing-brightgreen?logo=windows&logoColor=white)](https://github.com/novelbytelabs/ArqonHPO/actions/workflows/ci.yml)
 
-<!-- Coverage & Quality -->
-<!-- Coverage (Dynamic Components) -->
-[![Project](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/novelbytelabs/ArqonHPO/badges/project.json)](https://github.com/novelbytelabs/ArqonHPO/actions)
-[![Core](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/novelbytelabs/ArqonHPO/badges/core.json)](https://github.com/novelbytelabs/ArqonHPO/tree/main/crates/core)
-[![Hotpath](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/novelbytelabs/ArqonHPO/badges/hotpath.json)](https://github.com/novelbytelabs/ArqonHPO/tree/main/crates/hotpath)
-[![CLI](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/novelbytelabs/ArqonHPO/badges/cli.json)](https://github.com/novelbytelabs/ArqonHPO/tree/main/crates/cli)
-<!-- Hybrid Codecov link -->
-[![codecov](https://codecov.io/gh/novelbytelabs/ArqonHPO/branch/main/graph/badge.svg)](https://codecov.io/gh/novelbytelabs/ArqonHPO)
+  <!-- CI / Build Status -->
+  [![CI](https://github.com/novelbytelabs/ArqonHPO/actions/workflows/ci.yml/badge.svg)](https://github.com/novelbytelabs/ArqonHPO/actions/workflows/ci.yml)
+  [![Linux](https://img.shields.io/badge/Linux-passing-brightgreen?logo=linux&logoColor=white)](https://github.com/novelbytelabs/ArqonHPO/actions/workflows/ci.yml)
+  [![macOS](https://img.shields.io/badge/macOS-passing-brightgreen?logo=apple&logoColor=white)](https://github.com/novelbytelabs/ArqonHPO/actions/workflows/ci.yml)
+  [![Windows](https://img.shields.io/badge/Windows-passing-brightgreen?logo=windows&logoColor=white)](https://github.com/novelbytelabs/ArqonHPO/actions/workflows/ci.yml)
 
-<!-- Version & Language -->
-[![Crates.io](https://img.shields.io/crates/v/arqonhpo-core?label=crates.io)](https://crates.io/crates/arqonhpo-core)
-[![PyPI](https://img.shields.io/pypi/v/arqonhpo?label=PyPI)](https://pypi.org/project/arqonhpo/)
-[![Rust](https://img.shields.io/badge/rust-1.82%2B-orange?logo=rust)](https://www.rust-lang.org/)
-[![Python](https://img.shields.io/badge/python-3.10%2B-blue?logo=python&logoColor=white)](https://www.python.org/)
+  <!-- Coverage & Quality -->
+  <br/>
+  [![Project](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/novelbytelabs/ArqonHPO/badges/project.json)](https://github.com/novelbytelabs/ArqonHPO/actions)
+  [![Core](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/novelbytelabs/ArqonHPO/badges/core.json)](https://github.com/novelbytelabs/ArqonHPO/tree/main/crates/core)
+  [![Hotpath](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/novelbytelabs/ArqonHPO/badges/hotpath.json)](https://github.com/novelbytelabs/ArqonHPO/tree/main/crates/hotpath)
+  [![CLI](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/novelbytelabs/ArqonHPO/badges/cli.json)](https://github.com/novelbytelabs/ArqonHPO/tree/main/crates/cli)
+  [![codecov](https://codecov.io/gh/novelbytelabs/ArqonHPO/branch/main/graph/badge.svg)](https://codecov.io/gh/novelbytelabs/ArqonHPO)
 
-<!-- Documentation & License -->
-[![Docs](https://img.shields.io/badge/docs-mkdocs-blue?logo=readthedocs)](https://novelbytelabs.github.io/ArqonHPO/)
-[![License](https://img.shields.io/badge/license-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+  <!-- Version & Language & Stats -->
+  <br/>
+  [![Crates.io](https://img.shields.io/crates/v/arqonhpo-core?label=crates.io)](https://crates.io/crates/arqonhpo-core)
+  [![PyPI](https://img.shields.io/pypi/v/arqonhpo?label=PyPI)](https://pypi.org/project/arqonhpo/)
+  [![Rust](https://img.shields.io/badge/rust-1.82%2B-orange?logo=rust)](https://www.rust-lang.org/)
+  [![Python](https://img.shields.io/badge/python-3.10%2B-blue?logo=python&logoColor=white)](https://www.python.org/)
+  [![Docs](https://img.shields.io/badge/docs-mkdocs-blue?logo=readthedocs)](https://novelbytelabs.github.io/ArqonHPO/)
+  [![License](https://img.shields.io/badge/license-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+  <br/>
+  [![GitHub stars](https://img.shields.io/github/stars/novelbytelabs/ArqonHPO?style=social)](https://github.com/novelbytelabs/ArqonHPO/stargazers)
+  [![GitHub forks](https://img.shields.io/github/forks/novelbytelabs/ArqonHPO?style=social)](https://github.com/novelbytelabs/ArqonHPO/network/members)
+  [![Contributors](https://img.shields.io/github/contributors/novelbytelabs/ArqonHPO)](https://github.com/novelbytelabs/ArqonHPO/graphs/contributors)
+  [![Downloads](https://img.shields.io/github/downloads/novelbytelabs/ArqonHPO/total?label=downloads)](https://github.com/novelbytelabs/ArqonHPO/releases)
+  [![PyPI Downloads](https://img.shields.io/pypi/dm/arqonhpo?label=PyPI%20downloads)](https://pypi.org/project/arqonhpo/)
 
-<!-- GitHub Stats -->
-[![GitHub stars](https://img.shields.io/github/stars/novelbytelabs/ArqonHPO?style=social)](https://github.com/novelbytelabs/ArqonHPO/stargazers)
-[![GitHub forks](https://img.shields.io/github/forks/novelbytelabs/ArqonHPO?style=social)](https://github.com/novelbytelabs/ArqonHPO/network/members)
-[![Contributors](https://img.shields.io/github/contributors/novelbytelabs/ArqonHPO)](https://github.com/novelbytelabs/ArqonHPO/graphs/contributors)
-
-<!-- Downloads -->
-[![Downloads](https://img.shields.io/github/downloads/novelbytelabs/ArqonHPO/total?label=downloads)](https://github.com/novelbytelabs/ArqonHPO/releases)
-[![PyPI Downloads](https://img.shields.io/pypi/dm/arqonhpo?label=PyPI%20downloads)](https://pypi.org/project/arqonhpo/)
+  <p>
+    🛡️ Safe by Construction &nbsp;&nbsp;•&nbsp;&nbsp; 🎯 Deterministic & Replayable &nbsp;&nbsp;•&nbsp;&nbsp; ⚡ Hot-Path Ready
+  </p>
+  
+  <p>Powered by <code>ArqonHPO</code></p>
+</div>
 
 
 # **Machine-speed optimization for live systems.**  
