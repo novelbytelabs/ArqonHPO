@@ -130,3 +130,4 @@ jobs:
           repository-url: https://pypi.pkg.github.com/${{ github.repository_owner }}/
           packages-dir: dist
           skip-existing: true
+          verbose: true
