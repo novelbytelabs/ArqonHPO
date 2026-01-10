@@ -99,8 +99,7 @@ Releases are automated via `.github/workflows/release.yml`.
 - **Unique release asset names:** Release uploads must have unique basenames. If multiple artifacts are named the same (e.g., `arqonhpo`), `action-gh-release` can fail or overwrite assets.
 - **SLSA subjects are required:** The SLSA generator needs `base64-subjects`; generate a `sha256sum` list of artifacts and pass it to the provenance job.
 - **Publish after release creation:** If provenance or other jobs upload assets, avoid doing so before the GitHub Release exists. Otherwise uploads can fail.
-- **GitHub Packages != PyPI:** Publishing to PyPI does not populate the GitHub Packages tab. You must publish to `pypi.pkg.github.com` separately.
-- **GitHub Packages URL:** Use `https://pypi.pkg.github.com/<owner>/` for Python package uploads. `upload.pypi.pkg.github.com` fails TLS verification.
+- **PyPI is the canonical channel:** Publish Python packages to PyPI for the standard install path.
 - **Tag triggers matter:** Release/publish workflows trigger on tags. If you fix a workflow, move the tag to the new commit and push the tag.
 
 ---

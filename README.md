@@ -100,6 +100,12 @@ Your actual performance will depend on CPU, build flags, and integration, but th
 pip install arqonhpo
 ```
 
+Run the CLI after install:
+
+```bash
+arqonhpo --help
+```
+
 Build from source (Python bindings via maturin):
 
 ```bash
@@ -208,4 +214,3 @@ See `project/CONTRIBUTING.md`.
 ## License
 
 Apache License 2.0 — see `project/LICENSE`.
-
