@@ -9,7 +9,7 @@ arrow-array = "55.2.0"
 arrow-schema = "55.2.0"
 candle-core = "0.8.2"
 candle-nn = "0.8.2"
-candle-transformers = "0.8.2"
+candle-transformers = "0.9.1"
 chrono = "=0.4.41"
 clap = { workspace = true, features = ["derive"] }
 futures = "0.3"
