@@ -4,7 +4,6 @@
 //! Here we use channels to test the interaction model.
 
 use super::{DownstreamMessage, UpstreamMessage};
-use std::collections::HashMap;
 use std::sync::mpsc::{channel, Receiver, Sender};
 
 /// Client for interacting with the Governance Control Plane

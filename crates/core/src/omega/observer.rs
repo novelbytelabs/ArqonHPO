@@ -1,6 +1,5 @@
 use crate::omega::{Candidate, DiscoverySource};
 use crate::variant_catalog::{Variant, VariantConstraints, VariantType};
-use std::collections::HashMap;
 
 /// Context provided to the Observer (LLM) to inform its suggestions
 #[derive(Debug, Clone)]

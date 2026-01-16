@@ -6,7 +6,7 @@
 //! 2. Evaluate Candidates (Heavy simulation/benchmarking).
 //! 3. Promote Winners to the Online Variant Catalog.
 
-use crate::variant_catalog::{Variant, VariantId};
+use crate::variant_catalog::Variant;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 

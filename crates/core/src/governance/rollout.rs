@@ -6,7 +6,7 @@
 use super::RolloutConfig;
 use crate::rng::Prng;
 use rand::{Rng, SeedableRng};
-use std::time::{Duration, Instant};
+use std::time::Instant;
 
 /// Tracks the state of a gradual rollout
 #[derive(Debug)]
