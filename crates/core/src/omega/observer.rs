@@ -1,5 +1,5 @@
 use crate::omega::{Candidate, DiscoverySource};
-use crate::variant_catalog::{Variant, VariantType, VariantConstraints};
+use crate::variant_catalog::{Variant, VariantConstraints, VariantType};
 use std::collections::HashMap;
 
 /// Context provided to the Observer (LLM) to inform its suggestions
@@ -51,21 +51,24 @@ impl Observer for MockLlmObserver {
             "System: You are an AI optimization assistant.\nContext: {:?}\nGoal: {}\nPropose a Variant JSON.",
             context.recent_telemetry, context.goal_description
         );
-        
+
         // 2. Call LLM (Mocked)
         let response_json = self.simulate_llm_response(context);
-        
+
         // 3. Parse Response
         // We use a simple untyped parse for the mock, then map to Candidate
         let parsed: serde_json::Value = match serde_json::from_str(&response_json) {
             Ok(v) => v,
             Err(_) => return None,
         };
-        
+
         // 4. Construct Candidate
         let variant = Variant {
             id: 0, // Assigned by catalog later
-            name: parsed["variant_name"].as_str().unwrap_or("unknown").to_string(),
+            name: parsed["variant_name"]
+                .as_str()
+                .unwrap_or("unknown")
+                .to_string(),
             version: "1.0-llm".to_string(),
             variant_type: VariantType::Kernel,
             constraints: VariantConstraints::default(),
@@ -78,7 +81,7 @@ impl Observer for MockLlmObserver {
                 .map(|(k, v)| (k.clone(), v.as_str().unwrap_or("").to_string()))
                 .collect(),
         };
-        
+
         Some(Candidate {
             id: format!("cand_llm_{}", rand::random::<u32>()),
             source: DiscoverySource::LlmObserver,

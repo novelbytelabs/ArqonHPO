@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 pub mod observer;
-pub use observer::{Observer, MockLlmObserver, ObserverContext};
+pub use observer::{MockLlmObserver, Observer, ObserverContext};
 
 /// A candidate solution proposed by the Discovery Tier
 #[derive(Debug, Clone, Serialize, Deserialize)]
