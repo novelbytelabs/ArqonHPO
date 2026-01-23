@@ -56,7 +56,7 @@ while True:
     batch = solver.ask()
     if batch is None:
         break
-    
+
     results = []
     for params in batch:
         loss = objective(params)
@@ -68,7 +68,7 @@ while True:
             "value": loss,
             "cost": 0.5
         })
-    
+
     solver.tell(json.dumps(results))
 
 print(f"Best: n_estimators={int(best['params']['n_estimators'])}, max_depth={int(best['params']['max_depth'])}")
@@ -97,10 +97,10 @@ This provides:
 
 Compared to fixed bandwidth (e.g., 10% of range):
 
-| Method | Pros | Cons |
-|--------|------|------|
-| **Scott's Rule** | Adapts to data distribution, optimal for smooth densities | May under-smooth in tails |
-| **Fixed 10%** | Simple, predictable | Ignores data structure, often suboptimal |
+| Method           | Pros                                                      | Cons                                     |
+| ---------------- | --------------------------------------------------------- | ---------------------------------------- |
+| **Scott's Rule** | Adapts to data distribution, optimal for smooth densities | May under-smooth in tails                |
+| **Fixed 10%**    | Simple, predictable                                       | Ignores data structure, often suboptimal |
 
 ArqonHPO defaults to Scott's Rule but supports alternatives via `BandwidthRule`:
 
@@ -109,4 +109,3 @@ TPE::with_bandwidth_rule(dim, BandwidthRule::Scott)    // Default
 TPE::with_bandwidth_rule(dim, BandwidthRule::Silverman)  // Alternative
 TPE::with_bandwidth_rule(dim, BandwidthRule::Fixed(0.1)) // Legacy behavior
 ```
-

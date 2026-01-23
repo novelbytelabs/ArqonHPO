@@ -128,17 +128,23 @@ impl Solver {
                     let current_count = self.history.len();
 
                     if current_count < probe_budget {
-                        if current_count == 0 {
-                            let candidates = self.probe.sample(&self.config);
-                            return Some(candidates);
-                        } else if self.history.len() >= probe_budget {
-                            self.phase = Phase::Classify;
-                            continue;
+                        let all_candidates = self.probe.sample(&self.config);
+                        if current_count > 0 {
+                            // Incremental sampling: skip already-evaluated points
+                            let remaining: Vec<_> =
+                                all_candidates.into_iter().skip(current_count).collect();
+                            if remaining.is_empty() {
+                                self.phase = Phase::Classify;
+                                continue;
+                            }
+                            return Some(remaining);
                         } else {
-                            return None;
+                            // Initial sampling
+                            return Some(all_candidates);
                         }
                     } else {
                         self.phase = Phase::Classify;
+                        continue;
                     }
                 }
                 Phase::Classify => {

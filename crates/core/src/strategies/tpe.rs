@@ -63,7 +63,6 @@ impl TPE {
         // Scott's Rule: 1.06 × σ × n^(-1/5)
         let bandwidth = 1.06 * stddev * n.powf(-0.2);
 
-        // Minimum bandwidth to prevent degenerate kernels
         bandwidth.max(1e-6)
     }
 
@@ -103,11 +102,15 @@ impl TPE {
 
     /// Compute bandwidth for a dimension based on selected rule
     fn compute_bandwidth(&self, values: &[f64], range: f64) -> f64 {
-        match self.bandwidth_rule {
+        let bw = match self.bandwidth_rule {
             BandwidthRule::Scott => Self::scotts_bandwidth(values),
             BandwidthRule::Silverman => Self::silverman_bandwidth(values),
             BandwidthRule::Fixed => Self::fixed_bandwidth(range, 0.1),
-        }
+        };
+
+        // Enforce a minimum bandwidth (2% of range) to ensure exploration
+        // even when history is clustered. Critical for Online Mode.
+        bw.max(range * 0.02)
     }
 
     // Gaussian PDF

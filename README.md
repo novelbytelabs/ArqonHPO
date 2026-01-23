@@ -1,43 +1,50 @@
-# ArqonHPO
+<div align="center">
+  <img src="docs/docs/assets/logo_with_glow.png" alt="ArqonHPO Logo" width="128"/>
+  <h1>Arqon Runtime Optimizer</h1>
+  <h3>Optimization isn't a workflow anymore.<br>It's a control loop.</h3>
+  <p>Safe self-optimization, robustness, and resilience for live systems—with microsecond-class overhead and deterministic governance.</p>
+  <>
 
-<!-- CI / Build Status -->
+  <!-- CI / Build Status -->
+
 [![CI](https://github.com/novelbytelabs/ArqonHPO/actions/workflows/ci.yml/badge.svg)](https://github.com/novelbytelabs/ArqonHPO/actions/workflows/ci.yml)
 [![Linux](https://img.shields.io/badge/Linux-passing-brightgreen?logo=linux&logoColor=white)](https://github.com/novelbytelabs/ArqonHPO/actions/workflows/ci.yml)
 [![macOS](https://img.shields.io/badge/macOS-passing-brightgreen?logo=apple&logoColor=white)](https://github.com/novelbytelabs/ArqonHPO/actions/workflows/ci.yml)
 [![Windows](https://img.shields.io/badge/Windows-passing-brightgreen?logo=windows&logoColor=white)](https://github.com/novelbytelabs/ArqonHPO/actions/workflows/ci.yml)
 
-<!-- Coverage & Quality -->
-<!-- Coverage (Dynamic Components) -->
-[![Project](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/novelbytelabs/ArqonHPO/badges/project.json)](https://github.com/novelbytelabs/ArqonHPO/actions)
-[![Core](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/novelbytelabs/ArqonHPO/badges/core.json)](https://github.com/novelbytelabs/ArqonHPO/tree/main/crates/core)
-[![Hotpath](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/novelbytelabs/ArqonHPO/badges/hotpath.json)](https://github.com/novelbytelabs/ArqonHPO/tree/main/crates/hotpath)
-[![CLI](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/novelbytelabs/ArqonHPO/badges/cli.json)](https://github.com/novelbytelabs/ArqonHPO/tree/main/crates/cli)
-<!-- Hybrid Codecov link -->
-[![codecov](https://codecov.io/gh/novelbytelabs/ArqonHPO/branch/main/graph/badge.svg)](https://codecov.io/gh/novelbytelabs/ArqonHPO)
+  <!-- Coverage & Quality -->
+  <br/>
+  [![Project](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/novelbytelabs/ArqonHPO/badges/project.json)](https://github.com/novelbytelabs/ArqonHPO/actions)
+  [![Core](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/novelbytelabs/ArqonHPO/badges/core.json)](https://github.com/novelbytelabs/ArqonHPO/tree/main/crates/core)
+  [![Hotpath](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/novelbytelabs/ArqonHPO/badges/hotpath.json)](https://github.com/novelbytelabs/ArqonHPO/tree/main/crates/hotpath)
+  [![CLI](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/novelbytelabs/ArqonHPO/badges/cli.json)](https://github.com/novelbytelabs/ArqonHPO/tree/main/crates/cli)
+  [![codecov](https://codecov.io/gh/novelbytelabs/ArqonHPO/branch/main/graph/badge.svg)](https://codecov.io/gh/novelbytelabs/ArqonHPO)
 
-<!-- Version & Language -->
-[![Crates.io](https://img.shields.io/crates/v/arqonhpo-core?label=crates.io)](https://crates.io/crates/arqonhpo-core)
-[![PyPI](https://img.shields.io/pypi/v/arqonhpo?label=PyPI)](https://pypi.org/project/arqonhpo/)
-[![Rust](https://img.shields.io/badge/rust-1.82%2B-orange?logo=rust)](https://www.rust-lang.org/)
-[![Python](https://img.shields.io/badge/python-3.10%2B-blue?logo=python&logoColor=white)](https://www.python.org/)
+  <!-- Version & Language & Stats -->
+  <br/>
+  [![Crates.io](https://img.shields.io/crates/v/arqonhpo-core?label=crates.io)](https://crates.io/crates/arqonhpo-core)
+  [![PyPI](https://img.shields.io/pypi/v/arqonhpo?label=PyPI)](https://pypi.org/project/arqonhpo/)
+  [![Rust](https://img.shields.io/badge/rust-1.82%2B-orange?logo=rust)](https://www.rust-lang.org/)
+  [![Python](https://img.shields.io/badge/python-3.10%2B-blue?logo=python&logoColor=white)](https://www.python.org/)
+  [![Docs](https://img.shields.io/badge/docs-mkdocs-blue?logo=readthedocs)](https://novelbytelabs.github.io/ArqonHPO/)
+  [![License](https://img.shields.io/badge/license-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+  <br/>
+  [![GitHub stars](https://img.shields.io/github/stars/novelbytelabs/ArqonHPO?style=social)](https://github.com/novelbytelabs/ArqonHPO/stargazers)
+  [![GitHub forks](https://img.shields.io/github/forks/novelbytelabs/ArqonHPO?style=social)](https://github.com/novelbytelabs/ArqonHPO/network/members)
+  [![Contributors](https://img.shields.io/github/contributors/novelbytelabs/ArqonHPO)](https://github.com/novelbytelabs/ArqonHPO/graphs/contributors)
+  [![Downloads](https://img.shields.io/github/downloads/novelbytelabs/ArqonHPO/total?label=downloads)](https://github.com/novelbytelabs/ArqonHPO/releases)
+  [![PyPI Downloads](https://img.shields.io/pypi/dm/arqonhpo?label=PyPI%20downloads)](https://pypi.org/project/arqonhpo/)
 
-<!-- Documentation & License -->
-[![Docs](https://img.shields.io/badge/docs-mkdocs-blue?logo=readthedocs)](https://novelbytelabs.github.io/ArqonHPO/)
-[![License](https://img.shields.io/badge/license-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+  <p>
+    🛡️ Safe by Construction &nbsp;&nbsp;•&nbsp;&nbsp; 🎯 Deterministic & Replayable &nbsp;&nbsp;•&nbsp;&nbsp; ⚡ Hot-Path Ready
+  </p>
+  
+  <p>Powered by <code>ArqonHPO</code></p>
+</div>
 
-<!-- GitHub Stats -->
-[![GitHub stars](https://img.shields.io/github/stars/novelbytelabs/ArqonHPO?style=social)](https://github.com/novelbytelabs/ArqonHPO/stargazers)
-[![GitHub forks](https://img.shields.io/github/forks/novelbytelabs/ArqonHPO?style=social)](https://github.com/novelbytelabs/ArqonHPO/network/members)
-[![Contributors](https://img.shields.io/github/contributors/novelbytelabs/ArqonHPO)](https://github.com/novelbytelabs/ArqonHPO/graphs/contributors)
+# **Machine-speed optimization for live systems.**
 
-<!-- Downloads -->
-[![Downloads](https://img.shields.io/github/downloads/novelbytelabs/ArqonHPO/total?label=downloads)](https://github.com/novelbytelabs/ArqonHPO/releases)
-[![PyPI Downloads](https://img.shields.io/pypi/dm/arqonhpo?label=PyPI%20downloads)](https://pypi.org/project/arqonhpo/)
-
-
-# **Machine-speed optimization for live systems.**  
-
-ArqonHPO is a Rust-first optimization runtime that can sit *inside* a control loop: it proposes bounded parameter updates, ingests telemetry/reward signals, and produces deterministic, auditable decisions with sub-microsecond overhead.
+ArqonHPO is a Rust-first optimization runtime that can sit _inside_ a control loop: it proposes bounded parameter updates, ingests telemetry/reward signals, and produces deterministic, auditable decisions with sub-microsecond overhead.
 
 It’s not “run an offline study.” It’s: **measure → decide → apply → measure again**.
 
@@ -66,17 +73,20 @@ If your loop must run at machine speed, ArqonHPO is built for that.
 ## What’s in the box
 
 ### Tier-2: Adaptive decision engine (hot path)
+
 - Online optimizer designed for **continuous tuning under drift**
 - Runs under strict time budgets
-- Produces **bounded, stable deltas** rather than “wild” parameter jumps 
+- Produces **bounded, stable deltas** rather than “wild” parameter jumps
 
 ### Tier-1: Safety executor (hot path)
+
 - Guardrails: bounds, max-delta, cooldown/dwell, rollback hooks
-- Non-blocking audit + telemetry emission (never blocks the hot path) 
+- Non-blocking audit + telemetry emission (never blocks the hot path)
 
 ### Determinism + evidence
+
 - Stable parameter ordering (registry) for replayability
-- Seeded decisioning, audit trail, and artifacts for “why did it change?” 
+- Seeded decisioning, audit trail, and artifacts for “why did it change?”
 
 ---
 
@@ -100,6 +110,12 @@ Your actual performance will depend on CPU, build flags, and integration, but th
 pip install arqonhpo
 ```
 
+Run the CLI after install:
+
+```bash
+arqonhpo --help
+```
+
 Build from source (Python bindings via maturin):
 
 ```bash
@@ -113,7 +129,7 @@ maturin develop -m bindings/python/Cargo.toml
 
 ## Quick start (ask/tell loop)
 
-> This example shows the *shape* of integration: you supply measurements, ArqonHPO returns proposals.
+> This example shows the _shape_ of integration: you supply measurements, ArqonHPO returns proposals.
 
 ```python
 import json
@@ -169,9 +185,9 @@ ArqonHPO expects three things:
 ArqonHPO does **not** require you to adopt a giant platform.
 But to deliver the “runtime optimization” promise, you will typically integrate at least:
 
-* a telemetry digest (even minimal),
-* safe actuation,
-* guardrails (policy).
+- a telemetry digest (even minimal),
+- safe actuation,
+- guardrails (policy).
 
 ---
 
@@ -181,10 +197,10 @@ ArqonHPO is developed under a Constitution: a living spec of invariants and timi
 
 Highlights:
 
-* **Hot-Path Representation:** Tier-1/Tier-2 code uses dense parameter vectors (no `HashMap` in hot path)
-* **Timing Contracts:** T1/T2 must remain within defined budgets (p99 targets)
-* **Non-blocking observability:** audit/telemetry must never block the hot path
-* **Deterministic replay:** decisions must be reproducible from artifacts + seeds
+- **Hot-Path Representation:** Tier-1/Tier-2 code uses dense parameter vectors (no `HashMap` in hot path)
+- **Timing Contracts:** T1/T2 must remain within defined budgets (p99 targets)
+- **Non-blocking observability:** audit/telemetry must never block the hot path
+- **Deterministic replay:** decisions must be reproducible from artifacts + seeds
 
 See: `project/constitution.md`
 
@@ -208,4 +224,3 @@ See `project/CONTRIBUTING.md`.
 ## License
 
 Apache License 2.0 — see `project/LICENSE`.
-

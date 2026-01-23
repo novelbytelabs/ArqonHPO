@@ -15,11 +15,8 @@ miette = { workspace = true }
 tracing = { workspace = true }
 static_assertions = { workspace = true }
 hotpath = { version = "0.3.0", path = "../hotpath" }
+serde_json = { workspace = true }
 
 [dev-dependencies]
 criterion = "=0.5.1"
-serde_json.workspace = true
 
-[[bench]]
-name = "adaptive_engine_latency"
-harness = false

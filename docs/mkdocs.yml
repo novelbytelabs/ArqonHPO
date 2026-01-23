@@ -6,9 +6,11 @@ repo_url: https://github.com/novelbytelabs/ArqonHPO
 repo_name: novelbytelabs/ArqonHPO
 edit_uri: edit/main/docs/docs/
 
+copyright: "Copyright &copy; 2025 Novel Byte Labs - All rights reserved."
+
 theme:
   name: material
-  logo: assets/logo.png
+  logo: assets/favicon.ico
   favicon: assets/favicon.ico
   features:
     - navigation.tabs
@@ -39,9 +41,11 @@ theme:
   icon:
     repo: fontawesome/brands/github
 
+extra_css:
+  - stylesheets/extra.css
+
 plugins:
-  - search
-  - social
+  - search:
   - git-revision-date-localized:
       enable_creation_date: true
       fallback_to_build_date: true
@@ -54,7 +58,11 @@ markdown_extensions:
   - md_in_html
   - toc:
       permalink: true
-  - pymdownx.superfences
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
   - pymdownx.details
   - pymdownx.tabbed:
       alternate_style: true
@@ -80,37 +88,76 @@ extra_css:
   - stylesheets/extra.css
 
 extra_javascript:
+  - https://unpkg.com/mermaid@10/dist/mermaid.min.js
   - javascripts/theme.js
 
 nav:
   - Home: index.md
-  - Why: why/index.md
-  - Demos: demos/index.md
-  - Benchmarks: benchmarks/index.md
+  - Why:
+      - why/index.md
+      - Architecture: why/architecture.md
+  - Demos:
+      - demos/index.md
+      - Inference: demos/inference.md
+      - Systems: demos/systems.md
+      - Edge: demos/edge.md
+  - Benchmarks:
+      - benchmarks/index.md
+      - Methodology: benchmarks/methodology.md
   - Docs:
       - documentation/index.md
+      - Installation: documentation/installation.md
       - Quickstart: documentation/quickstart.md
+      - Tech Note: documentation/technote.md
       - Concepts:
           - Metabolic Architecture: documentation/concepts/metabolic_architecture.md
           - PCR Algorithm: documentation/concepts/pcr_algorithm.md
+          - Probe Deep Dive: documentation/concepts/probe_deep_dive.md
+          - Strategies: documentation/concepts/strategies.md
+          - Batch vs Online: documentation/concepts/batch_vs_online.md
+          - Determinism: documentation/concepts/determinism.md
+          - Safety: documentation/concepts/safety.md
       - Reference:
           - Python API: documentation/reference/python.md
           - Rust Core: documentation/reference/rust.md
+          - Hotpath API: documentation/reference/hotpath.md
           - CLI: documentation/reference/cli.md
+          - TUI: documentation/reference/tui.md
+          - Dashboard: documentation/reference/dashboard.md
           - Observability: documentation/reference/observability.md
-      - Cookbook: documentation/cookbook/
+          - Error Codes: documentation/reference/error_codes.md
+      - Cookbook:
+          - documentation/cookbook/index.md
+          - ML Tuning: documentation/cookbook/ml_tuning.md
+          - Sim Tuning: documentation/cookbook/sim_tuning.md
+          - Warm Starting: documentation/cookbook/warm_starting.md
+          - Kubernetes: documentation/cookbook/kubernetes.md
+          - FastAPI: documentation/cookbook/fastapi.md
+          - Ray Tune: documentation/cookbook/ray.md
+          - MLflow: documentation/cookbook/mlflow.md
+      - Integrations:
+          - documentation/integrations/index.md
+          - Prometheus: documentation/integrations/prometheus.md
+      - Migration: documentation/migration.md
+      - Troubleshooting: documentation/troubleshooting.md
+      - FAQ: documentation/faq.md
   - ArqonShip:
       - arqonship/index.md
       - Architecture: arqonship/architecture.md
       - CLI Reference: arqonship/cli-reference.md
       - Configuration: arqonship/configuration.md
       - Developer Guide: arqonship/developer-guide.md
+  - Autopoiesis:
+      - Overview: autopoiesis/overview.md
+      - Omega Tier: autopoiesis/omega_tier.md
+      - Variant Catalog: autopoiesis/variant_catalog.md
+      - Governance: autopoiesis/governance.md
   - Community: community/index.md
   - Project:
       - About: project/about.md
       - Roadmap: project/roadmap.md
       - Changelog: project/changelog.md
-      - Contributing: project/contributing.md
+      - Contributing: project/CONTRIBUTING.md
       - License: project/LICENSE
       - CI/CD Runbook: project/ci_cd.md
       - Test Coverage: project/test_coverage.md

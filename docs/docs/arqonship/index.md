@@ -32,22 +32,24 @@ arqon ship --dry-run
 
 ## Documentation
 
-| Document | Description |
-|----------|-------------|
-| [Architecture](architecture.md) | System design and data flows |
-| [CLI Reference](cli-reference.md) | Command documentation |
-| [Configuration](configuration.md) | Config file options |
-| [Developer Guide](developer-guide.md) | Contributing and extending |
+| Document                              | Description                  |
+| ------------------------------------- | ---------------------------- |
+| [Architecture](architecture.md)       | System design and data flows |
+| [CLI Reference](cli-reference.md)     | Command documentation        |
+| [Configuration](configuration.md)     | Config file options          |
+| [Developer Guide](developer-guide.md) | Contributing and extending   |
 
 ## Key Features
 
 ### Codebase Oracle
+
 - **Tree-sitter parsing** for Rust and Python
 - **Graph storage** (SQLite) for code structure
 - **Vector embeddings** (LanceDB + MiniLM) for semantic search
 - **Hybrid queries** combining structural and semantic matching
 
 ### Self-Healing CI
+
 - **Log parsing** for cargo test and pytest
 - **Context-aware repairs** using Oracle data
 - **Local LLM inference** (DeepSeek-Coder via Candle)
@@ -55,6 +57,7 @@ arqon ship --dry-run
 - **Audit logging** for all healing attempts
 
 ### Governed Releases
+
 - **Pre-flight checks** (clean git, passing tests)
 - **Conventional commit parsing**
 - **Automatic SemVer calculation**

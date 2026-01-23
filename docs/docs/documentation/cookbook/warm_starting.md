@@ -54,7 +54,7 @@ def load_previous_run(run_path: str) -> list:
     """Load evaluation history from a previous run."""
     with open(run_path) as f:
         artifact = json.load(f)
-    
+
     # Convert EvalTrace format to SeedPoint format
     return [
         {
@@ -87,7 +87,7 @@ while True:
     batch = solver.ask()
     if batch is None:
         break
-    
+
     # Evaluate and tell...
 ```
 
@@ -124,14 +124,14 @@ print(f"Total evaluations: {solver.get_history_len()}")
 ## Key Points
 
 !!! tip "Probe Budget"
-    The solver needs `budget × probe_ratio` evaluations (default: 20%) 
-    to transition from Probe to Classify phase. Seed enough data to 
-    meet this threshold if you want to skip probing.
+The solver needs `budget × probe_ratio` evaluations (default: 20%)
+to transition from Probe to Classify phase. Seed enough data to
+meet this threshold if you want to skip probing.
 
 !!! note "eval_id Not Required"
-    Unlike `tell()`, the `seed()` method does not require `eval_id` 
-    in the input data. The solver assigns IDs automatically.
+Unlike `tell()`, the `seed()` method does not require `eval_id`
+in the input data. The solver assigns IDs automatically.
 
 !!! warning "Bounds Consistency"
-    Ensure seeded parameter values are within the configured bounds. 
-    The solver does not validate seeded data against bounds.
+Ensure seeded parameter values are within the configured bounds.
+The solver does not validate seeded data against bounds.

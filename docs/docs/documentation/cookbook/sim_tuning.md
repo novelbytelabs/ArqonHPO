@@ -22,6 +22,7 @@ For simulation tuning, ArqonHPO uses the **Probe-Classify-Refine (PCR)** algorit
 
 This "Hybrid Seeding" allows Nelder-Mead to start exploitation immediately from a high-quality region.
 This means for CFD simulations with smooth, bowl-shaped objectives, ArqonHPO will:
+
 - Detect geometric decay in residuals (fast convergence signature)
 - Automatically select Nelder-Mead without manual configuration
 - Use probe results to intelligently initialize the simplex
@@ -37,9 +38,9 @@ from arqonhpo import ArqonSolver
 def cfd_simulation(params):
     inlet_velocity = params["inlet_velocity"]
     turbulence_k = params["turbulence_k"]
-    
+
     time.sleep(0.5)  # Simulate 30-minute CFD; use 0.5s for demo
-    
+
     # Fake "drag coefficient" as objective
     drag = (inlet_velocity - 5.0)**2 + (turbulence_k - 0.1)**2
     return drag
@@ -62,7 +63,7 @@ while True:
     batch = solver.ask()
     if batch is None:
         break
-    
+
     results = []
     for i, params in enumerate(batch):
         drag = cfd_simulation(params)
@@ -74,7 +75,7 @@ while True:
             "value": drag,
             "cost": 30.0  # 30 mins
         })
-    
+
     solver.tell(json.dumps(results))
 
 print(f"Optimal: {best}")
@@ -89,13 +90,12 @@ For smooth landscapes, Nelder-Mead's simplex operations converge faster than ran
 
 ArqonHPO implements all 5 standard NM operations:
 
-| Operation | When Used | Formula |
-|-----------|-----------|---------|
-| **Reflection** | Always tried first | x_r = c + α(c - worst) |
-| **Expansion** | Reflection is best so far | x_e = c + γ(r - c) |
-| **Outside Contraction** | Reflection between 2nd-worst and worst | x_c = c + ρ(r - c) |
-| **Inside Contraction** | Reflection worse than worst | x_c = c + ρ(worst - c) |
-| **Shrink** | Contraction fails | x_i = best + σ(x_i - best) |
+| Operation               | When Used                              | Formula                    |
+| ----------------------- | -------------------------------------- | -------------------------- |
+| **Reflection**          | Always tried first                     | x_r = c + α(c - worst)     |
+| **Expansion**           | Reflection is best so far              | x_e = c + γ(r - c)         |
+| **Outside Contraction** | Reflection between 2nd-worst and worst | x_c = c + ρ(r - c)         |
+| **Inside Contraction**  | Reflection worse than worst            | x_c = c + ρ(worst - c)     |
+| **Shrink**              | Contraction fails                      | x_i = best + σ(x_i - best) |
 
 Standard coefficients: α=1.0, γ=2.0, ρ=0.5, σ=0.5
-

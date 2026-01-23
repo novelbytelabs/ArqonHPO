@@ -35,11 +35,13 @@ arqon init
 ```
 
 **Behavior:**
+
 - Creates `.arqon/` directory
 - Generates default `config.toml`
 - If config exists, does nothing
 
 **Exit Codes:**
+
 - `0`: Success
 - `1`: Error creating files
 
@@ -54,6 +56,7 @@ arqon scan
 ```
 
 **Behavior:**
+
 1. Walks project directory (respects `.gitignore`)
 2. Parses `.rs` and `.py` files via Tree-sitter
 3. Extracts functions, structs, classes → SQLite graph
@@ -61,6 +64,7 @@ arqon scan
 5. Shows progress spinner
 
 **Output:**
+
 ```
 Scanning codebase at "/path/to/project"
 Processing lib.rs
@@ -70,6 +74,7 @@ Scan complete.
 ```
 
 **Exit Codes:**
+
 - `0`: Success
 - `1`: Parse or storage error
 
@@ -91,12 +96,14 @@ arqon chat -q "optimizer implementation"
 | `--cli` | CLI output mode (default) |
 
 **Output:**
+
 ```
 [src/auth/mod.rs] authenticate (Score: 0.89)
 [src/auth/jwt.rs] verify_token (Score: 0.76)
 ```
 
 **Exit Codes:**
+
 - `0`: Results found
 - `1`: Error or no results
 
@@ -118,6 +125,7 @@ arqon heal --log-file test-output.json --max-attempts 3
 | `--max-attempts <N>` | Max repair attempts [default: 2] |
 
 **Behavior:**
+
 1. Parse test failures from log file
 2. Build repair context from Oracle
 3. Generate fix via LLM
@@ -127,6 +135,7 @@ arqon heal --log-file test-output.json --max-attempts 3
 7. Repeat up to max attempts
 
 **Exit Codes:**
+
 - `0`: All failures healed
 - `1`: Some failures remain
 
@@ -151,6 +160,7 @@ arqon ship --skip-checks
 | `--skip-checks` | Skip pre-flight constitution checks |
 
 **Behavior:**
+
 1. Run pre-flight checks:
    - Clean git working directory
    - All tests pass
@@ -161,6 +171,7 @@ arqon ship --skip-checks
 5. Create GitHub PR (requires `GITHUB_TOKEN`)
 
 **Example Output:**
+
 ```
 Starting release pipeline...
 Next version: v1.2.0
@@ -179,6 +190,7 @@ Changelog:
 ```
 
 **Exit Codes:**
+
 - `0`: Release PR created / dry-run complete
 - `1`: Pre-flight check failed
 
@@ -186,10 +198,10 @@ Changelog:
 
 ## Exit Codes Summary
 
-| Code | Meaning |
-|------|---------|
-| `0` | Command succeeded |
-| `1` | Command failed (see stderr) |
+| Code | Meaning                     |
+| ---- | --------------------------- |
+| `0`  | Command succeeded           |
+| `1`  | Command failed (see stderr) |
 
 ## Examples
 
