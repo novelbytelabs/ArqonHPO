@@ -99,7 +99,7 @@ impl Context {
         ];
 
         // Add custom numeric features
-        for (_, feature) in &self.features {
+        for feature in self.features.values() {
             if let ContextFeature::Numeric(v) = feature {
                 features.push(*v);
             }

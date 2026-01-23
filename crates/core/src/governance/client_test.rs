@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use crate::governance::{
-        DownstreamMessage, EnforcementAction, GovernanceClient, MockBus, UpstreamMessage,
+        DownstreamMessage, EnforcementAction, GovernanceClient, UpstreamMessage,
     };
     use std::collections::HashMap;
 

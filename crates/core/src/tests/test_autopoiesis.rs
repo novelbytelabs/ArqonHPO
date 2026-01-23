@@ -13,8 +13,7 @@ use crate::omega::{
     Observer, ObserverContext,
 };
 use crate::variant_catalog::{
-    BanditConfig, ContextualBandit, SelectionReason, Variant, VariantCatalog, VariantConstraints,
-    VariantType,
+    BanditConfig, ContextualBandit, Variant, VariantCatalog, VariantConstraints, VariantType,
 };
 use std::collections::HashMap;
 
@@ -55,9 +54,8 @@ mod omega_unit_tests {
     #[test]
     fn test_discovery_loop_creation() {
         let evaluator = MockEvaluator::new(0.5, 0.9);
-        let loop_instance = DiscoveryLoop::new(evaluator);
-        // Should be created successfully (no public way to inspect, but no panic)
-        assert!(true);
+        let _loop_instance = DiscoveryLoop::new(evaluator);
+        // Should be created successfully
     }
 
     #[test]
@@ -399,8 +397,8 @@ mod integration_tests {
         // Add variants to catalog
         let v1 = create_test_variant("variant_a", VariantType::Quantization);
         let v2 = create_test_variant("variant_b", VariantType::Quantization);
-        let id1 = catalog.add(v1);
-        let id2 = catalog.add(v2);
+        let _id1 = catalog.add(v1);
+        let _id2 = catalog.add(v2);
 
         // Get eligible variants from catalog
         let eligible = catalog.all_ids();
