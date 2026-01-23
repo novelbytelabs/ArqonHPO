@@ -55,6 +55,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.2.0] - 2025-12-14
 
 ### Added
+
 - **PCR Algorithm**: Complete Probe-Classify-Refine implementation (`Solver::pcr`).
 - **ResidualDecayClassifier**: Automatic landscape detection (Structured vs Chaotic).
 - **Scott's Rule TPE**: Adaptive bandwidth selection for chaotic landscapes.
@@ -63,5 +64,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Benchmarks**: Comprehensive suite comparing ArqonHPO vs Optuna vs Random.
 
 ### Changed
+
 - Refactored core `Solver` to use the V2 **PCR** pipeline by default.
 - Updated documentation with **PCR** methodology and examples.

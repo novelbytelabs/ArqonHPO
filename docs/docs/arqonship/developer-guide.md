@@ -86,11 +86,13 @@ crates/ship/
 ### Adding a New Language Parser
 
 1. Add the tree-sitter grammar dependency:
+
 ```bash
 cargo add -p ship tree-sitter-java
 ```
 
 2. Create `crates/ship/src/oracle/parser_java.rs`:
+
 ```rust
 use tree_sitter::{Parser, Tree, Language};
 use anyhow::{Result, Context};
@@ -121,6 +123,7 @@ impl JavaParser {
 ### Adding a New LLM Backend
 
 1. Implement the `LlmClient` trait in `heal/llm.rs`:
+
 ```rust
 pub trait LlmClient {
     fn generate_fix(&mut self, prompt: &str) -> Result<String>;
@@ -145,13 +148,14 @@ impl LlmClient for OpenAiClient {
 ### Adding New Constitution Checks
 
 1. Add a method to `ConstitutionCheck` in `ship/checks.rs`:
+
 ```rust
 pub fn check_security_scan(&self) -> Result<bool> {
     let output = Command::new("cargo")
         .args(["audit"])
         .current_dir(&self.root)
         .output()?;
-    
+
     Ok(output.status.success())
 }
 ```
@@ -163,6 +167,7 @@ pub fn check_security_scan(&self) -> Result<bool> {
 ### Unit Tests
 
 Place in the same file with `#[cfg(test)]`:
+
 ```rust
 #[cfg(test)]
 mod tests {
@@ -179,6 +184,7 @@ mod tests {
 ### Integration Tests
 
 Place in `crates/ship/tests/`:
+
 ```rust
 // tests/oracle_integration.rs
 use ship::oracle::scan_codebase;
@@ -195,6 +201,7 @@ async fn test_scan_empty_project() {
 ### Snapshot Tests
 
 Using `insta`:
+
 ```rust
 use insta::assert_debug_snapshot;
 
@@ -210,6 +217,7 @@ fn test_graph_extraction() {
 ### Logging
 
 Add `tracing` for structured logging:
+
 ```bash
 RUST_LOG=debug arqon scan
 ```
@@ -294,4 +302,3 @@ cargo run -p ship --example oracle_bench
 #   Per parse: ~20 µs
 #   Throughput: ~50,000 parses/sec
 ```
-

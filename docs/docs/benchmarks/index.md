@@ -7,30 +7,31 @@ In high-throughput optimization—like real-time control, high-frequency trading
 ArqonHPO flips the script.
 
 !!! abstract "Executive Summary"
-    *   🚀 **300x Faster**: ArqonHPO runs thousands of trials in the time it takes Optuna to run dozens.
-    *   🛡️ **Rust Core**: Zero-overhead execution (2.9ms per trial).
-    *   📉 **Best for Speed**: Dominates in high-frequency, low-latency environments.
-    *   🧠 **Honest Trade-off**: For extremely expensive (>1s) functions, Optuna's slower TPE is currently more sample-efficient.
+_ 🚀 **300x Faster**: ArqonHPO runs thousands of trials in the time it takes Optuna to run dozens.
+_ 🛡️ **Rust Core**: Zero-overhead execution (2.9ms per trial).
+_ 📉 **Best for Speed**: Dominates in high-frequency, low-latency environments.
+_ 🧠 **Honest Trade-off**: For extremely expensive (>1s) functions, Optuna's slower TPE is currently more sample-efficient.
 
 ---
 
 ## 🏎️ The Race: "Who Finds the Answer in 5 Seconds?"
 
-Optimization isn't just about efficiency per step; it's about **volume**. 
+Optimization isn't just about efficiency per step; it's about **volume**.
 
 We benchmarked ArqonHPO against Optuna in a fixed **5-second time budget**. The results show exactly where ArqonHPO shines.
 
 ### 1. The Speed Zone (0ms Latency)
-*Scenario: Real-time control loops, HFT, embedded systems.*
+
+_Scenario: Real-time control loops, HFT, embedded systems._
 
 When your function is instant, Python overhead kills performance. **ArqonHPO runs 150,000 trials** while Optuna is still warming up.
 
 ![Time Bounded Zones](time_bounded_zones.png)
 
-| Optimizer | Trials / Sec | Throughput |
-|-----------|--------------|------------|
-| **ArqonHPO** | ~33,000 | **100x Higher** |
-| Optuna | ~300 | Baseline |
+| Optimizer    | Trials / Sec | Throughput      |
+| ------------ | ------------ | --------------- |
+| **ArqonHPO** | ~33,000      | **100x Higher** |
+| Optuna       | ~300         | Baseline        |
 
 > **Winner**: **ArqonHPO**. Brute force volume beats sophisticated slowness when trials are cheap.
 
@@ -42,10 +43,10 @@ ArqonHPO eliminates the "Python Tax." By running the optimization logic in Rust,
 
 ![Speedup Chart](speedup_comparison.png)
 
-| Metric | ArqonHPO | Optuna (TPE) | Advantage |
-|--------|----------|--------------|-----------|
-| **Latency per Trial** | 2.9 ms | 846.4 ms | **297x faster** |
-| **Overhead** | Negligible | Signficant | **Zero Cost** |
+| Metric                | ArqonHPO   | Optuna (TPE) | Advantage       |
+| --------------------- | ---------- | ------------ | --------------- |
+| **Latency per Trial** | 2.9 ms     | 846.4 ms     | **297x faster** |
+| **Overhead**          | Negligible | Signficant   | **Zero Cost**   |
 
 ---
 
@@ -54,14 +55,16 @@ ArqonHPO eliminates the "Python Tax." By running the optimization logic in Rust,
 We tested across two primary use cases to be fully transparent about performance.
 
 ### US1: Smooth Simulations (Nelder-Mead Case)
-*Targeting expensive engineering simulations.*
+
+_Targeting expensive engineering simulations._
 
 For smooth functions, ArqonHPO's Nelder-Mead strategy is blazing fast but currently less sample-efficient than Optuna's mature TPE.
 
 ![US1 Comparison](us1_smooth_functions_comparison.png)
 
 ### US2: Noisy & Complex (TPE Case)
-*Targeting ML hyperparameter tuning.*
+
+_Targeting ML hyperparameter tuning._
 
 On rugged, noisy landscapes (like ML model training), Optuna's specialized TPE implementation is currently more accurate per-step. ArqonHPO competes by running **more steps**.
 
@@ -73,16 +76,17 @@ On rugged, noisy landscapes (like ML model training), Optuna's specialized TPE i
 
 We believe in using the right tool for the job.
 
-| If Your Function Takes... | You Should Use... | Why? |
-|---------------------------|-------------------|------|
-| **< 10ms** | 🦀 **ArqonHPO** | **Speed is King.** Python overhead consumes 99% of your budget otherwise. |
-| **10ms - 1s** | ⚖️ **Either** | A crossover zone. ArqonHPO gives you more trials; Optuna gives you smarter trials. |
-| **> 1s** | 🐍 **Optuna** | **Intelligence Wins.** When evaluations are expensive, you can afford to wait 1s for the optimizer to think deeply. |
+| If Your Function Takes... | You Should Use... | Why?                                                                                                                |
+| ------------------------- | ----------------- | ------------------------------------------------------------------------------------------------------------------- |
+| **< 10ms**                | 🦀 **ArqonHPO**   | **Speed is King.** Python overhead consumes 99% of your budget otherwise.                                           |
+| **10ms - 1s**             | ⚖️ **Either**     | A crossover zone. ArqonHPO gives you more trials; Optuna gives you smarter trials.                                  |
+| **> 1s**                  | 🐍 **Optuna**     | **Intelligence Wins.** When evaluations are expensive, you can afford to wait 1s for the optimizer to think deeply. |
 
 ### The ArqonHPO Advantage
-*   **No Python Runtime?** No problem. ArqonHPO is a standalone binary.
-*   **Deterministic?** Yes, fully reproducible execution.
-*   **Simple?** Yes, zero-config automatic strategy selection.
+
+- **No Python Runtime?** No problem. ArqonHPO is a standalone binary.
+- **Deterministic?** Yes, fully reproducible execution.
+- **Simple?** Yes, zero-config automatic strategy selection.
 
 ---
 

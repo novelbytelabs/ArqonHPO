@@ -153,7 +153,7 @@ dependencies = [
 
 [[package]]
 name = "arqonhpo"
-version = "0.3.0"
+version = "0.3.3"
 dependencies = [
  "arqonhpo-core",
  "pyo3",
@@ -196,7 +196,7 @@ dependencies = [
 
 [[package]]
 name = "arqonhpo-core"
-version = "0.3.0"
+version = "0.3.3"
 dependencies = [
  "criterion",
  "crossbeam-queue",
@@ -6427,7 +6427,7 @@ dependencies = [
 
 [[package]]
 name = "ship"
-version = "0.3.0"
+version = "0.3.3"
 dependencies = [
  "anyhow",
  "arrow-array",

@@ -8,17 +8,17 @@ We as members, contributors, and leaders pledge to make participation in our com
 
 Examples of behavior that contributes to a positive environment:
 
-* Being respectful of differing viewpoints
-* Giving and gracefully accepting constructive feedback
-* Focusing on what is best for the community
-* Showing empathy towards others
+- Being respectful of differing viewpoints
+- Giving and gracefully accepting constructive feedback
+- Focusing on what is best for the community
+- Showing empathy towards others
 
 Examples of unacceptable behavior:
 
-* Trolling, insulting or derogatory comments
-* Public or private harassment
-* Publishing others' private information without permission
-* Other conduct which could reasonably be considered inappropriate
+- Trolling, insulting or derogatory comments
+- Public or private harassment
+- Publishing others' private information without permission
+- Other conduct which could reasonably be considered inappropriate
 
 ## Enforcement
 

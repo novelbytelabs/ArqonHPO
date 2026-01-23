@@ -25,13 +25,13 @@ The new `hotpath` crate provides:
 
 ### 📊 Performance
 
-| Benchmark | Latency (p50) |
-|-----------|---------------|
-| T1 Apply (4 params) | 117 ns |
-| T2 Decision (4 params) | 209 ns |
-| SPSA Perturbation (16 params) | 176 ns |
-| Audit Enqueue | 35 ns |
-| Telemetry Push | 13 ns |
+| Benchmark                     | Latency (p50) |
+| ----------------------------- | ------------- |
+| T1 Apply (4 params)           | 117 ns        |
+| T2 Decision (4 params)        | 209 ns        |
+| SPSA Perturbation (16 params) | 176 ns        |
+| Audit Enqueue                 | 35 ns         |
+| Telemetry Push                | 13 ns         |
 
 All timings are **4 orders of magnitude** below Constitution VIII.4 targets (T1 ≤ 100µs, T2 ≤ 1000µs).
 
@@ -42,16 +42,19 @@ All timings are **4 orders of magnitude** below Constitution VIII.4 targets (T1 
 ## 📁 New Files
 
 ### Core
+
 - `crates/hotpath/` - Complete Adaptive Engine implementation
 - `clippy.toml` - Repo-root HashMap ban
 - `crates/core/benches/adaptive_engine_latency.rs` - Latency benchmarks
 - `crates/core/tests/artifact_contract.rs` - Artifact schema verification
 
 ### Specifications
+
 - `specs/005-adaptive-engine/` - Full spec, plan, tasks, contracts
 - `specs/004-probe-upgrade/` - PCR probe improvements
 
 ### Constitution
+
 - Updated to **v1.4.1** with VIII.3 Hot-Path Enforcement rules
 
 ## ⬆️ Upgrade Notes

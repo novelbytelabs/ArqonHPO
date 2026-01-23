@@ -16,21 +16,22 @@ ArqonShip is a DevSecOps automation system implementing three core capabilities:
 
 Provides intelligent codebase understanding through dual indexing:
 
-| Component | Responsibility |
-|-----------|---------------|
-| `parser.rs` | Tree-sitter AST parsing for Rust |
-| `parser_py.rs` | Tree-sitter AST parsing for Python |
-| `graph.rs` | Extract code entities (functions, structs, classes) |
-| `edges.rs` | Extract relationships (calls, imports) |
-| `store.rs` | SQLite persistence for graph data |
-| `schema.rs` | Database schema migrations |
-| `embed.rs` | Candle-based embedding generation (MiniLM) |
-| `vector_store.rs` | LanceDB for approximate nearest neighbor search |
-| `query.rs` | Hybrid query combining graph + vector results |
-| `hash.rs` | Deterministic content hashing for incremental updates |
-| `incremental.rs` | Skip unchanged files during re-scans |
+| Component         | Responsibility                                        |
+| ----------------- | ----------------------------------------------------- |
+| `parser.rs`       | Tree-sitter AST parsing for Rust                      |
+| `parser_py.rs`    | Tree-sitter AST parsing for Python                    |
+| `graph.rs`        | Extract code entities (functions, structs, classes)   |
+| `edges.rs`        | Extract relationships (calls, imports)                |
+| `store.rs`        | SQLite persistence for graph data                     |
+| `schema.rs`       | Database schema migrations                            |
+| `embed.rs`        | Candle-based embedding generation (MiniLM)            |
+| `vector_store.rs` | LanceDB for approximate nearest neighbor search       |
+| `query.rs`        | Hybrid query combining graph + vector results         |
+| `hash.rs`         | Deterministic content hashing for incremental updates |
+| `incremental.rs`  | Skip unchanged files during re-scans                  |
 
 **Data Flow:**
+
 ```
 Source Files → Parser → AST → GraphBuilder → Nodes/Edges → SQLite
                     ↓
@@ -41,21 +42,22 @@ Source Files → Parser → AST → GraphBuilder → Nodes/Edges → SQLite
 
 Implements autonomous self-healing per Constitution XVII:
 
-| Component | Responsibility |
-|-----------|---------------|
-| `parser_rust.rs` | Parse `cargo test --message-format=json` |
-| `parser_py.rs` | Parse pytest output |
-| `context.rs` | Build repair context from Oracle |
-| `llm.rs` | LLM trait + Candle implementation |
-| `prompts.rs` | Repair prompt templates |
-| `loop.rs` | Healing state machine (max 2 attempts) |
-| `apply.rs` | Apply fixes using whole-block replacement |
-| `verify.rs` | Gate: compile + lint + test |
-| `audit.rs` | Log all attempts to SQLite |
+| Component        | Responsibility                            |
+| ---------------- | ----------------------------------------- |
+| `parser_rust.rs` | Parse `cargo test --message-format=json`  |
+| `parser_py.rs`   | Parse pytest output                       |
+| `context.rs`     | Build repair context from Oracle          |
+| `llm.rs`         | LLM trait + Candle implementation         |
+| `prompts.rs`     | Repair prompt templates                   |
+| `loop.rs`        | Healing state machine (max 2 attempts)    |
+| `apply.rs`       | Apply fixes using whole-block replacement |
+| `verify.rs`      | Gate: compile + lint + test               |
+| `audit.rs`       | Log all attempts to SQLite                |
 
 **State Machine:**
+
 ```
-ANALYZE → BUILD_CONTEXT → GENERATE_PROMPT → LLM_INFERENCE 
+ANALYZE → BUILD_CONTEXT → GENERATE_PROMPT → LLM_INFERENCE
     ↓                                           ↓
     ← ← ← ← VERIFY ← ← APPLY_FIX ← ← ← ← ← ← ← ←
               ↓
@@ -66,12 +68,12 @@ ANALYZE → BUILD_CONTEXT → GENERATE_PROMPT → LLM_INFERENCE
 
 Implements governed releases per Constitution XVIII:
 
-| Component | Responsibility |
-|-----------|---------------|
-| `checks.rs` | Pre-flight: clean git, passing tests, no untagged debt |
-| `commits.rs` | Parse conventional commit history |
-| `version.rs` | Calculate next SemVer version |
-| `github.rs` | Create release PR via GitHub API |
+| Component    | Responsibility                                         |
+| ------------ | ------------------------------------------------------ |
+| `checks.rs`  | Pre-flight: clean git, passing tests, no untagged debt |
+| `commits.rs` | Parse conventional commit history                      |
+| `version.rs` | Calculate next SemVer version                          |
+| `github.rs`  | Create release PR via GitHub API                       |
 
 ## Data Storage
 
@@ -118,18 +120,18 @@ Schema: code_vectors
 
 ## Constitution Alignment
 
-| Section | Principle | Implementation |
-|---------|-----------|----------------|
-| XVI.1 | Graph + Vector duality | SQLite + LanceDB dual storage |
-| XVI.2 | Deterministic hashing | SHA256 content hash in `hash.rs` |
-| XVII.1 | Max 2 healing attempts | `HealingLoop.max_attempts = 2` |
-| XVII.2 | Verification gate | `VerificationGate` (compile + lint + test) |
-| XVII.3 | Whole-block replacement | `apply.rs` replaces entire files |
-| XVII.4 | Audit logging | `audit.rs` → healing_attempts table |
-| XVIII.1 | Pre-flight checks | `ConstitutionCheck.run_all()` |
-| XVIII.2 | SemVer from commits | `calculate_next_version()` |
-| XIX.1 | Structured CLI | Clap with subcommands |
-| XIX.2 | Exit codes | 0=success, 1=failure |
+| Section | Principle               | Implementation                             |
+| ------- | ----------------------- | ------------------------------------------ |
+| XVI.1   | Graph + Vector duality  | SQLite + LanceDB dual storage              |
+| XVI.2   | Deterministic hashing   | SHA256 content hash in `hash.rs`           |
+| XVII.1  | Max 2 healing attempts  | `HealingLoop.max_attempts = 2`             |
+| XVII.2  | Verification gate       | `VerificationGate` (compile + lint + test) |
+| XVII.3  | Whole-block replacement | `apply.rs` replaces entire files           |
+| XVII.4  | Audit logging           | `audit.rs` → healing_attempts table        |
+| XVIII.1 | Pre-flight checks       | `ConstitutionCheck.run_all()`              |
+| XVIII.2 | SemVer from commits     | `calculate_next_version()`                 |
+| XIX.1   | Structured CLI          | Clap with subcommands                      |
+| XIX.2   | Exit codes              | 0=success, 1=failure                       |
 
 ## Performance Considerations
 

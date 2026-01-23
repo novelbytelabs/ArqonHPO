@@ -17,6 +17,6 @@ ArqonHPO treats your system as a **flow**:
 
 ## Core Components
 
-*   **Safety Executor**: The gatekeeper. Enforces rate limits, rollback contracts, and value bounds.
-*   **Adaptive Engine**: The brain. Uses SPSA or Nelder-Mead to steer parameters.
-*   **Telemetry Ring**: Lock-free, allocation-free circular buffer for observation.
+- **Safety Executor**: The gatekeeper. Enforces rate limits, rollback contracts, and value bounds.
+- **Adaptive Engine**: The brain. Uses SPSA or Nelder-Mead to steer parameters.
+- **Telemetry Ring**: Lock-free, allocation-free circular buffer for observation.

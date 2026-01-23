@@ -70,16 +70,22 @@ def main():
 
         # Generate Badge JSON (Shields.io schema)
         # Color scale
+        # Color scale - utilizing lighter hex codes to ensure black text (Shields.io contrast)
         if pct > 90:
-            color = "brightgreen"
+            color = "66ff66" # Very bright green -> Black text
         elif pct > 80:
-            color = "green"
+            color = "99ff99" # Pastel green -> Black text
         elif pct > 70:
-            color = "yellow"
+            color = "ffeebb" # Light Yellow -> Black text
         elif pct > 60:
-            color = "orange"
+            color = "ffccaa" # Light Orange -> Black text
         else:
-            color = "red"
+            color = "ffaaaa" # Light Red -> Black text? Or keep red for white text?
+            # User said "white in the gray ones". Gray is label.
+            # Usually red background (fail) has white text.
+            color = "red" 
+
+
         
         badges[name] = {
             "schemaVersion": 1,

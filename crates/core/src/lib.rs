@@ -8,10 +8,13 @@
 pub mod artifact;
 pub mod classify;
 pub mod config;
+pub mod governance;
 pub mod machine;
+pub mod omega;
 pub mod probe;
 pub mod rng;
 pub mod strategies;
+pub mod variant_catalog;
 
 // Re-export hotpath as adaptive_engine for API compatibility
 pub use hotpath as adaptive_engine;

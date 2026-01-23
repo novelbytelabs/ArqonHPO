@@ -67,20 +67,41 @@ jobs:
           if [[ "${{ runner.os }}" == "Windows" ]]; then
             src="${src}.exe"
           fi
-          dst="target/${{ matrix.target }}/release/${{ matrix.artifact_name }}"
+          dst="target/${{ matrix.target }}/release/${{ matrix.asset_name }}"
           cp "$src" "$dst"
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v6
         with:
           name: ${{ matrix.asset_name }}
-          path: target/${{ matrix.target }}/release/${{ matrix.artifact_name }}
+          path: target/${{ matrix.target }}/release/${{ matrix.asset_name }}
 
   # ==========================================================================
   # SLSA Provenance - Supply Chain Security (Level 3)
   # ==========================================================================
-  provenance:
+  subjects:
+    name: Generate Provenance Subjects
     needs: build
+    runs-on: ubuntu-latest
+    outputs:
+      base64_subjects: ${{ steps.subjects.outputs.base64_subjects }}
+    steps:
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create subjects file
+        id: subjects
+        shell: bash
+        run: |
+          set -euo pipefail
+          find artifacts -type f -print0 | sort -z | xargs -0 sha256sum > subjects.sha256sum
+          base64 -w0 subjects.sha256sum > subjects.sha256sum.base64
+          echo "base64_subjects=$(cat subjects.sha256sum.base64)" >> "$GITHUB_OUTPUT"
+
+  provenance:
+    needs: [build, subjects]
     permissions:
       actions: read
       id-token: write
@@ -88,8 +109,8 @@ jobs:
     uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.1.0
     with:
       base64-subjects: |
-        ${{ needs.build.outputs.hashes }}
-      upload-assets: true
+        ${{ needs.subjects.outputs.base64_subjects }}
+      upload-assets: false
 
   # ==========================================================================
   # SBOM - Software Bill of Materials
@@ -163,7 +184,7 @@ jobs:
   # ==========================================================================
   release:
     name: Create Release
-    needs: [build, python-wheels]
+    needs: [build, python-wheels, provenance, sbom]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -173,10 +194,30 @@ jobs:
         with:
           path: artifacts
 
+      - name: Prepare release assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p release-assets
+          while IFS= read -r -d '' file; do
+            rel="${file#artifacts/}"
+            parent="${rel%%/*}"
+            base="$(basename "$file")"
+            if [[ "$base" == "arqonhpo" || "$base" == "arqonhpo.exe" ]]; then
+              dest="release-assets/${parent}"
+            else
+              dest="release-assets/${base}"
+            fi
+            if [[ -e "$dest" ]]; then
+              dest="release-assets/${parent}-${base}"
+            fi
+            cp "$file" "$dest"
+          done < <(find artifacts -type f -print0)
+
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          files: artifacts/**/*
+          files: release-assets/*
           generate_release_notes: true
           draft: false
           prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') || contains(github.ref, 'rc') }}

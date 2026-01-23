@@ -16,6 +16,7 @@ node_modules/
 target/
 docs/site/assets/javascripts/
 docs/context/
+docs/site/
 
 *.json
 *.jsonl
