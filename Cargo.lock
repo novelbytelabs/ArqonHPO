@@ -6489,6 +6489,7 @@ dependencies = [
  "tree-sitter-rust",
  "uuid",
  "writeable",
+ "zerovec",
 ]
 
 [[package]]
@@ -8401,6 +8402,7 @@ version = "0.11.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6c28719294829477f525be0186d13efa9a3c602f7ec202ca9e353d310fb9a002"
 dependencies = [
+ "serde",
  "yoke 0.8.1",
  "zerofrom",
  "zerovec-derive",

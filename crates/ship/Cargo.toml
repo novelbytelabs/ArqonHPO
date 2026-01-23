@@ -33,6 +33,7 @@ tree-sitter = "0.26.3"
 tree-sitter-python = "0.25.0"
 tree-sitter-rust = "0.24.0"
 uuid = { version = "1.19.0", features = ["v4", "fast-rng"] }
+zerovec = { version = "0.11", features = ["alloc"] } # Workaround for icu_properties 2.0.0 missing alloc feature
 
 [dev-dependencies]
 assert_cmd = "2.1.2"
