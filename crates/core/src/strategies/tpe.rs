@@ -63,7 +63,7 @@ impl TPE {
         // Scott's Rule: 1.06 × σ × n^(-1/5)
         let bandwidth = 1.06 * stddev * n.powf(-0.2);
 
-        bandwidth
+        bandwidth.max(1e-6)
     }
 
     /// Silverman's Rule bandwidth: σ = 0.9 × min(stddev, IQR/1.34) × n^(-1/5)

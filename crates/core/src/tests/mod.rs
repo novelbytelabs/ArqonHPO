@@ -5,6 +5,7 @@
 //! - TPE strategy (Scott's rule bandwidth)
 //! - Nelder-Mead strategy (all 5 operations)
 //! - Probe strategies (prime-index, uniform)
+//! - Autopoiesis (Omega tier, Variant Catalog, Governance)
 
 #[cfg(test)]
 mod test_classify;
@@ -17,3 +18,6 @@ mod test_nelder_mead;
 
 #[cfg(test)]
 mod test_probe;
+
+#[cfg(test)]
+mod test_autopoiesis;

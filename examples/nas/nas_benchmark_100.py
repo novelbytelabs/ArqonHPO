@@ -23,20 +23,27 @@ import time
 import os
 import sys
 import hashlib
+print("DEBUG: Basic imports done", flush=True)
 
 os.environ["CUDA_VISIBLE_DEVICES"] = ""
-os.environ["OMP_NUM_THREADS"] = "1"
+os.environ["OMP_NUM_THREADS"] = "20"
+print("DEBUG: Env vars set", flush=True)
 
 import numpy as np
+print("DEBUG: Numpy imported", flush=True)
 import torch
+print("DEBUG: Torch imported", flush=True)
 import torch.nn as nn
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
+print("DEBUG: Torchvision imported", flush=True)
 
-torch.set_num_threads(1)
+torch.set_num_threads(20)
+print("DEBUG: Threads set", flush=True)
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from arqonhpo import ArqonSolver
+print("DEBUG: ArqonSolver imported", flush=True)
 
 # =============================================================================
 # CONFIGURATION
@@ -279,11 +286,10 @@ def run_arqon(seed):
         if unique_evals >= NAS_BUDGET_UNIQUE:
             break
             
-        candidates = solver.ask()
-        if not candidates:
+        config = solver.ask_one()
+        if config is None:
             break
             
-        config = candidates[0]
         disc_cfg = discretize_config(config)
         cache_key = tuple(sorted(disc_cfg.items()))
         total_asks += 1
