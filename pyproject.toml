@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "arqon-hpo"
+version = "0.3.3"
+description = "ArqonHPO Hyperparameter Optimization AGO"
+requires-python = ">=3.10"
+dependencies = []
+
+[tool.setuptools]
+package-dir = {"" = "."}
+
+[tool.arqon.relationships]
+parent = "Arqon"
+children = []
