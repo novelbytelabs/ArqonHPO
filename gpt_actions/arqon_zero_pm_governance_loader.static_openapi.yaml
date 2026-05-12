@@ -1,0 +1,121 @@
+openapi: 3.1.0
+info:
+  title: Arqon Zero PM Governance Loader
+  version: 0.1.0
+  description: >
+    Loads static GitHub Pages governance context files for Arqon Zero PM AI.
+    The GitHub Pages project prefix /ArqonHPO is included directly in every path.
+
+servers:
+  - url: https://novelbytelabs.github.io
+    description: Novel Byte Labs GitHub Pages root
+
+paths:
+  /ArqonHPO/shared/constitution/pm_gpt_context.json:
+    get:
+      operationId: loadGovernanceContext
+      summary: Load current PM AI governance context.
+      description: >
+        Fetches shared constitution, PM constitution, policy contents,
+        manifest hashes, authority order, and fallback policy.
+      responses:
+        "200":
+          description: PM governance context.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GovernanceContext"
+
+  /ArqonHPO/shared/constitution/constitution_manifest.json:
+    get:
+      operationId: getConstitutionManifest
+      summary: Fetch current constitution manifest.
+      responses:
+        "200":
+          description: Current constitution manifest.
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /ArqonHPO/shared/constitution/status_language_policy.json:
+    get:
+      operationId: getRequiredStatusLanguage
+      summary: Fetch required status language.
+      responses:
+        "200":
+          description: Required status language.
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /ArqonHPO/shared/constitution/amendment_protocol.json:
+    get:
+      operationId: getAmendmentProtocol
+      summary: Fetch constitution amendment protocol.
+      responses:
+        "200":
+          description: Amendment protocol.
+          content:
+            application/json:
+              schema:
+                type: object
+
+components:
+  schemas:
+    GovernanceContext:
+      type: object
+      required:
+        - role
+        - shared_constitution
+        - role_constitution
+        - policies
+        - manifest
+        - status_language
+        - authority_order
+        - fallback_policy
+      properties:
+        role:
+          type: string
+          example: PM_AI
+        shared_constitution:
+          $ref: "#/components/schemas/GovernanceDocument"
+        role_constitution:
+          $ref: "#/components/schemas/GovernanceDocument"
+        policies:
+          type: array
+          items:
+            $ref: "#/components/schemas/GovernanceDocument"
+        manifest:
+          type: object
+        status_language:
+          type: object
+        authority_order:
+          type: array
+          items:
+            type: string
+        fallback_policy:
+          type: object
+
+    GovernanceDocument:
+      type: object
+      required:
+        - name
+        - version
+        - hash
+        - path
+        - content
+      properties:
+        name:
+          type: string
+        version:
+          type: string
+        hash:
+          type: string
+        path:
+          type: string
+        url:
+          type: string
+        content:
+          type: string
