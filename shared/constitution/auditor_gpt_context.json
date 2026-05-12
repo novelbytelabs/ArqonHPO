@@ -14,9 +14,9 @@
     "stale_fallback_status": "REQUIRES_STALENESS_REVIEW"
   },
   "manifest": {
-    "context_hash": "sha256:e8cffc976572a0a5a49224fed38839614220942a4da45f575460dcc0e1739d25",
+    "context_hash": "sha256:314cfa28ffe1bea308c0aac74005ccf3e00124a841efbab924f6cf14d4fe2e37",
     "effective_url_base": "https://novelbytelabs.github.io/ArqonHPO",
-    "generated_at": "2026-05-12T00:01:58.519629+00:00",
+    "generated_at": "2026-05-12T00:27:04.772589+00:00",
     "policy_hashes": {
       "AUDIT_REPLAY_POLICY": "sha256:4a34dcdef362c14b7c22a775548921f92fa71f92e599e99ad9cdc15e43326af0",
       "CONSTITUTION_AMENDMENT_PROTOCOL": "sha256:936330cfad87dc4a7642644eb128a0aeeb50aa381484486cf6c1cf11ec1403d9",

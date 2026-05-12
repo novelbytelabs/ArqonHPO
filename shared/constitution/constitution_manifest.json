@@ -1,12 +1,12 @@
 {
   "derived_json_hashes": {
     "amendment_protocol.json": "sha256:e0d71f3c3c5e84e7f14e65cc9ecb34f9ec522fc09f041992d3e9c9d71e8ef0c1",
-    "auditor_gpt_context.json": "sha256:997989910e787e8b7a23ebd4ac398ef873ca4e61fedfd052414ba5d8e322fedf",
+    "auditor_gpt_context.json": "sha256:daf5d71f35e18ef018241e27621507c0c9837da534d78103b759686106c04fe6",
     "status_language_policy.json": "sha256:764f026bf7f651fc833f27c02bf89ef4beb8802fc8c15a1e05390507cdd2ae05"
   },
   "effective_url_base": "https://novelbytelabs.github.io/ArqonHPO",
-  "generated_at": "2026-05-12T00:01:58.519629+00:00",
-  "manifest_hash": "sha256:4be29f0b31b5da0aed6f3def671c0a1a2a6eb164d458232de4955ce8f2509672",
+  "generated_at": "2026-05-12T00:27:04.772589+00:00",
+  "manifest_hash": "sha256:53e0c1c298caaa2c702ca682d82fd0475e838c2c39505960b504e30d0e2a3f69",
   "policy_hashes": {
     "AUDIT_REPLAY_POLICY": "sha256:4a34dcdef362c14b7c22a775548921f92fa71f92e599e99ad9cdc15e43326af0",
     "CONSTITUTION_AMENDMENT_PROTOCOL": "sha256:936330cfad87dc4a7642644eb128a0aeeb50aa381484486cf6c1cf11ec1403d9",
