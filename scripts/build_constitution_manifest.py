@@ -63,6 +63,7 @@ def write_json(filename: str, payload: dict) -> str:
 def main() -> None:
     shared = read_doc("shared_gpt_constitution.md", "ARQON_ZERO_SHARED_GPT_CONSTITUTION")
     auditor = read_doc("auditor_gpt_constitution.md", "AUDITOR_AI_GPT_CONSTITUTION")
+    coder = read_doc("coder_gpt_constitution.md", "CODER_AI_GPT_CONSTITUTION")
 
     policy_files = [
         ("status_language_policy.md", "STATUS_LANGUAGE_POLICY"),
@@ -109,34 +110,43 @@ def main() -> None:
         "shared_constitution_hash": shared["hash"],
         "role_constitution_hashes": {
             "AUDITOR_AI": auditor["hash"],
+            "CODER_AI": coder["hash"],
         },
         "policy_hashes": {policy["name"]: policy["hash"] for policy in policies},
         "effective_url_base": URL_BASE,
         "generated_at": datetime.now(timezone.utc).isoformat(),
     }
 
-    context = {
-        "role": "AUDITOR_AI",
-        "shared_constitution": shared,
-        "role_constitution": auditor,
-        "policies": policies,
-        "manifest": dict(manifest_base),
-        "status_language": status_language,
-        "authority_order": [
-            "Human final promotion authority",
-            "Arqon Zero Shared GPT Constitution",
-            "Auditor AI GPT Constitution",
-            "Governance policies",
-            "PM spec / audit request",
-            "User request",
-            "Auditor convenience or preference",
-        ],
-        "fallback_policy": {
-            "live_load_required_for_governance_sensitive_tasks": True,
-            "stale_fallback_allowed": True,
-            "stale_fallback_status": "REQUIRES_STALENESS_REVIEW",
-        },
-    }
+    # Generate contexts for each role
+    def build_context(role: str, role_doc: dict) -> dict:
+        ctx = {
+            "role": role,
+            "shared_constitution": shared,
+            "role_constitution": role_doc,
+            "policies": policies,
+            "manifest": dict(manifest_base),
+            "status_language": status_language,
+            "authority_order": [
+                "Human final promotion authority",
+                "Arqon Zero Shared GPT Constitution",
+                f"{role.replace('_', ' ').title()} Constitution",
+                "Governance policies",
+                "PM spec / audit request",
+                "User request",
+                "AI convenience or preference",
+            ],
+            "fallback_policy": {
+                "live_load_required_for_governance_sensitive_tasks": True,
+                "stale_fallback_allowed": True,
+                "stale_fallback_status": "REQUIRES_STALENESS_REVIEW",
+            },
+        }
+        context_text = json.dumps(ctx, indent=2, sort_keys=True, ensure_ascii=False) + "\n"
+        ctx["manifest"]["context_hash"] = sha256_text(context_text)
+        return ctx
+
+    auditor_context = build_context("AUDITOR_AI", auditor)
+    coder_context = build_context("CODER_AI", coder)
 
     status_hash = write_json("status_language_policy.json", status_language)
     amendment_hash = write_json("amendment_protocol.json", amendment_protocol)
@@ -147,19 +157,17 @@ def main() -> None:
         "amendment_protocol.json": amendment_hash,
     }
 
-    context_text = json.dumps(context, indent=2, sort_keys=True, ensure_ascii=False) + "\n"
-    context_hash = sha256_text(context_text)
-    context["manifest"]["context_hash"] = context_hash
+    auditor_context_hash = write_json("auditor_gpt_context.json", auditor_context)
+    coder_context_hash = write_json("coder_gpt_context.json", coder_context)
 
-    context_hash = write_json("auditor_gpt_context.json", context)
-    manifest["derived_json_hashes"]["auditor_gpt_context.json"] = context_hash
-
+    manifest["derived_json_hashes"]["auditor_gpt_context.json"] = auditor_context_hash
     manifest_text_without_hash = json.dumps(manifest, indent=2, sort_keys=True, ensure_ascii=False) + "\n"
     manifest["manifest_hash"] = sha256_text(manifest_text_without_hash)
     write_json("constitution_manifest.json", manifest)
 
     print("Wrote governance context files:")
     print(f" - {CONSTITUTION_DIR}/auditor_gpt_context.json")
+    print(f" - {CONSTITUTION_DIR}/coder_gpt_context.json")
     print(f" - {CONSTITUTION_DIR}/constitution_manifest.json")
     print(f" - {CONSTITUTION_DIR}/status_language_policy.json")
     print(f" - {CONSTITUTION_DIR}/amendment_protocol.json")

@@ -25,10 +25,12 @@ docs/site/
 *.jsonl.bz2
 *.json.bz2
 
-# Keep a single checked-in JSON artifact for probe-gating experiment results.
+# Keep specific JSON artifacts for governance and experiments.
 !dev/probe_gating_experiments/results.json
 !examples/safety_presets/*.json
 !examples/actions/*.jsonl
+!shared/constitution/*.json
+!docs/docs/shared/constitution/*.json
 
 # *.md
 *.bak

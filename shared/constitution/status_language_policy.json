@@ -1,0 +1,10 @@
+{
+  "removal_is_hard_fail": true,
+  "required_labels": [
+    "REQUIRES_HUMAN_REVIEW",
+    "development diagnostic only",
+    "NOT SEALED-TEST CERTIFIED",
+    "not promotable"
+  ],
+  "stale_fallback_label": "REQUIRES_STALENESS_REVIEW"
+}
