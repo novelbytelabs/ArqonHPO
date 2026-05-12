@@ -159,10 +159,20 @@ def main() -> None:
     write_json("constitution_manifest.json", manifest)
 
     print("Wrote governance context files:")
-    print(" - shared/constitution/auditor_gpt_context.json")
-    print(" - shared/constitution/constitution_manifest.json")
-    print(" - shared/constitution/status_language_policy.json")
-    print(" - shared/constitution/amendment_protocol.json")
+    print(f" - {CONSTITUTION_DIR}/auditor_gpt_context.json")
+    print(f" - {CONSTITUTION_DIR}/constitution_manifest.json")
+    print(f" - {CONSTITUTION_DIR}/status_language_policy.json")
+    print(f" - {CONSTITUTION_DIR}/amendment_protocol.json")
+
+    # Mirror to docs for GitHub Pages publication
+    docs_mirror = ROOT / "docs" / "docs" / "shared" / "constitution"
+    if (ROOT / "docs" / "docs").exists():
+        import shutil
+        docs_mirror.mkdir(parents=True, exist_ok=True)
+        for f in CONSTITUTION_DIR.glob("*"):
+            if f.is_file():
+                shutil.copy2(f, docs_mirror / f.name)
+        print(f"Mirrored constitution files to {docs_mirror}")
 
 
 if __name__ == "__main__":
