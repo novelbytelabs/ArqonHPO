@@ -1,0 +1,19 @@
+{
+  "hard_constraints": [
+    "No removal of human final promotion authority",
+    "No AI self-certification",
+    "No silent weakening of sealed-test boundary",
+    "No retroactive certification of failed/contaminated/diagnostic evidence",
+    "No removal of conservative status language",
+    "No bypass of audit replay requirements"
+  ],
+  "required_flow": [
+    "PM amendment proposal",
+    "Coder patch draft",
+    "Helper/Codex execution and governance checks",
+    "Auditor weakening/conflict review",
+    "Human ratification",
+    "Version bump and manifest update"
+  ],
+  "retroactive_certification_forbidden": true
+}
