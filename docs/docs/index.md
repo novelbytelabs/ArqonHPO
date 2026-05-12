@@ -243,6 +243,7 @@ hide:
 <div class="hero-section">
   <div class="hero-content">
     <h1 class="hero-title">Arqon Runtime Optimizer</h1>
+    <p style="font-size: 2.5rem; font-weight: 800; color: #818cf8; margin-bottom: 0.5rem; letter-spacing: -1px;">Software That Can Responsibly Steer Itself!</p>
     <h2 class="hero-subtitle">Optimization isn't a workflow anymore.<br>It's a control loop.</h2>
     <p class="hero-support">Safe self-optimization, robustness, and resilience for live systems—with microsecond-class overhead and deterministic governance.</p>
     
