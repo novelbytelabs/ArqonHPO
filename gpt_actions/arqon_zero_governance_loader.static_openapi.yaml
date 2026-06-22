@@ -1,0 +1,181 @@
+openapi: 3.1.0
+info:
+  title: Arqon Zero Static Governance Loader
+  version: 0.1.0
+  description: >
+    Loads static GitHub Pages governance context files for Arqon Zero GPTs.
+    This is the first hybrid implementation: live static files from the repo
+    plus uploaded Knowledge as fallback.
+servers:
+  - url: https://novelbytelabs.github.io/ArqonHPO
+    description: ArqonHPO GitHub Pages site
+paths:
+  /shared/constitution/auditor_gpt_context.json:
+    get:
+      operationId: loadGovernanceContext
+      summary: Load current Auditor AI governance context.
+      description: >
+        Fetches shared constitution, Auditor constitution, policy contents,
+        manifest hashes, authority order, and fallback policy.
+      responses:
+        "200":
+          description: Auditor governance context.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GovernanceContext"
+  /shared/constitution/constitution_manifest.json:
+    get:
+      operationId: getConstitutionManifest
+      summary: Fetch current constitution manifest.
+      responses:
+        "200":
+          description: Current constitution manifest.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConstitutionManifest"
+  /shared/constitution/status_language_policy.json:
+    get:
+      operationId: getRequiredStatusLanguage
+      summary: Fetch required status language.
+      responses:
+        "200":
+          description: Required status language.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatusLanguage"
+  /shared/constitution/amendment_protocol.json:
+    get:
+      operationId: getAmendmentProtocol
+      summary: Fetch constitution amendment protocol.
+      responses:
+        "200":
+          description: Amendment protocol.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AmendmentProtocol"
+components:
+  schemas:
+    GovernanceContext:
+      type: object
+      required:
+        - role
+        - shared_constitution
+        - role_constitution
+        - policies
+        - manifest
+        - status_language
+        - authority_order
+        - fallback_policy
+      properties:
+        role:
+          type: string
+          example: AUDITOR_AI
+        shared_constitution:
+          $ref: "#/components/schemas/GovernanceDocument"
+        role_constitution:
+          $ref: "#/components/schemas/GovernanceDocument"
+        policies:
+          type: array
+          items:
+            $ref: "#/components/schemas/GovernanceDocument"
+        manifest:
+          $ref: "#/components/schemas/ConstitutionManifest"
+        status_language:
+          $ref: "#/components/schemas/StatusLanguage"
+        authority_order:
+          type: array
+          items:
+            type: string
+        fallback_policy:
+          type: object
+          required:
+            - stale_fallback_allowed
+            - live_load_required_for_governance_sensitive_tasks
+            - stale_fallback_status
+          properties:
+            stale_fallback_allowed:
+              type: boolean
+            live_load_required_for_governance_sensitive_tasks:
+              type: boolean
+            stale_fallback_status:
+              type: string
+    GovernanceDocument:
+      type: object
+      required:
+        - name
+        - version
+        - hash
+        - path
+        - content
+      properties:
+        name:
+          type: string
+        version:
+          type: string
+        hash:
+          type: string
+        path:
+          type: string
+        content:
+          type: string
+    ConstitutionManifest:
+      type: object
+      required:
+        - shared_constitution_version
+        - shared_constitution_hash
+        - role_constitution_hashes
+        - policy_hashes
+        - manifest_hash
+        - effective_url_base
+      properties:
+        shared_constitution_version:
+          type: string
+        shared_constitution_hash:
+          type: string
+        role_constitution_hashes:
+          type: object
+          additionalProperties:
+            type: string
+        policy_hashes:
+          type: object
+          additionalProperties:
+            type: string
+        manifest_hash:
+          type: string
+        effective_url_base:
+          type: string
+        generated_at:
+          type: string
+    StatusLanguage:
+      type: object
+      required:
+        - required_labels
+        - removal_is_hard_fail
+      properties:
+        required_labels:
+          type: array
+          items:
+            type: string
+        removal_is_hard_fail:
+          type: boolean
+    AmendmentProtocol:
+      type: object
+      required:
+        - required_flow
+        - hard_constraints
+        - retroactive_certification_forbidden
+      properties:
+        required_flow:
+          type: array
+          items:
+            type: string
+        hard_constraints:
+          type: array
+          items:
+            type: string
+        retroactive_certification_forbidden:
+          type: boolean
